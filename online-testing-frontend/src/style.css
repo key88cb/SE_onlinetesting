@@ -5,7 +5,6 @@
   font-weight: 400;
 
   color-scheme: light dark;
-  /* 默认颜色和背景可以保留，或者根据您的 App.vue 主题调整 */
   color: rgba(255, 255, 255, 0.87);
   background-color: #242424;
 

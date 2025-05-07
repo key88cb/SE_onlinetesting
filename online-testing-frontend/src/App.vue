@@ -3,23 +3,11 @@
   <div class="layout">
     <aside class="sidebar">
       <h2>在线测试子系统</h2>
-<!--      <nav>-->
-<!--        <router-link to="/resource-manage">教学资源管理</router-link>-->
-<!--        <router-link to="/auto-schedule">自动排课</router-link>-->
-<!--        <div class="menu-group">-->
-<!--          <div class="menu-title" @click="toggleManualMenu">-->
-<!--            手动课程调整-->
-<!--            <span class="arrow-icon" :class="{ rotated: manualMenuOpen }">▼</span>-->
-<!--          </div>-->
-<!--          <transition name="fade">-->
-<!--            <div v-show="manualMenuOpen" class="submenu">-->
-<!--              <router-link to="/manual-adjust/teacher-review">教师申请审核</router-link>-->
-<!--              <router-link to="/manual-adjust/admin-adjust">管理员手动调整</router-link>-->
-<!--            </div>-->
-<!--          </transition>-->
-<!--        </div>-->
-<!--        <router-link to="/result-query">排课结果查询</router-link>-->
-<!--      </nav>-->
+      <nav>
+        <router-link to="/">首页</router-link>
+        <router-link to="/test">在线测试</router-link>
+        <router-link to="/result">测试结果</router-link>
+      </nav>
     </aside>
 
     <main class="content">

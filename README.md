@@ -6,15 +6,18 @@ vite + vue + ts
 
 网页UI对齐
 
-!()[https://chhhhhzh.github.io/SE_project_front/]
+[统一框架格式](https://chhhhhzh.github.io/SE_project_front/])
 
 前置依赖：node.js
 ```bash
   cd online-testing-frontend
   npm install
-  npm run dev
+  npm run dev4
 ```
-
+路由管理
+```bash
+  npm install vue-router@
+```
 ---
 ## git
 建议使用IDE拓展支持下的git！
