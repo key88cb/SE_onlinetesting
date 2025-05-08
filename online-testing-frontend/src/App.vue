@@ -1,27 +1,35 @@
 // 网页UI使用框架 https://chhhhhzh.github.io/SE_project_front/
 <template>
   <div class="layout">
-    <aside class="sidebar">
+    <!-- 条件渲染侧边栏 -->
+    <aside v-if="isLoggedIn" class="sidebar">
       <h2>在线测试子系统</h2>
       <nav>
-        <router-link to="/">首页</router-link>
-        <router-link to="/test">在线测试</router-link>
-        <router-link to="/result">测试结果</router-link>
+        <!-- 根据角色动态显示菜单 -->
+        <router-link to="/student/dashboard" v-if="isStudent">考试信息</router-link>
+        <router-link to="/student/results" v-if="isStudent">答题记录</router-link>
+        <router-link to="/student/past-papers" v-if="isStudent">历年真题</router-link>
+
+        <router-link to="/teacher/dashboard" v-if="isTeacher">教师首页</router-link>
+        <router-link to="/teacher/question-bank" v-if="isTeacher">题库管理</router-link>
+        <router-link to="/teacher/create-paper" v-if="isTeacher">编辑发布试卷</router-link>
+        <router-link to="/teacher/past-papers" v-if="isTeacher">查看历年卷</router-link>
+        <router-link to="/teacher/exam-management" v-if="isTeacher">考试情况管理</router-link>
       </nav>
     </aside>
 
     <main class="content">
       <!-- ⭐ 顶栏，右上角用户模块 -->
-      <div class="top-bar">
+      <div class="top-bar" v-if="isLoggedIn">
         <div class="user-area" @click="toggleDropdown">
-          <img src="https://i.pravatar.cc/40" alt="头像" class="avatar" />
+          <img src="/vite.svg" alt="头像" class="avatar" />
           <span class="username">{{ username }}</span>
           <svg class="arrow" viewBox="0 0 1024 1024" width="12" height="12">
             <path d="M512 672L192 352h640z" fill="#333" />
           </svg>
         </div>
 
-         下拉菜单
+        <!-- 下拉菜单 -->
         <div v-if="dropdownVisible" class="dropdown-menu">
           <div class="dropdown-item" @click="logout">退出登录</div>
         </div>
@@ -34,29 +42,53 @@
   </div>
 </template>
 
-<script setup>
-import { ref } from 'vue'
 
-const username = ref('我是谁？')  // 这里可以以后从后端接口动态拿到
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
+const route = useRoute()
+const router = useRouter()
+
+// 用户信息
+const username = ref('user')
+const role = ref(null) // 'student' or 'teacher'
 const dropdownVisible = ref(false)
 
-// 点击头像区域切换下拉框
+// 登录状态判断
+const isLoggedIn = computed(() => {
+  return route.path.startsWith('/student') || route.path.startsWith('/teacher')
+})
+
+
+// 角色判断
+const isStudent = computed(() => {return route.path.startsWith('/student')})
+const isTeacher = computed(() => {return route.path.startsWith('/teacher')})
+
+// 模拟从 localStorage 获取用户信息（真实项目中应调用接口）
+onMounted(() => {
+  const user = JSON.parse(localStorage.getItem('user'))
+  if (user && user.username && user.role) {
+    username.value = user.username
+    role.value = user.role
+  }
+})
+
+// 切换下拉菜单
 const toggleDropdown = () => {
   dropdownVisible.value = !dropdownVisible.value
 }
 
-// 点击退出登录
+// 退出登录
 const logout = () => {
-  alert('退出登录')
-  // 这里可以添加真正的退出逻辑，比如跳转到登录页
+  localStorage.removeItem('user') // 清除登录信息
+  role.value = null
+  username.value = 'user'
+  dropdownVisible.value = false
+  router.push('/login')
 }
-
-const manualMenuOpen = ref(false)
-const toggleManualMenu = () => {
-  manualMenuOpen.value = !manualMenuOpen.value
-}
-
 </script>
+
 
 <style scoped>
 /* 整个布局占满浏览器 */
