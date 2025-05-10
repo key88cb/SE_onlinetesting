@@ -81,13 +81,14 @@ const formatDate = (dateString) => {
   const date = new Date(dateString)
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
-
 const pad = (num) => String(num).padStart(2, '0')
+
 </script>
 
 <style scoped>
 .exam-detail {
   padding: 20px;
+  color:black;
 }
 
 .exam-info-card {
@@ -101,6 +102,7 @@ const pad = (num) => String(num).padStart(2, '0')
 .info-row {
   margin-bottom: 10px;
   font-size: 1em;
+  font-weight: 500;
 }
 
 .start-btn {

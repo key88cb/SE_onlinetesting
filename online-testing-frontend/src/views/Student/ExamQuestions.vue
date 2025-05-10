@@ -9,6 +9,7 @@
       <div class="options">
         <label v-for="option in question.options" :key="option.value">
           <input type="radio" :name="'q' + index" :value="option.value" />
+          {{ option.value }}. 
           {{ option.label }}
         </label>
       </div>
@@ -101,6 +102,7 @@ function pad(n) {
 <style scoped>
 .exam-questions {
   padding: 20px;
+  color:black;
 }
 
 .exam-info-card {
