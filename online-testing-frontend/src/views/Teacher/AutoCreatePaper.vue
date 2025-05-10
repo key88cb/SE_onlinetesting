@@ -428,6 +428,9 @@ const getTypeQuestionCount = (type) => {
 </script>
 
 <style scoped>
+h1{
+  color: black;
+}
 .auto-create-paper {
   padding: 20px;
 }
@@ -441,6 +444,7 @@ const getTypeQuestionCount = (type) => {
 
 .form-group {
   margin-bottom: 20px;
+  color: #000000;
 }
 
 .form-group label {
