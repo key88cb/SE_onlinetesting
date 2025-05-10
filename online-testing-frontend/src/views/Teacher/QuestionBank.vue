@@ -29,7 +29,6 @@
       >
         <div class="question-header">
           <span class="type-badge">{{ question.type }}</span>
-          <span class="difficulty">{{ question.difficulty }}</span>
         </div>
         <div class="question-text">{{ question.text }}</div>
 
@@ -64,16 +63,6 @@
             <option value="单选">单选</option>
             <option value="多选">多选</option>
             <option value="判断">判断</option>
-            <option value="简答">简答</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>难度等级：</label>
-          <select v-model="currentQuestion.difficulty">
-            <option value="易">易</option>
-            <option value="中">中</option>
-            <option value="难">难</option>
           </select>
         </div>
 
@@ -87,27 +76,17 @@
           <textarea v-model="currentQuestion.text" rows="3" placeholder="请输入题目描述"></textarea>
         </div>
 
-        <div class="form-group" v-if="!isEssayQuestion">
+        <div class="form-group">
           <label>选项设置：</label>
           <div v-for="(option, index) in currentQuestion.options" :key="index" class="option-row">
             <span class="option-label">{{ String.fromCharCode(65 + index) }}.</span>
             <input type="text" v-model="option.label" :placeholder="`选项 ${String.fromCharCode(65 + index)}`" />
-            <input type="checkbox" v-if="!isMultipleChoice" v-model="option.isCorrect" /> 正确
+            <input type="checkbox" v-if="!isMultipleChoice && !isJudgmentQuestion" v-model="option.isCorrect" /> 正确
           </div>
 
           <div v-if="isMultipleChoice" class="multiple-choice-hint">
             可选择多个正确答案
           </div>
-        </div>
-
-        <div class="form-group" v-if="isEssayQuestion">
-          <label>参考答案：</label>
-          <textarea v-model="currentQuestion.correctAnswer" rows="3" placeholder="请输入参考答案"></textarea>
-        </div>
-
-        <div class="form-group" v-if="isEssayQuestion">
-          <label>解析说明：</label>
-          <textarea v-model="currentQuestion.explanation" rows="3" placeholder="请输入题目解析"></textarea>
         </div>
 
         <div class="modal-buttons">
@@ -128,20 +107,17 @@ const questions = ref([
     type: '单选',
     subject: '操作系统原理',
     text: '进程和线程的主要区别是什么？',
-    difficulty: '中',
     options: [
       { value: 'A', label: '资源分配的基本单位', isCorrect: false },
       { value: 'B', label: 'CPU调度的基本单位', isCorrect: true },
       { value: 'C', label: '程序运行环境描述', isCorrect: false }
-    ],
-    explanation: '进程是资源分配的基本单位，线程是CPU调度的基本单位。'
+    ]
   },
   {
     id: 2,
     type: '多选',
     subject: '数据库基础',
     text: '下列哪些是关系型数据库？',
-    difficulty: '中',
     options: [
       { value: 'A', label: 'MySQL', isCorrect: true },
       { value: 'B', label: 'MongoDB', isCorrect: false },
@@ -154,20 +130,10 @@ const questions = ref([
     type: '判断',
     subject: '计算机网络',
     text: 'HTTP协议是无状态的协议。',
-    difficulty: '易',
     options: [
       { value: 'A', label: '正确', isCorrect: true },
       { value: 'B', label: '错误', isCorrect: false }
     ]
-  },
-  {
-    id: 4,
-    type: '简答',
-    subject: '数据结构',
-    text: '请解释什么是哈希冲突以及解决方法有哪些？',
-    difficulty: '难',
-    correctAnswer: '当两个不同的键值对应到相同的存储位置时就发生了哈希冲突...解决方法包括开放定址法、链地址法等',
-    explanation: '哈希冲突是哈希函数计算出相同位置的情况，常见解决方案包括开放定址法、链地址法等'
   }
 ])
 
@@ -178,15 +144,12 @@ const currentQuestion = ref({
   type: '单选',
   subject: '',
   text: '',
-  difficulty: '中',
   options: [
     { value: 'A', label: '', isCorrect: false },
     { value: 'B', label: '', isCorrect: false },
     { value: 'C', label: '', isCorrect: false },
     { value: 'D', label: '', isCorrect: false }
-  ],
-  correctAnswer: '',
-  explanation: ''
+  ]
 })
 
 const searchQuery = ref('')
@@ -216,14 +179,14 @@ const filteredQuestions = computed(() => {
   return result
 })
 
-// 判断是否为简答题
-const isEssayQuestion = computed(() => {
-  return currentQuestion.value.type === '简答'
-})
-
 // 判断是否为多选题
 const isMultipleChoice = computed(() => {
   return currentQuestion.value.type === '多选'
+})
+
+// 判断是否为判断题
+const isJudgmentQuestion = computed(() => {
+  return currentQuestion.value.type === '判断'
 })
 
 // 显示添加题目对话框
@@ -234,15 +197,12 @@ const showAddQuestionDialog = () => {
     type: '单选',
     subject: '',
     text: '',
-    difficulty: '中',
     options: [
       { value: 'A', label: '', isCorrect: false },
       { value: 'B', label: '', isCorrect: false },
       { value: 'C', label: '', isCorrect: false },
       { value: 'D', label: '', isCorrect: false }
-    ],
-    correctAnswer: '',
-    explanation: ''
+    ]
   }
   showModal.value = true
 }
@@ -266,7 +226,6 @@ const deleteQuestion = (question) => {
 
 // 查看题目详情
 const viewQuestionDetails = (question) => {
-  // 实际应用中可跳转到详细页或显示更多信息
   alert(`查看题目详情：${question.text}`)
 }
 
@@ -282,7 +241,7 @@ const saveQuestion = () => {
     return
   }
 
-  if (!isEssayQuestion.value && !currentQuestion.value.options.some(o => o.isCorrect)) {
+  if (!isJudgmentQuestion.value && !currentQuestion.value.options.some(o => o.isCorrect)) {
     alert('至少选择一个正确答案')
     return
   }
@@ -408,11 +367,6 @@ const removeOption = (index) => {
   color: white;
   padding: 3px 8px;
   border-radius: 4px;
-  font-size: 0.9em;
-}
-
-.difficulty {
-  color: #666;
   font-size: 0.9em;
 }
 
