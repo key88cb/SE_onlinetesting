@@ -17,6 +17,8 @@ import StudentPastPaperDetail from '../views/student/PastPaperDetail.vue'
 import TeacherDashboard from '../views/teacher/Dashboard.vue'
 import QuestionBank from '../views/teacher/QuestionBank.vue'
 import CreatePaper from '../views/teacher/CreatePaper.vue'
+import ManualCreatePaper from '../views/teacher/ManualCreatePaper.vue' // 手动出卷页面
+import AutoCreatePaper from '../views/teacher/AutoCreatePaper.vue'
 import TeacherPastPapers from '../views/teacher/PastPapers.vue'
 import ExamManagement from '../views/teacher/ExamManagement.vue'
 
@@ -78,9 +80,24 @@ const routes = [
     component: QuestionBank
   },
   {
+    path: '/teacher/question-bank',
+    name: 'QuestionBank',
+    component: QuestionBank
+  },
+  {
     path: '/teacher/create-paper',
     name: 'CreatePaper',
-    component: CreatePaper
+    component: CreatePaper // 这个页面作为选择入口
+  },
+  {
+    path: '/teacher/create-paper/manual',
+    name: 'ManualCreatePaper',
+    component: ManualCreatePaper
+  },
+  {
+    path: '/teacher/create-paper/auto',
+    name: 'AutoCreatePaper',
+    component: AutoCreatePaper
   },
   {
     path: '/teacher/past-papers',

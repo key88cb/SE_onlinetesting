@@ -92,7 +92,7 @@
             <strong>考试时长：</strong> {{ formatTime(selectedExam.duration * 60) }}
           </div>
           <div class="info-row">
-            <strong>总题数：</strong> {{ selectedExam.questions.length }}
+            <strong>总题数：</strong> {{ selectedquestions.length }}
           </div>
           <div class="info-row">
             <strong>试卷总分：</strong> {{ selectedExam.fullScore }}
@@ -105,7 +105,7 @@
         <div class="questions-list">
           <h3>考试题目</h3>
           <div
-              v-for="(question, index) in selectedExam.questions"
+              v-for="(question, index) in selectedquestions"
               :key="question.id"
               class="question-preview"
           >
@@ -219,17 +219,23 @@
           <div class="charts-container">
             <div class="chart">
               <h4>分数分布</h4>
-              <div class="score-distribution">
-                <div
+                <div class="score-distribution">
+                  <div
                     v-for="range in scoreDistribution"
                     :key="range.label"
                     class="distribution-bar"
-                    :style="{ height: range.percentage + '%' }"
-                >
-                  <div class="bar-label">{{ range.label }}</div>
-                  <div class="bar-value">{{ range.count }}人 ({{ range.percentage }}%)</div>
+                    :style="{
+                      height: range.percentage + '%',
+                      width: '40px', // 柱子宽度
+                      margin: '0 15px', // 柱子间距
+                    }"
+                  >
+                    <div class="bar-label">
+                    <div class="bar-label">{{ range.label }}</div>
+                    <div class="bar-value">{{ range.count }}人 ({{ range.percentage }}%)</div>
+                    </div>
+                  </div>
                 </div>
-              </div>
             </div>
 
             <div class="chart">
@@ -315,7 +321,7 @@
 
         <div class="answers-list">
           <div
-              v-for="(question, index) in selectedExam.questions"
+              v-for="(question, index) in selectedquestions"
               :key="question.id"
               class="answer-item"
           >
@@ -340,8 +346,8 @@
                   {{ String.fromCharCode(65 + optionIndex) }}. {{ option.label }}
                 </div>
                 <div class="option-result">
-                  {{ option.isCorrect ? '正确' : '' }}
-                  {{ option.value === selectedStudentResult.answers[index] && !option.isCorrect ? '错误选择' : '' }}
+                  {{ option.isCorrect && question.type === '多选'&&!selectedStudentResult.answers[index].includes(option.value) ? '未选择正确选项' : '' }}
+                  {{!option.isCorrect&&question.type === '多选'&&selectedStudentResult.answers[index].includes(option.value) ? '选择错误选项' : '' }}
                 </div>
               </div>
             </div>
@@ -349,10 +355,10 @@
             <div class="essay-answer" v-else>
               <strong>学生作答：</strong>
               <p>{{ selectedStudentResult.answers[index] }}</p>
-              <div class="essay-evaluation">
-                <label>评分：<input type="number" v-model.number="selectedStudentResult.questionScores[index]" /></label>
-                <button class="btn save-evaluation-btn" @click.stop="saveEvaluation">保存评分</button>
-              </div>
+              <!-- <div class="essay-evaluation">
+                <label>评分：<input type="number" v-model.number="selectedStudentResult.score" /></label>
+                <button class="btn save-evaluation-btn" @click.stop="saveEvaluation">保存评分</button> -->
+              <!-- </div> -->
             </div>
 
             <div class="question-explanation" v-if="question.explanation">
@@ -504,33 +510,6 @@ const questions = ref([
     ],
     explanation: '短作业优先(SJF)可能导致长作业长期等待，产生饥饿现象。'
   },
-  {
-    id: 6,
-    type: '单选',
-    subject: '数据库基础',
-    text: '在数据库设计中，规范化的主要目的是什么？',
-    difficulty: '中',
-    options: [
-      { value: 'A', label: '提高查询速度', isCorrect: false },
-      { value: 'B', label: '减少冗余和更新异常', isCorrect: true },
-      { value: 'C', label: '增加数据量', isCorrect: false },
-      { value: 'D', label: '提升并发性能', isCorrect: false }
-    ],
-    explanation: '数据库规范化的目的是减少数据冗余和更新异常。'
-  },
-  {
-    id: 7,
-    type: '多选',
-    subject: '计算机网络',
-    text: '下列关于TCP/IP协议的说法哪些是正确的？',
-    difficulty: '难',
-    options: [
-      { value: 'A', label: 'TCP是面向连接的协议', isCorrect: true },
-      { value: 'B', label: 'IP负责路由寻址', isCorrect: true },
-      { value: 'C', label: 'TCP保证传输可靠性', isCorrect: true },
-      { value: 'D', label: 'IP提供可靠传输', isCorrect: false }
-    ]
-  }
 ])
 
 // 模拟学生答题数据
@@ -565,7 +544,7 @@ const showSettingsModal = ref(false)
 const showStatsModal = ref(false)
 const showAnswerDetailModal = ref(false)
 const selectedStudentResult = ref(null)
-
+const selectedquestions =ref(questions)
 // 搜索过滤
 const studentSearchQuery = ref('')
 const searchQuery = ref('')
@@ -574,6 +553,10 @@ const selectedSubject = ref('')
 // 设置当前考试
 const setActiveTab = (tab) => {
   currentTab.value = tab
+  selectedExam.value = null
+  showDetailModal.value = false
+  showSettingsModal.value = false
+  showStatsModal.value = false
 }
 
 // 获取所有唯一科目
@@ -636,6 +619,17 @@ const formatDate = (dateString) => {
   const date = new Date(dateString)
   return date.toLocaleString('zh-CN')
 }
+const formatDuration = (seconds) => {
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${mins}分${secs}秒`
+}
+const viewExamResults = (exam) => {
+  selectedExam.value = exam
+  showDetailModal.value = true
+  showStatsModal.value = true
+  currentTab.value = null
+}
 
 const formatTime = (seconds) => {
   const mins = Math.floor(seconds / 60)
@@ -690,7 +684,18 @@ const scoreDistribution = computed(() => {
     percentage: total ? ((counts[index] / total) * 100).toFixed(1) : 0
   }))
 })
-
+const closeStatsModal = () => {
+  showStatsModal.value = false
+}
+const closeDetailModal = () => {
+  showDetailModal.value = false
+}
+const closeSettingsModal = () => {
+  showSettingsModal.value = false
+}
+const closeAnswerDetailModal = () => {
+  showAnswerDetailModal.value = false
+}
 const questionStatistics = computed(() => {
   const results = studentAnswers.value[selectedExam.value?.id] || []
   const exam = selectedExam.value
@@ -718,10 +723,10 @@ const questionStatistics = computed(() => {
       }
     })
 
-    const correctRate = question.type === '简答'
+    var correctRate = question.type === '简答'
         ? Math.round(correctCount / results.length / question.fullScore * 100)
         : Math.round(correctCount / results.length * 100)
-
+    if (isNaN(correctRate)) correctRate = 0
     return {
       correctRate,
       topic: question.topic || '暂无考点'
@@ -754,17 +759,14 @@ const noExams = computed(() => {
 
 </script>
 
-Score: #c62828;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
 
 
 <style scoped>
-
+.exam-management {
+  padding: 20px;
+  background-color: #f0f4ff;
+  color:black;
+}
 .delete-btn:hover {
   background-color: #d32f2f;
 }
@@ -1024,5 +1026,10 @@ Score: #c62828;
 
 .save-evaluation-btn:hover {
   background-color: #388e3c;
+}
+.exam-card{
+  margin: 10px;
+  padding: 10px;
+  border: 1px solid black;
 }
 </style>

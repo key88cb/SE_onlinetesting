@@ -196,6 +196,7 @@ const getScoreBadgeClass = (score) => {
 <style scoped>
 .result-detail {
   padding: 20px;
+  color:black;
 }
 
 .exam-info-card {
@@ -246,6 +247,7 @@ const getScoreBadgeClass = (score) => {
 
 .questions-list {
   margin-bottom: 30px;
+  color:black;
 }
 
 .question-card {
@@ -293,6 +295,7 @@ const getScoreBadgeClass = (score) => {
   margin-top: 15px;
   padding: 10px;
   background-color: #f5f5f5;
+  color:red;
   border-radius: 6px;
 }
 
