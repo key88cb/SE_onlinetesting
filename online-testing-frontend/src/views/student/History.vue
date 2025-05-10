@@ -130,6 +130,9 @@ const handleCurrentChange = (val) => {
 </script>
 
 <style scoped>
+h1{
+  color: black;
+}
 .history-container {
   padding: 20px;
 }

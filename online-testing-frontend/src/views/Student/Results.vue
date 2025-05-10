@@ -167,6 +167,9 @@ const viewDetails = (result) => {
 </script>
 
 <style scoped>
+h1{
+  color: black;
+}
 .exam-results {
   padding: 20px;
 }

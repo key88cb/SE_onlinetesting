@@ -21,15 +21,17 @@
     <main class="content">
       <!-- ⭐ 顶栏，右上角用户模块 -->
       <div class="top-bar" v-if="isLoggedIn">
+        <div class="time-display">
+          {{ currentTime }}
+        </div>
         <div class="user-area" @click="toggleDropdown">
-          <img src="/vite.svg" alt="头像" class="avatar" />
+          <img src="./assets/default_teacher.png" alt="头像" class="avatar" />
           <span class="username">{{ username }}</span>
           <svg class="arrow" viewBox="0 0 1024 1024" width="12" height="12">
             <path d="M512 672L192 352h640z" fill="#333" />
           </svg>
         </div>
 
-        <!-- 下拉菜单 -->
         <div v-if="dropdownVisible" class="dropdown-menu">
           <div class="dropdown-item" @click="logout">退出登录</div>
         </div>
@@ -44,7 +46,7 @@
 
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
@@ -55,6 +57,10 @@ const username = ref('user')
 const role = ref(null) // 'student' or 'teacher'
 const dropdownVisible = ref(false)
 
+// 时间显示相关
+const currentTime = ref('')
+let intervalId = null
+
 // 登录状态判断
 const isLoggedIn = computed(() => {
   return route.path.startsWith('/student') || route.path.startsWith('/teacher')
@@ -62,16 +68,39 @@ const isLoggedIn = computed(() => {
 
 
 // 角色判断
-const isStudent = computed(() => {return route.path.startsWith('/student')})
-const isTeacher = computed(() => {return route.path.startsWith('/teacher')})
+const isStudent = computed(() => { return route.path.startsWith('/student') })
+const isTeacher = computed(() => { return route.path.startsWith('/teacher') })
 
-// 模拟从 localStorage 获取用户信息（真实项目中应调用接口）
+// 格式化时间
+const formatTime = () => {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const hours = String(now.getHours()).padStart(2, '0')
+  const minutes = String(now.getMinutes()).padStart(2, '0')
+  const seconds = String(now.getSeconds()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+}
+
+// 页面加载时启动定时器
 onMounted(() => {
+  currentTime.value = formatTime()
+  intervalId = setInterval(() => {
+    currentTime.value = formatTime()
+  }, 1000) // 每秒更新一次
+
+  // 模拟从 localStorage 获取用户信息（真实项目中应调用接口）
   const user = JSON.parse(localStorage.getItem('user'))
   if (user && user.username && user.role) {
     username.value = user.username
     role.value = user.role
   }
+})
+
+// 组件卸载时清除定时器，防止内存泄漏
+onUnmounted(() => {
+  clearInterval(intervalId)
 })
 
 // 切换下拉菜单
@@ -159,12 +188,17 @@ const logout = () => {
   height: 60px;
   background-color: #ffffff;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between; /* 修改为 space-between */
   align-items: center;
   padding: 0 30px;
   box-sizing: border-box;
   border-bottom: 1px solid #ddd;
   position: relative;
+}
+
+.time-display {
+  font-size: 14px;
+  color: #333;
 }
 
 /* 用户信息区域 */
@@ -344,5 +378,4 @@ button:hover, .el-button:hover {
   opacity: 0;
   height: 0;
 }
-
 </style>

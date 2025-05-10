@@ -1,7 +1,7 @@
 <template>
   <div class="teacher-dashboard">
     <h1>教师控制台</h1>
-    <p>欢迎回来，{{ username }}</p>
+    <p>欢迎回来，{{ username }}，Do you have anything to tell me?</p>
 
     <div class="actions">
       <div class="action-card" @click="navigateTo('/teacher/question-bank')">
@@ -40,6 +40,12 @@ const navigateTo = (path) => {
 </script>
 
 <style scoped>
+h1{
+  color: black;
+}
+p{
+  color: black;
+}
 .teacher-dashboard {
   padding: 20px;
 }

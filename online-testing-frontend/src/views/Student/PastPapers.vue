@@ -142,6 +142,9 @@ const viewPaperDetails = (paper) => {
 </script>
 
 <style scoped>
+h1{
+  color: black;
+}
 .past-papers {
   padding: 20px;
 }

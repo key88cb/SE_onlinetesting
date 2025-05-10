@@ -222,6 +222,9 @@ const goBack = () => {
 </script>
 
 <style scoped>
+h1 {
+  color: #000000;
+}
 .exam-details {
   padding: 20px;
 }

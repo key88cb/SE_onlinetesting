@@ -762,6 +762,9 @@ const noExams = computed(() => {
 
 
 <style scoped>
+h1 {
+  color: #000000;
+}
 .exam-management {
   padding: 20px;
   background-color: #f0f4ff;

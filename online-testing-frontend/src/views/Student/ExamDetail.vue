@@ -86,6 +86,9 @@ const pad = (num) => String(num).padStart(2, '0')
 </script>
 
 <style scoped>
+h1{
+  color: black;
+}
 .exam-detail {
   padding: 20px;
   color:black;

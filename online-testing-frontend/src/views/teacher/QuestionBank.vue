@@ -1,217 +1,546 @@
 <template>
-  <div class="question-bank-container">
-    <h1>题库编辑</h1>
+  <div class="question-bank">
+    <h1>题库管理</h1>
 
     <div class="toolbar">
-      <el-button type="primary" @click="showAddQuestionDialog">添加题目</el-button>
-      <el-input
-        v-model="searchQuery"
-        placeholder="搜索题目"
-        style="width: 200px; margin-left: 16px"
-        clearable
-      >
-        <template #prefix>
-          <el-icon><Search /></el-icon>
-        </template>
-      </el-input>
+      <div class="search-filter">
+        <input
+            v-model="searchQuery"
+            placeholder="输入科目或关键词搜索题目"
+            class="search-input"
+        />
+        <select v-model="selectedSubject" class="subject-filter">
+          <option value="">全部科目</option>
+          <option v-for="subject in uniqueSubjects" :key="subject" :value="subject">{{ subject }}</option>
+        </select>
+      </div>
+
+      <div class="actions">
+        <button class="btn add-btn" @click="showAddQuestionDialog">添加题目</button>
+      </div>
     </div>
 
-    <el-table :data="questions" style="width: 100%" border>
-      <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="type" label="题型" width="100">
-        <template #default="scope">
-          <el-tag :type="getQuestionTypeTag(scope.row.type)">{{ scope.row.type }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="content" label="题目内容" show-overflow-tooltip />
-      <el-table-column prop="difficulty" label="难度" width="100">
-        <template #default="scope">
-          <el-rate
-            v-model="scope.row.difficulty"
-            disabled
-            show-score
-            text-color="#ff9900"
-          />
-        </template>
-      </el-table-column>
-      <el-table-column prop="createTime" label="创建时间" width="180" />
-      <el-table-column label="操作" width="200">
-        <template #default="scope">
-          <el-button type="primary" link @click="editQuestion(scope.row)">编辑</el-button>
-          <el-button type="danger" link @click="deleteQuestion(scope.row)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    <div class="questions-grid">
+      <div
+          v-for="question in filteredQuestions"
+          :key="question.id"
+          class="question-card"
+          @click="viewQuestionDetails(question)"
+      >
+        <div class="question-header">
+          <span class="type-badge">{{ question.type }}</span>
+        </div>
+        <div class="question-text">{{ question.text }}</div>
 
-    <!-- 添加/编辑题目对话框 -->
-    <el-dialog
-      v-model="dialogVisible"
-      :title="isEdit ? '编辑题目' : '添加题目'"
-      width="70%"
-    >
-      <el-form :model="questionForm" label-width="100px">
-        <el-form-item label="题型">
-          <el-select v-model="questionForm.type" placeholder="请选择题型">
-            <el-option label="单选题" value="单选题" />
-            <el-option label="多选题" value="多选题" />
-            <el-option label="判断题" value="判断题" />
-            <el-option label="简答题" value="简答题" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="题目内容">
-          <el-input
-            v-model="questionForm.content"
-            type="textarea"
-            :rows="4"
-            placeholder="请输入题目内容"
-          />
-        </el-form-item>
-        <el-form-item label="难度">
-          <el-rate v-model="questionForm.difficulty" />
-        </el-form-item>
-        <el-form-item label="选项" v-if="['单选题', '多选题'].includes(questionForm.type)">
-          <div v-for="(option, index) in questionForm.options" :key="index" class="option-item">
-            <el-input v-model="option.content" placeholder="请输入选项内容">
-              <template #prepend>{{ String.fromCharCode(65 + index) }}</template>
-            </el-input>
-            <el-checkbox v-model="option.isCorrect">正确答案</el-checkbox>
-            <el-button type="danger" link @click="removeOption(index)">删除</el-button>
+        <div class="options">
+          <div
+              v-for="(option, index) in question.options"
+              :key="option.value"
+              :class="['option', { correct: option.isCorrect }]">
+            {{ String.fromCharCode(65 + index) }}. {{ option.label }}
           </div>
-          <el-button type="primary" link @click="addOption">添加选项</el-button>
-        </el-form-item>
-        <el-form-item label="答案" v-if="questionForm.type === '判断题'">
-          <el-radio-group v-model="questionForm.answer">
-            <el-radio label="true">正确</el-radio>
-            <el-radio label="false">错误</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="参考答案" v-if="questionForm.type === '简答题'">
-          <el-input
-            v-model="questionForm.answer"
-            type="textarea"
-            :rows="4"
-            placeholder="请输入参考答案"
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="saveQuestion">确定</el-button>
-        </span>
-      </template>
-    </el-dialog>
+        </div>
+
+        <div class="question-actions">
+          <button class="btn edit-btn" @click.stop="editQuestion(question)">编辑</button>
+          <button class="btn delete-btn" @click.stop="deleteQuestion(question)">删除</button>
+        </div>
+      </div>
+
+      <div v-if="filteredQuestions.length === 0" class="no-results">
+        没有找到相关题目
+      </div>
+    </div>
+
+    <!-- 添加/编辑模态框 -->
+    <div v-if="showModal" class="modal">
+      <div class="modal-content">
+        <h2>{{ isEditing ? '编辑题目' : '添加题目' }}</h2>
+
+        <div class="form-group">
+          <label>题目类型：</label>
+          <select v-model="currentQuestion.type">
+            <option value="单选">单选</option>
+            <option value="多选">多选</option>
+            <option value="判断">判断</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>所属科目：</label>
+          <input type="text" v-model="currentQuestion.subject" placeholder="请输入科目名称" />
+        </div>
+
+        <div class="form-group">
+          <label>题目内容：</label>
+          <textarea v-model="currentQuestion.text" rows="3" placeholder="请输入题目描述"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>选项设置：</label>
+          <div v-for="(option, index) in currentQuestion.options" :key="index" class="option-row">
+            <span class="option-label">{{ String.fromCharCode(65 + index) }}.</span>
+            <input type="text" v-model="option.label" :placeholder="`选项 ${String.fromCharCode(65 + index)}`" />
+            <input type="checkbox" v-if="!isMultipleChoice && !isJudgmentQuestion" v-model="option.isCorrect" /> 正确
+          </div>
+
+          <div v-if="isMultipleChoice" class="multiple-choice-hint">
+            可选择多个正确答案
+          </div>
+        </div>
+
+        <div class="modal-buttons">
+          <button class="btn save-btn" @click="saveQuestion">保存</button>
+          <button class="btn cancel-btn" @click="closeModal">取消</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
-import { Search } from '@element-plus/icons-vue'
+import { ref, computed } from 'vue'
 
-// 模拟题目数据
 const questions = ref([
   {
     id: 1,
-    type: '单选题',
-    content: '以下哪个不是Java的基本数据类型？',
-    difficulty: 3,
-    createTime: '2024-03-20 10:00:00'
+    type: '单选',
+    subject: '操作系统原理',
+    text: '进程和线程的主要区别是什么？',
+    options: [
+      { value: 'A', label: '资源分配的基本单位', isCorrect: false },
+      { value: 'B', label: 'CPU调度的基本单位', isCorrect: true },
+      { value: 'C', label: '程序运行环境描述', isCorrect: false }
+    ]
   },
   {
     id: 2,
-    type: '多选题',
-    content: '以下哪些是Java的访问修饰符？',
-    difficulty: 4,
-    createTime: '2024-03-20 11:00:00'
+    type: '多选',
+    subject: '数据库基础',
+    text: '下列哪些是关系型数据库？',
+    options: [
+      { value: 'A', label: 'MySQL', isCorrect: true },
+      { value: 'B', label: 'MongoDB', isCorrect: false },
+      { value: 'C', label: 'PostgreSQL', isCorrect: true },
+      { value: 'D', label: 'Oracle', isCorrect: true }
+    ]
+  },
+  {
+    id: 3,
+    type: '判断',
+    subject: '计算机网络',
+    text: 'HTTP协议是无状态的协议。',
+    options: [
+      { value: 'A', label: '正确', isCorrect: true },
+      { value: 'B', label: '错误', isCorrect: false }
+    ]
   }
 ])
 
-const searchQuery = ref('')
-const dialogVisible = ref(false)
-const isEdit = ref(false)
-
-const questionForm = reactive({
-  type: '',
-  content: '',
-  difficulty: 3,
-  options: [],
-  answer: ''
+const showModal = ref(false)
+const isEditing = ref(false)
+const currentQuestion = ref({
+  id: null,
+  type: '单选',
+  subject: '',
+  text: '',
+  options: [
+    { value: 'A', label: '', isCorrect: false },
+    { value: 'B', label: '', isCorrect: false },
+    { value: 'C', label: '', isCorrect: false },
+    { value: 'D', label: '', isCorrect: false }
+  ]
 })
 
-const getQuestionTypeTag = (type) => {
-  const typeMap = {
-    '单选题': 'primary',
-    '多选题': 'success',
-    '判断题': 'warning',
-    '简答题': 'info'
+const searchQuery = ref('')
+const selectedSubject = ref('')
+
+// 获取所有唯一科目
+const uniqueSubjects = computed(() => {
+  return [...new Set(questions.value.map(q => q.subject))]
+})
+
+// 过滤后的题目列表
+const filteredQuestions = computed(() => {
+  let result = [...questions.value]
+
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    result = result.filter(q =>
+        q.text.toLowerCase().includes(query) ||
+        q.subject.toLowerCase().includes(query)
+    )
   }
-  return typeMap[type] || 'info'
-}
 
+  if (selectedSubject.value) {
+    result = result.filter(q => q.subject === selectedSubject.value)
+  }
+
+  return result
+})
+
+// 判断是否为多选题
+const isMultipleChoice = computed(() => {
+  return currentQuestion.value.type === '多选'
+})
+
+// 判断是否为判断题
+const isJudgmentQuestion = computed(() => {
+  return currentQuestion.value.type === '判断'
+})
+
+// 显示添加题目对话框
 const showAddQuestionDialog = () => {
-  isEdit.value = false
-  resetForm()
-  dialogVisible.value = true
+  isEditing.value = false
+  currentQuestion.value = {
+    id: null,
+    type: '单选',
+    subject: '',
+    text: '',
+    options: [
+      { value: 'A', label: '', isCorrect: false },
+      { value: 'B', label: '', isCorrect: false },
+      { value: 'C', label: '', isCorrect: false },
+      { value: 'D', label: '', isCorrect: false }
+    ]
+  }
+  showModal.value = true
 }
 
-const editQuestion = (row) => {
-  isEdit.value = true
-  Object.assign(questionForm, row)
-  dialogVisible.value = true
+// 编辑题目
+const editQuestion = (question) => {
+  isEditing.value = true
+  currentQuestion.value = JSON.parse(JSON.stringify(question))
+  showModal.value = true
 }
 
-const deleteQuestion = (row) => {
-  // TODO: 实现删除题目的逻辑
-  console.log('删除题目：', row)
+// 删除题目
+const deleteQuestion = (question) => {
+  if (confirm(`确定要删除题目 "${question.text}" 吗？`)) {
+    const index = questions.value.findIndex(q => q.id === question.id)
+    if (index > -1) {
+      questions.value.splice(index, 1)
+    }
+  }
 }
 
+// 查看题目详情
+const viewQuestionDetails = (question) => {
+  alert(`查看题目详情：${question.text}`)
+}
+
+// 关闭模态框
+const closeModal = () => {
+  showModal.value = false
+}
+
+// 保存题目
+const saveQuestion = () => {
+  if (!currentQuestion.value.text.trim()) {
+    alert('题目内容不能为空')
+    return
+  }
+
+  if (!isJudgmentQuestion.value && !currentQuestion.value.options.some(o => o.isCorrect)) {
+    alert('至少选择一个正确答案')
+    return
+  }
+
+  if (isEditing.value) {
+    // 编辑模式：更新现有题目
+    const index = questions.value.findIndex(q => q.id === currentQuestion.value.id)
+    if (index > -1) {
+      questions.value[index] = {...currentQuestion.value}
+    }
+  } else {
+    // 添加模式：创建新题目
+    const newId = Math.max(...questions.value.map(q => q.id)) + 1
+    questions.value.push({...currentQuestion.value, id: newId})
+  }
+
+  closeModal()
+}
+
+// 添加选项
 const addOption = () => {
-  questionForm.options.push({
-    content: '',
+  const nextLetter = String.fromCharCode(65 + currentQuestion.value.options.length)
+  currentQuestion.value.options.push({
+    value: nextLetter,
+    label: '',
     isCorrect: false
   })
 }
 
+// 删除选项
 const removeOption = (index) => {
-  questionForm.options.splice(index, 1)
-}
-
-const resetForm = () => {
-  questionForm.type = ''
-  questionForm.content = ''
-  questionForm.difficulty = 3
-  questionForm.options = []
-  questionForm.answer = ''
-}
-
-const saveQuestion = () => {
-  // TODO: 实现保存题目的逻辑
-  console.log('保存题目：', questionForm)
-  dialogVisible.value = false
+  if (currentQuestion.value.options.length > 2) {
+    currentQuestion.value.options.splice(index, 1)
+  } else {
+    alert('每个题目必须至少保留两个选项')
+  }
 }
 </script>
-
+//标题颜色
 <style scoped>
-.question-bank-container {
+h1 {
+  color: #000000;
+}
+.question-bank {
   padding: 20px;
 }
 
 .toolbar {
-  margin-bottom: 20px;
   display: flex;
-  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
-.option-item {
+.search-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.search-input {
+  flex: 1 1 200px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1em;
+}
+
+.subject-filter {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1em;
+}
+
+.actions {
+  margin-top: 10px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.add-btn {
+  background-color: #0d47a1;
+  color: white;
+}
+
+.add-btn:hover {
+  background-color: #1565c0;
+}
+
+.questions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.question-card {
+  background: #60a193;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.question-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.question-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.type-badge {
+  background-color: #0d47a1;
+  color: white;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.question-text {
+  margin-bottom: 15px;
+  font-weight: bold;
+}
+
+.options {
+  margin-bottom: 15px;
+}
+
+.option {
+  display: block;
+  margin: 5px 0;
+  padding: 5px 8px;
+  border-radius: 4px;
+}
+
+.option.correct {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.question-actions {
+  display: flex;
+  justify-content: space-between;
+}
+
+.edit-btn {
+  background-color: #2e7d32;
+  color: white;
+  padding: 6px 12px;
+  font-size: 0.9em;
+}
+
+.edit-btn:hover {
+  background-color: #388e3c;
+}
+
+.delete-btn {
+  background-color: #c62828;
+  color: white;
+  padding: 6px 12px;
+  font-size: 0.9em;
+}
+
+.delete-btn:hover {
+  background-color: #d32f2f;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 25px;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-content h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #0d47a1;
+}
+
+.form-group {
+  margin-bottom: 20px;
+  color: black;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.form-group select,
+.form-group input[type="text"],
+.form-group textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1em;
+}
+
+.form-group input[type="text"] {
+  height: 30px;
+}
+
+.form-group select {
+  height: 34px;
+}
+
+.form-group textarea {
+  resize: vertical;
+}
+
+.option-row {
   display: flex;
   align-items: center;
   margin-bottom: 10px;
-  gap: 10px;
 }
 
-.dialog-footer {
+.option-label {
+  width: 30px;
+  font-weight: bold;
+}
+
+.option-row input[type="text"] {
+  flex: 1;
+  margin-right: 10px;
+}
+
+.option-row input[type="checkbox"] {
+  margin-left: 10px;
+}
+
+.multiple-choice-hint {
+  font-size: 0.9em;
+  color: #666;
+  margin-top: 5px;
+}
+
+.modal-buttons {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+  margin-top: 20px;
 }
-</style> 
+
+.save-btn {
+  background-color: #0d47a1;
+  color: white;
+  padding: 8px 16px;
+}
+
+.save-btn:hover {
+  background-color: #1565c0;
+}
+
+.cancel-btn {
+  background-color: #666;
+  color: white;
+  padding: 8px 16px;
+}
+
+.cancel-btn:hover {
+  background-color: #444;
+}
+
+.no-results {
+  text-align: center;
+  color: #666;
+  padding: 40px;
+  background: #f9f9f9;
+  border-radius: 10px;
+}
+</style>

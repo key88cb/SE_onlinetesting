@@ -153,6 +153,9 @@ const clearSearch = () => {
 </script>
 
 <style scoped>
+h1{
+  color: black;
+}
 .student-dashboard {
   padding: 20px;
 }

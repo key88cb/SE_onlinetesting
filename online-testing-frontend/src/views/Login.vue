@@ -74,6 +74,9 @@ const login = () => {
 </script>
 
 <style scoped>
+h1{
+  color: black;
+}
 .login {
   padding: 20px;
   min-height: 100vh;

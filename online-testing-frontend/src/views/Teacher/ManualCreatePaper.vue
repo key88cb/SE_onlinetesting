@@ -284,6 +284,9 @@ const confirmPublish = () => {
 </script>
 
 <style scoped>
+h1 {
+  color: #000000;
+}
 .manual-create-paper {
   padding: 20px;
 }
@@ -297,6 +300,7 @@ const confirmPublish = () => {
 
 .form-group {
   margin-bottom: 20px;
+  color: black;
 }
 
 .form-group label {

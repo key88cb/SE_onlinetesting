@@ -31,6 +31,9 @@ export default {
 </script>
 
 <style scoped>
+h1 {
+  color: #000000;
+}
 .create-paper-container {
   background-color: #f5f9ff;
   min-height: 100vh;
