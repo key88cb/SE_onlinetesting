@@ -282,9 +282,7 @@ const removeOption = (index) => {
 </script>
 //标题颜色
 <style scoped>
-h1 {
-  color: #000000;
-}
+
 .question-bank {
   padding: 20px;
 }
