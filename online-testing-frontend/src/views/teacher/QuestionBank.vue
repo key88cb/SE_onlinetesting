@@ -280,9 +280,11 @@ const removeOption = (index) => {
   }
 }
 </script>
-//标题颜色
-<style scoped>
 
+<style scoped>
+h1{
+  color: black;
+}
 .question-bank {
   padding: 20px;
 }
@@ -344,7 +346,7 @@ const removeOption = (index) => {
 }
 
 .question-card {
-  background: #60a193;
+  background: #000000;
   padding: 20px;
   border-radius: 10px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
