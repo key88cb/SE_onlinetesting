@@ -17,7 +17,7 @@ vite + vue + ts
 ```bash
   cd online-testing-frontend
   npm install
-  npm run dev4
+  npm run dev
 ```
 路由管理
 ```bash
