@@ -4,7 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import java.io.Serializable;
 import java.util.Objects;
-
+// 问题的选项ID复合 主键
 @Embeddable
 public class QuestionOptionId implements Serializable {
     private static final long serialVersionUID = 1L;

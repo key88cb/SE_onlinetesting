@@ -28,10 +28,10 @@ public class DetailedResult {
             @JoinColumn(name = "paper_id", referencedColumnName = "paper_id", insertable = false, updatable = false),
             @JoinColumn(name = "course_id", referencedColumnName = "course_id", insertable = false, updatable = false)
     }, foreignKey = @ForeignKey(name = "fk_detailedresult_paperinfo",
-            foreignKeyDefinition = "FOREIGN KEY (paper_id, course_id) REFERENCES Paper_info(paper_id, course_id) ON DELETE CASCADE ON UPDATE CASCADE"))
+            foreignKeyDefinition = "FOREIGN KEY (paper_id, course_id) REFERENCES Paper_info(course_id, paper_id) ON DELETE CASCADE ON UPDATE CASCADE"))
     private PaperInfo paperInfo;
 
-    // Constructors, Getters, Setters, equals, hashCode (similar to previous version)
+    // Constructors, Getters, Setters, equals, hashCode
     public DetailedResult() {}
     public Integer getPaperId() { return paperId; }
     public void setPaperId(Integer paperId) { this.paperId = paperId; }

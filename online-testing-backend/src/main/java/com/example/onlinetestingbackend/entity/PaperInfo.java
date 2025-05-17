@@ -14,13 +14,7 @@ public class PaperInfo {
 
     @Id
     @Column(name = "paper_id")
-    // IMPORTANT LIMITATION: Hibernate's ddl-auto=create will NOT generate
-    // AUTO_INCREMENT for 'paper_id' here because it's part of a composite key.
-    // @GeneratedValue is for single-column IDs.
-    // The DDL will create 'paper_id INT NOT NULL'.
-    // To get the exact AUTO_INCREMENT behavior from your DDL,
-    // you'd need to apply that part of your SQL script manually after table creation by Hibernate,
-    // or manage this table's DDL entirely with your script.
+    // 这里可能会出现一些问题 因为 卷子信息的主键是复合的 自动生成的sql语句 无法对自动生成的主键成员加一 也就是paper_id 可能无法自增
     private Integer paperId;
 
     @Id
@@ -58,7 +52,7 @@ public class PaperInfo {
     private Integer totalScores;
 
     @OneToMany(mappedBy = "paperInfo", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Paper_questions> paperQuestions = new ArrayList<>();
+    private List<PaperQuestion> paperQuestions = new ArrayList<>();
 
     @OneToMany(mappedBy = "paperInfo", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<ExamResult> examResults = new ArrayList<>();
@@ -66,7 +60,7 @@ public class PaperInfo {
     @OneToMany(mappedBy = "paperInfo", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<DetailedResult> detailedResults = new ArrayList<>();
 
-    // Constructors, Getters, Setters, equals, hashCode (similar to previous version)
+    // Constructors, Getters, Setters, equals, hashCode
     public PaperInfo() {}
     public Integer getPaperId() { return paperId; }
     public void setPaperId(Integer paperId) { this.paperId = paperId; }
@@ -92,8 +86,8 @@ public class PaperInfo {
     public void setHighestScoresForTrueFalse(Integer h) { this.highestScoresForTrueFalse = h; }
     public Integer getTotalScores() { return totalScores; }
     public void setTotalScores(Integer totalScores) { this.totalScores = totalScores; }
-    public List<Paper_questions> getPaperQuestions() { return paperQuestions; }
-    public void setPaperQuestions(List<Paper_questions> paperQuestions) { this.paperQuestions = paperQuestions; }
+    public List<PaperQuestion> getPaperQuestions() { return paperQuestions; }
+    public void setPaperQuestions(List<PaperQuestion> paperQuestions) { this.paperQuestions = paperQuestions; }
     public List<ExamResult> getExamResults() { return examResults; }
     public void setExamResults(List<ExamResult> examResults) { this.examResults = examResults; }
     public List<DetailedResult> getDetailedResults() { return detailedResults; }

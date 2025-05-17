@@ -17,7 +17,7 @@ public class PaperQuestionId implements Serializable {
 
     @Column(name = "question_id")
     private Integer questionId;
-
+    // getter setter 自动生成的
     public PaperQuestionId() {}
     public PaperQuestionId(Integer paperId, Integer courseId, Integer questionId) { this.paperId = paperId; this.courseId = courseId; this.questionId = questionId; }
     public Integer getPaperId() { return paperId; }
