@@ -24,7 +24,6 @@ public class OptionId implements Serializable {
         this.questionId = questionId;
         this.optionIdValue = optionIdValue;
     }
-
     // Getters and Setters
     public Integer getQuestionId() {
         return questionId;

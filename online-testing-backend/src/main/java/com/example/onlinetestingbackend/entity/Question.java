@@ -38,12 +38,10 @@ public class Question {
     // Constructors
     public Question() {
     }
-
     // Getters and Setters
     public Integer getQuestionId() {
         return questionId;
     }
-
     public void setQuestionId(Integer questionId) {
         this.questionId = questionId;
     }

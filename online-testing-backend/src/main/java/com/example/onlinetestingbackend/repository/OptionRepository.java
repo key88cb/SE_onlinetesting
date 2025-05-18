@@ -14,8 +14,4 @@ public interface OptionRepository extends JpaRepository<Option, OptionId> {
     // Spring Data JPA 将会查找 Option.id.questionId (Option实体中的id字段，其类型为OptionId，OptionId中有一个questionId字段)
     List<Option> findById_QuestionId(Integer questionId);
 
-    // 如果你需要根据题目ID和选项自身的ID值查找，可以这样做：
-    // Optional<Option> findById_QuestionIdAndId_OptionIdValue(Integer questionId, Integer optionIdValue);
-    // 不过，通常直接使用 JpaRepository 提供的 findById(OptionId optionIdInstance) 会更直接，
-    // 你需要先创建一个 OptionId 的实例。
 }
