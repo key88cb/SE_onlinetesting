@@ -20,8 +20,7 @@ public class ExamResult {
     @JoinColumns(value = {
             @JoinColumn(name = "paper_id", referencedColumnName = "paper_id", insertable = false, updatable = false),
             @JoinColumn(name = "course_id", referencedColumnName = "course_id", insertable = false, updatable = false)
-    }, foreignKey = @ForeignKey(name = "fk_examresult_paperinfo",
-            foreignKeyDefinition = "FOREIGN KEY (paper_id, course_id) REFERENCES Paper_info(course_id, paper_id) ON DELETE CASCADE ON UPDATE CASCADE"))
+    }, foreignKey = @ForeignKey(name = "fk_examresult_paperinfo"))
     private PaperInfo paperInfo;
 
     // Constructors, Getters, Setters, equals, hashCode (similar to previous version)
