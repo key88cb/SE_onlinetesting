@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 public class PaperQuestionService {
@@ -30,7 +31,10 @@ public class PaperQuestionService {
     @Transactional
     public void createManualPaper(ManualPaperCreationRequestDto request) {
         // Step 1: 创建 PaperInfo
+        // 1.1. 生成唯一的paperId
+        Integer paperId = generateUniquePaperId();
         PaperInfo paperInfo = new PaperInfo();
+        paperInfo.setPaperId(paperId);
         paperInfo.setCourseId(request.getCourseId());
         paperInfo.setCreator(request.getCreator());
         paperInfo.setSingleChoiceNum(request.getSingleChoiceNum());
@@ -43,6 +47,11 @@ public class PaperQuestionService {
         paperInfo.setHighestScoresForMultipleChoice(request.getHighestScoresForMultipleChoice());
         paperInfo.setHighestScoresForTrueFalse(request.getHighestScoresForTrueFalse());
 
+        int singleChoiceNum = 0;
+        int multipleChoiceNum = 0;
+        int trueFalseNum = 0;
+        int total_point = 0;
+
         PaperInfo savedPaperInfo = paperInfoRepository.save(paperInfo);
 
         // Step 2: 处理题目列表
@@ -50,6 +59,17 @@ public class PaperQuestionService {
         for (ManualPaperQuestionDto dto : request.getQuestions()) {
             Question question = questionRepository.findById(dto.getQuestionId())
                     .orElseThrow(() -> new IllegalArgumentException("Question not found"));
+
+            // 统计题型数量
+            String type = question.getQuestionType();
+            if ("Single Choice".equalsIgnoreCase(type)) {
+                singleChoiceNum++;
+            } else if ("Multiple Choice".equalsIgnoreCase(type)) {
+                multipleChoiceNum++;
+            } else if ("True/False".equalsIgnoreCase(type)) {
+                trueFalseNum++;
+            }
+            total_point += dto.getPoints();
 
             PaperQuestion paperQuestion = new PaperQuestion();
             paperQuestion.setPaperId(savedPaperInfo.getPaperId());//?
@@ -77,7 +97,22 @@ public class PaperQuestionService {
             paperQuestions.add(paperQuestion);
         }
 
+        savedPaperInfo.setSingleChoiceNum(singleChoiceNum);
+        savedPaperInfo.setMultipleChoiceNum(multipleChoiceNum);
+        savedPaperInfo.setTrueFalseNum(trueFalseNum);
+        savedPaperInfo.setTotalScores(total_point);
+
         // Step 3: 批量保存 PaperQuestion
+        paperInfoRepository.save(savedPaperInfo);
         paperQuestionRepository.saveAll(paperQuestions);
+    }
+
+    /**
+     * 生成唯一的paperId
+     */
+    private Integer generateUniquePaperId() {
+        Integer paperId;
+        paperId = 100000 + ThreadLocalRandom.current().nextInt(900000);
+        return paperId;
     }
 }
