@@ -282,9 +282,6 @@ const removeOption = (index) => {
 </script>
 
 <style scoped>
-h1{
-  color: black;
-}
 .question-bank {
   padding: 20px;
 }
@@ -346,7 +343,7 @@ h1{
 }
 
 .question-card {
-  background: #000000;
+  background: white;
   padding: 20px;
   border-radius: 10px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -452,7 +449,6 @@ h1{
 
 .form-group {
   margin-bottom: 20px;
-  color: black;
 }
 
 .form-group label {

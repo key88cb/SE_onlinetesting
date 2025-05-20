@@ -104,8 +104,8 @@ public class MySQLDataPersistenceTest {
         paperInfo.setCourseId(101);       // 课程ID
         paperInfo.setCreator("教学管理员");
         paperInfo.setSingleChoiceNum(1);
-        paperInfo.setMultipleChoiceNum("1"); // 您的实体中此字段是 String
-        paperInfo.setTrueFalseNum("0");      // 您的实体中此字段是 String
+        paperInfo.setMultipleChoiceNum(1); // 您的实体中此字段是 String
+        paperInfo.setTrueFalseNum(0);      // 您的实体中此字段是 String
         paperInfo.setOpenTime(LocalDateTime.now().minusDays(1)); // 假设一天前开始
         paperInfo.setCloseTime(LocalDateTime.now().plusDays(7));  // 一周后结束
 

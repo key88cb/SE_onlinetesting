@@ -40,8 +40,8 @@ public class PaperQuestionRepositoryTest {
         paperInfo1.setCourseId(101);
         paperInfo1.setCreator("Test Creator");
         paperInfo1.setSingleChoiceNum(2);
-        paperInfo1.setMultipleChoiceNum("0");
-        paperInfo1.setTrueFalseNum("0");
+        paperInfo1.setMultipleChoiceNum(0);
+        paperInfo1.setTrueFalseNum(0);
         paperInfo1.setTotalScores(20);
 
         // *** 再次确认添加这些缺失的非空字段赋值 ***

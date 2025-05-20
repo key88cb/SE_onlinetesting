@@ -8,11 +8,12 @@ import java.util.List;
 import java.util.Objects;
 
 @Entity
-@Table(name = "Paper_info")
+@Table(name = "Paper_info", uniqueConstraints = {@UniqueConstraint(columnNames = {"paper_id", "course_id"})})
 @IdClass(PaperInfoId.class)
 public class PaperInfo {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "paper_id")
     // 这里可能会出现一些问题 因为 卷子信息的主键是复合的 自动生成的sql语句 无法对自动生成的主键成员加一 也就是paper_id 可能无法自增
     private Integer paperId;
@@ -24,14 +25,14 @@ public class PaperInfo {
     @Column(name = "creator", nullable = false, length = 20)
     private String creator;
 
-    @Column(name = "single_choice_num", nullable = false) // int(3) display width not specified
+    @Column(name = "single_choice_num") // int(3) display width not specified
     private Integer singleChoiceNum;
 
-    @Column(name = "multiple_choice_num", nullable = false, length = 20) // As per DDL: varchar(20)
-    private String multipleChoiceNum;
+    @Column(name = "multiple_choice_num")
+    private Integer multipleChoiceNum;
 
-    @Column(name = "true_false_num", nullable = false, length = 20) // As per DDL: varchar(20)
-    private String trueFalseNum;
+    @Column(name = "true_false_num")
+    private Integer trueFalseNum;
 
     @Column(name = "open_time", columnDefinition = "datetime(0)")
     private LocalDateTime openTime;
@@ -39,16 +40,16 @@ public class PaperInfo {
     @Column(name = "close_time", columnDefinition = "datetime(0)")
     private LocalDateTime closeTime;
 
-    @Column(name = "highest_scores_for_single_choice", nullable = false)
+    @Column(name = "highest_scores_for_single_choice")
     private Integer highestScoresForSingleChoice;
 
-    @Column(name = "highest_scores_for_multiple_choice", nullable = false)
+    @Column(name = "highest_scores_for_multiple_choice")
     private Integer highestScoresForMultipleChoice;
 
-    @Column(name = "highest_scores_for_true_false", nullable = false)
+    @Column(name = "highest_scores_for_true_false")
     private Integer highestScoresForTrueFalse;
 
-    @Column(name = "total_scores", nullable = false)
+    @Column(name = "total_scores")
     private Integer totalScores;
 
     @OneToMany(mappedBy = "paperInfo", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
@@ -70,10 +71,10 @@ public class PaperInfo {
     public void setCreator(String creator) { this.creator = creator; }
     public Integer getSingleChoiceNum() { return singleChoiceNum; }
     public void setSingleChoiceNum(Integer singleChoiceNum) { this.singleChoiceNum = singleChoiceNum; }
-    public String getMultipleChoiceNum() { return multipleChoiceNum; }
-    public void setMultipleChoiceNum(String multipleChoiceNum) { this.multipleChoiceNum = multipleChoiceNum; }
-    public String getTrueFalseNum() { return trueFalseNum; }
-    public void setTrueFalseNum(String trueFalseNum) { this.trueFalseNum = trueFalseNum; }
+    public Integer getMultipleChoiceNum() { return multipleChoiceNum; }
+    public void setMultipleChoiceNum(Integer multipleChoiceNum) { this.multipleChoiceNum = multipleChoiceNum; }
+    public Integer getTrueFalseNum() { return trueFalseNum; }
+    public void setTrueFalseNum(Integer trueFalseNum) { this.trueFalseNum = trueFalseNum; }
     public LocalDateTime getOpenTime() { return openTime; }
     public void setOpenTime(LocalDateTime openTime) { this.openTime = openTime; }
     public LocalDateTime getCloseTime() { return closeTime; }

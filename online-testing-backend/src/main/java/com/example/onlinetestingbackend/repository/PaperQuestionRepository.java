@@ -17,6 +17,8 @@ public interface PaperQuestionRepository extends JpaRepository<PaperQuestion, Pa
     // 根据试卷ID、课程ID和题目ID查询特定题目 (虽然 JpaRepository 提供了 findById)
     // PaperQuestion findByPaperIdAndCourseIdAndQuestionId(Integer paperId, Integer courseId, Integer questionId);
 
+    boolean existsByPaperIdAndCourseIdAndQuestionId(Integer paperId, Integer courseId, Integer questionId);
+
     // 根据知识点模糊查询
     List<PaperQuestion> findByKnowledgePointsContainingAndPaperIdAndCourseId(String keyword, Integer paperId, Integer courseId);
 }
