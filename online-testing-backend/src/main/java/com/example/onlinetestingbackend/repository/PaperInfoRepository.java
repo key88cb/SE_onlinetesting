@@ -1,5 +1,6 @@
 package com.example.onlinetestingbackend.repository;
 
+import aj.org.objectweb.asm.commons.Remapper;
 import com.example.onlinetestingbackend.entity.PaperInfo;
 import com.example.onlinetestingbackend.entity.id.PaperInfoId;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -22,4 +23,8 @@ public interface PaperInfoRepository extends JpaRepository<PaperInfo, PaperInfoI
 
     // 根据课程ID和创建者查询
     List<PaperInfo> findByCourseIdAndCreator(Integer courseId, String creator);
+
+    PaperInfo findByCourseIdAndPaperId(Integer courseId, Integer paperId);
+
+    void deleteById(PaperInfoId id);
 }

@@ -52,6 +52,9 @@ public class PaperInfo {
     @Column(name = "total_scores")
     private Integer totalScores;
 
+    @Column(name = "paper_name")
+    private String paperName;
+
     @OneToMany(mappedBy = "paperInfo", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<PaperQuestion> paperQuestions = new ArrayList<>();
 
@@ -63,6 +66,14 @@ public class PaperInfo {
 
     // Constructors, Getters, Setters, equals, hashCode
     public PaperInfo() {}
+    // Getter and Setter
+    public String getPaperName() {
+        return paperName;
+    }
+
+    public void setPaperName(String paperName) {
+        this.paperName = paperName;
+    }
     public Integer getPaperId() { return paperId; }
     public void setPaperId(Integer paperId) { this.paperId = paperId; }
     public Integer getCourseId() { return courseId; }

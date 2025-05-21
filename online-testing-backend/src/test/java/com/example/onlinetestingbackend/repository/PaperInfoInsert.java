@@ -54,13 +54,15 @@ public class PaperInfoInsert {
         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
         String line;
         boolean headerSkipped = false;
+
         while ((line = reader.readLine()) != null) {
             if (!headerSkipped) {
                 headerSkipped = true;
                 continue; // 跳过表头
             }
-            // 假设字段顺序：courseId,creator,openTime,closeTime,questionIds(分号分隔),points(分号分隔)
-            String[] values = line.split(",",12);
+
+            String[] values = line.split(",", 12); // 最多分割成12列
+
             ManualPaperCreationRequestDto dto = new ManualPaperCreationRequestDto();
             dto.setCourseId(Integer.parseInt(values[0]));
             dto.setCreator(values[1]);
@@ -77,35 +79,46 @@ public class PaperInfoInsert {
             System.out.println("=== values[11] ===");
             System.out.println(values[11]);
 
-            // 题目表
             ObjectMapper objectMapper = new ObjectMapper();
-            String questionsJson = values[11].trim();
-            if (questionsJson.startsWith("\"") && questionsJson.endsWith("\"")) {
-                questionsJson = questionsJson.substring(1, questionsJson.length() - 1);
+
+            // 原始字段值
+            String questionsField = values[11].trim();
+
+            // 1. 去除最外层引号（如果有的话）
+            String jsonContent = questionsField;
+            if (jsonContent.startsWith("\"") && jsonContent.endsWith("\"")) {
+                jsonContent = jsonContent.substring(1, jsonContent.length() - 1);
             }
-            questionsJson = questionsJson.replaceAll("\"\"", "\"");
+
+            // 2. 替换双重引号 "" -> " （应对 CSV 中的 JSON 字符串）
+            jsonContent = jsonContent.replace("\"\"", "\"");
+
+            // 3. 使用正则提取所有 { ... } 包裹的 JSON 对象
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\{.*?\\}");
+            java.util.regex.Matcher matcher = pattern.matcher(jsonContent);
 
             List<ManualPaperQuestionDto> questions = new ArrayList<>();
-            try {
-                List<Map<String, Integer>> items = objectMapper.readValue(
-                        questionsJson,
-                        new TypeReference<List<Map<String, Integer>>>(){}
-                );
-                for (Map<String, Integer> item : items) {
-                    System.out.println("=== Map<String, Integer> ===");
-                    System.out.println(item.get("questionId")+" " + item.get("points"));
-                    questions.add(new ManualPaperQuestionDto(item.get("questionId"),item.get("points")));
+
+            while (matcher.find()) {
+                String objStr = matcher.group();
+                try {
+                    ManualPaperQuestionDto q = objectMapper.readValue(objStr, ManualPaperQuestionDto.class);
+                    questions.add(q);
+                } catch (Exception e) {
+                    System.out.println("⚠️ 解析单个 question 失败: " + objStr);
+                    e.printStackTrace();
                 }
-            } catch (Exception e) {
-                System.out.println("⚠️ 解析 questions 字段失败: " + questionsJson);
-                e.printStackTrace();
             }
 
             dto.setQuestions(questions); // 设置问题列表
             dtos.add(dto);
         }
+
         return dtos;
     }
+
+
+
 
     private List<AutoPaperCreationRequestDto> readAutoPaperInfoFromCSV() throws Exception {
         List<AutoPaperCreationRequestDto> dtos = new ArrayList<>();

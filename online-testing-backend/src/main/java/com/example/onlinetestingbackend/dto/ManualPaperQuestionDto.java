@@ -4,6 +4,8 @@ public class ManualPaperQuestionDto {
     private Integer questionId;
     private Integer points;
 
+    public ManualPaperQuestionDto() {}
+
     public ManualPaperQuestionDto(Integer questionId, Integer points) {
         this.questionId = questionId;
         this.points = points;
