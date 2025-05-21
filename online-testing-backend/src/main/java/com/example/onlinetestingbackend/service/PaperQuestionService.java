@@ -6,6 +6,7 @@ import com.example.onlinetestingbackend.dto.ManualPaperQuestionDto;
 import com.example.onlinetestingbackend.entity.PaperInfo;
 import com.example.onlinetestingbackend.entity.PaperQuestion;
 import com.example.onlinetestingbackend.entity.Question;
+import com.example.onlinetestingbackend.entity.id.PaperInfoId;
 import com.example.onlinetestingbackend.repository.PaperInfoRepository;
 import com.example.onlinetestingbackend.repository.PaperQuestionRepository;
 import com.example.onlinetestingbackend.repository.QuestionRepository;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.time.LocalDateTime;
 
 @Service
 public class PaperQuestionService {
@@ -200,6 +202,16 @@ public class PaperQuestionService {
         // Step 4: 批量保存 PaperQuestion
         paperQuestionRepository.saveAll(paperQuestions);
     }
+
+    @Transactional
+    public void updatePaperTime(Integer paperId, Integer courseId, LocalDateTime openTime, LocalDateTime closeTime) {
+        PaperInfo paperInfo = paperInfoRepository.findById(new PaperInfoId(paperId, courseId))
+                .orElseThrow(() -> new IllegalArgumentException("PaperInfo not found"));
+        paperInfo.setOpenTime(openTime);
+        paperInfo.setCloseTime(closeTime);
+        paperInfoRepository.save(paperInfo);
+    }
+
     /**
      * 生成唯一的paperId
      */
