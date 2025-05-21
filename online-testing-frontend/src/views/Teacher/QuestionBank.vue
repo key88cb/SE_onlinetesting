@@ -9,9 +9,9 @@
             placeholder="输入科目或关键词搜索题目"
             class="search-input"
         />
-        <select v-model="selectedSubject" class="subject-filter">
+        <select v-model="selectedsubject" class="subject-filter">
           <option value="">全部科目</option>
-          <option v-for="subject in uniqueSubjects" :key="subject" :value="subject">{{ subject }}</option>
+          <option v-for="subject in uniquesubjects" :key="subject" :value="subject">{{ subject }}</option>
         </select>
       </div>
 
@@ -31,7 +31,7 @@
           <span class="type-badge">{{ question.type }}</span>
         </div>
         <div class="question-text">{{ question.text }}</div>
-
+        <div class="question-tag">备注：{{ question.tag }}  </div>
         <div class="options">
           <div
               v-for="(option, index) in question.options"
@@ -75,7 +75,10 @@
           <label>题目内容：</label>
           <textarea v-model="currentQuestion.text" rows="3" placeholder="请输入题目描述"></textarea>
         </div>
-
+        <div class="form-group">
+          <label>tag:</label>
+          <textarea v-model="currentQuestion.tag" rows="3" placeholder="请输入tag备注信息"></textarea>
+        </div>
         <div class="form-group">
           <label>选项设置：</label>
           <div v-for="(option, index) in currentQuestion.options" :key="index" class="option-row">
@@ -99,14 +102,17 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed,onMounted } from 'vue'
 
 const questions = ref([
   {
     id: 1,
+    questionId: 1,
     type: '单选',
     subject: '操作系统原理',
     text: '进程和线程的主要区别是什么？',
+    creator: 'Fish', // 可选字段
+    tag: '',         // 可选字段
     options: [
       { value: 'A', label: '资源分配的基本单位', isCorrect: false },
       { value: 'B', label: 'CPU调度的基本单位', isCorrect: true },
@@ -115,9 +121,12 @@ const questions = ref([
   },
   {
     id: 2,
+    questionId: 2,
     type: '多选',
     subject: '数据库基础',
     text: '下列哪些是关系型数据库？',
+    creator: 'Fish',
+    tag: '',
     options: [
       { value: 'A', label: 'MySQL', isCorrect: true },
       { value: 'B', label: 'MongoDB', isCorrect: false },
@@ -127,9 +136,12 @@ const questions = ref([
   },
   {
     id: 3,
+    questionId: 3,
     type: '判断',
     subject: '计算机网络',
     text: 'HTTP协议是无状态的协议。',
+    creator: 'Fish',
+    tag: '',
     options: [
       { value: 'A', label: '正确', isCorrect: true },
       { value: 'B', label: '错误', isCorrect: false }
@@ -141,9 +153,12 @@ const showModal = ref(false)
 const isEditing = ref(false)
 const currentQuestion = ref({
   id: null,
+  questionId: null,
   type: '单选',
   subject: '',
   text: '',
+  tag: '',
+  creator: '',
   options: [
     { value: 'A', label: '', isCorrect: false },
     { value: 'B', label: '', isCorrect: false },
@@ -151,12 +166,153 @@ const currentQuestion = ref({
     { value: 'D', label: '', isCorrect: false }
   ]
 })
+// 模拟从后端获取题目数据  @加工，更新，ddl
+onMounted(async () => {
+  try {
+    // const res =Search_for_all_questions()
+    // questions.value = res.data 
+  } catch (error) {
+    alert('加载题目失败，请检查网络或服务状态')
+    console.error(error)
+  }
+})
+const currentsubject = ref('操作系统原理')
+const Search_for_all_questions = async () => {
+  try {
+    const res = await fetch('http://localhost:8080/api/questions',{
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      query: {
+        method:'search',
+        subject: currentsubject.value,
+      }
+    })
+    if (!res.ok) {
+      throw new Error('网络错误')
+    }
+//此处需要修改
+    const data = await res.json()
+    questions.value = data
+  } catch (error) {
+    alert('加载题目失败，请检查网络或服务状态')
+    console.error(error)
+  }
+}
+const Alter_question = async (id,subject,tag,text,type,creator,options) => {
+  try {
+    const res = await fetch('http://localhost:8080/api/questions',{
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        method:'alter',
+        content:{
+        paper_id:id,
+        subject,
+        tag,
+        text,
+        type,
+        creator,
+        options
+        }
+      })
+    })
+    if (!res.ok) {
+      throw new Error('网络错误')
+    }
+  } catch (error) {
+    alert('修改题目失败，请检查网络或服务状态')
+    console.error(error)
+  }
+}
+const Delete_question = async (id) => { 
+  try {
+    const res = await fetch('http://localhost:8080/api/questions',{
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        method:'delete',
+        content:{
+          id
+        }
+      })
+    })
+    if (!res.ok) {
+      throw new Error('网络错误')
+    }
+  } catch (error) {
+    alert('删除题目失败，请检查网络或服务状态')
+    console.error(error)
+  }
+}
+const Insert_question = async (subject,tag,text,type,creator,options) => {
+  try {
+    const res = await fetch('http://localhost:8080/api/questions',{
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        method:'insert',
+        content:{
+          subject,
+          tag,
+          text,
+          type,
+          creator,
+          options
+        }
+      })
+    })
+    if (!res.ok) {
+      throw new Error('网络错误')
+    }
+  } catch (error) {
+    alert('添加题目失败，请检查网络或服务状态')
+    console.error(error)
+  }
+}
+// })
+const saveQuestion = () => {
+  if (!currentQuestion.value.text.trim()) {
+    alert('题目内容不能为空')
+    return
+  }
 
+  if (!isJudgmentQuestion.value && !currentQuestion.value.options.some(o => o.isCorrect)) {
+    alert('至少选择一个正确答案')
+    return
+  }
+
+  if (isEditing.value) {
+    // 编辑模式：更新现有题目
+    const index = questions.value.findIndex(q => q.id === currentQuestion.value.id)
+    if (index > -1) {
+      questions.value[index] = {...currentQuestion.value}
+      // const issuccessed=Alter_question(currentQuestion.value.id,currentQuestion.value.subject,currentQuestion.value.tag,currentQuestion.value.text,currentQuestion.value.type,currentQuestion.value.creator,currentQuestion.value.options)
+    }
+  } else {
+    // 添加模式：创建新题目
+    const newId = Math.max(...questions.value.map(q => q.id)) + 1
+    questions.value.push({...currentQuestion.value, id: newId})
+    // const newId=Insert_question(currentsubject.value,currentQuestion.value.tag,currentQuestion.value.text,currentQuestion.value.type,currentQuestion.value.creator,currentQuestion.value.options)
+    // questions.value.push({...currentQuestion.value, id: newId})
+  }
+
+  closeModal()
+}
+
+// 模拟从后端获取题目数据  @search
 const searchQuery = ref('')
-const selectedSubject = ref('')
+const selectedsubject = ref('')
 
 // 获取所有唯一科目
-const uniqueSubjects = computed(() => {
+const uniquesubjects = computed(() => {
   return [...new Set(questions.value.map(q => q.subject))]
 })
 
@@ -172,8 +328,8 @@ const filteredQuestions = computed(() => {
     )
   }
 
-  if (selectedSubject.value) {
-    result = result.filter(q => q.subject === selectedSubject.value)
+  if (selectedsubject.value) {
+    result = result.filter(q => q.subject === selectedsubject.value)
   }
 
   return result
@@ -205,6 +361,7 @@ const showAddQuestionDialog = () => {
     ]
   }
   showModal.value = true
+
 }
 
 // 编辑题目
@@ -217,6 +374,8 @@ const editQuestion = (question) => {
 // 删除题目
 const deleteQuestion = (question) => {
   if (confirm(`确定要删除题目 "${question.text}" 吗？`)) {
+    // const successstate=Delete_question(question.id)
+
     const index = questions.value.findIndex(q => q.id === question.id)
     if (index > -1) {
       questions.value.splice(index, 1)
@@ -235,32 +394,6 @@ const closeModal = () => {
 }
 
 // 保存题目
-const saveQuestion = () => {
-  if (!currentQuestion.value.text.trim()) {
-    alert('题目内容不能为空')
-    return
-  }
-
-  if (!isJudgmentQuestion.value && !currentQuestion.value.options.some(o => o.isCorrect)) {
-    alert('至少选择一个正确答案')
-    return
-  }
-
-  if (isEditing.value) {
-    // 编辑模式：更新现有题目
-    const index = questions.value.findIndex(q => q.id === currentQuestion.value.id)
-    if (index > -1) {
-      questions.value[index] = {...currentQuestion.value}
-    }
-  } else {
-    // 添加模式：创建新题目
-    const newId = Math.max(...questions.value.map(q => q.id)) + 1
-    questions.value.push({...currentQuestion.value, id: newId})
-  }
-
-  closeModal()
-}
-
 // 添加选项
 const addOption = () => {
   const nextLetter = String.fromCharCode(65 + currentQuestion.value.options.length)
@@ -282,6 +415,9 @@ const removeOption = (index) => {
 </script>
 
 <style scoped>
+h1{
+  color: black;
+}
 .question-bank {
   padding: 20px;
 }
@@ -343,7 +479,7 @@ const removeOption = (index) => {
 }
 
 .question-card {
-  background: white;
+  background-color: #282c34;
   padding: 20px;
   border-radius: 10px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -449,6 +585,7 @@ const removeOption = (index) => {
 
 .form-group {
   margin-bottom: 20px;
+  color: black;
 }
 
 .form-group label {

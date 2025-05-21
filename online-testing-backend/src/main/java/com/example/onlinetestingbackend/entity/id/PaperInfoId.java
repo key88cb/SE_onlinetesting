@@ -2,6 +2,9 @@ package com.example.onlinetestingbackend.entity.id;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -9,7 +12,8 @@ import java.util.Objects;
 public class PaperInfoId implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    @Column(name = "paper_id") // Will be INT NOT NULL in generated DDL
+    @Column(name = "paper_id")
+    // Will be INT NOT NULL in generated DDL
     private Integer paperId;
 
     @Column(name = "course_id")

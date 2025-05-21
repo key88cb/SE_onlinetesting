@@ -41,8 +41,8 @@ public class PaperInfoRepositoryTest {
         paperInfo1.setCourseId(paperInfoId1.getCourseId());
         paperInfo1.setCreator("Prof. Alpha");
         paperInfo1.setSingleChoiceNum(10);
-        paperInfo1.setMultipleChoiceNum("5");
-        paperInfo1.setTrueFalseNum("5");
+        paperInfo1.setMultipleChoiceNum(5);
+        paperInfo1.setTrueFalseNum(5);
         paperInfo1.setOpenTime(LocalDateTime.now().plusDays(1));
         paperInfo1.setCloseTime(LocalDateTime.now().plusDays(2));
         paperInfo1.setHighestScoresForSingleChoice(50);
@@ -56,8 +56,8 @@ public class PaperInfoRepositoryTest {
         paperInfo2.setCourseId(paperInfoId2.getCourseId());
         paperInfo2.setCreator("Prof. Beta");
         paperInfo2.setSingleChoiceNum(8);
-        paperInfo2.setMultipleChoiceNum("4");
-        paperInfo2.setTrueFalseNum("4");
+        paperInfo2.setMultipleChoiceNum(4);
+        paperInfo2.setTrueFalseNum(4);
         paperInfo2.setOpenTime(LocalDateTime.now().plusHours(12));
         paperInfo2.setCloseTime(LocalDateTime.now().plusHours(24));
         paperInfo2.setHighestScoresForSingleChoice(40);
@@ -142,8 +142,8 @@ public class PaperInfoRepositoryTest {
         paperInfoCourse101Another.setCourseId(101); // 相同的 courseId
         paperInfoCourse101Another.setCreator("Prof. Alpha");
         paperInfoCourse101Another.setSingleChoiceNum(10);
-        paperInfoCourse101Another.setMultipleChoiceNum("5"); // 实体中是 String 类型
-        paperInfoCourse101Another.setTrueFalseNum("5");     // 实体中是 String 类型
+        paperInfoCourse101Another.setMultipleChoiceNum(5); // 实体中是 String 类型
+        paperInfoCourse101Another.setTrueFalseNum(5);     // 实体中是 String 类型
         paperInfoCourse101Another.setTotalScores(100);
 
         // *** 修改点：为所有非空字段设置值 ***
@@ -232,8 +232,8 @@ public class PaperInfoRepositoryTest {
         paper.setCourseId(101);
         paper.setCreator("Test Creator");
         paper.setSingleChoiceNum(1);
-        paper.setMultipleChoiceNum("0");
-        paper.setTrueFalseNum("0");
+        paper.setMultipleChoiceNum(0);
+        paper.setTrueFalseNum(0);
         paper.setTotalScores(10);
 
         // *** 修改点：为所有在实体中定义为 nullable=false 的字段设置值 ***

@@ -1,0 +1,61 @@
+subject_category,tags,question_text,question_type,correct_answer,creator,option_a,option_b,option_c,option_d
+Math,Algebra,What is 2+2?,Single Choice,A,Teacher1,4,5,6,7
+Physics,Force,What is Newton's first law?,Single Choice,B,Teacher2,Every object stays at rest...,An object accelerates...,The gravity pulls...,None of the above
+English,Vocabulary,Which word means 'happy'?,Single Choice,C,Teacher3,Angry,Sad,Delighted,Furious
+History,WWII,When did WWII start?,Single Choice,D,Teacher4,1938,1939,1940,1941
+Biology,Cells,What is the powerhouse of the cell?,Single Choice,A,Teacher5,Mitochondria,Nucleus,Ribosome,Cell membrane
+Chemistry,Elements,Which is a noble gas?,Single Choice,B,Teacher6,Oxygen,Neon,Hydrogen,Carbon
+Geography,Continents,How many continents are there?,Single Choice,C,Teacher7,4,5,"",""
+Programming,Java,Which keyword defines a class in Java?,Single Choice,D,Teacher8,struct,func,classdef,class
+Economics,Supply and Demand,What happens when supply exceeds demand?,Single Choice,A,Teacher9,Price decreases,Price increases,Remains same,No effect
+Literature,Shakespeare,Who wrote Hamlet?,Single Choice,B,Teacher10,Charles Dickens,William Shakespeare,Ernest Hemingway,Mark Twain
+Math,Geometry,What is the sum of angles in a triangle?,Single Choice,C,Teacher11,90°,120°,180°,360°
+Physics,Gravity,What is the acceleration due to gravity on Earth?,Single Choice,D,Teacher12,5 m/s²,7 m/s²,9 m/s²,9.8 m/s²
+English,Tenses,What tense is 'I have eaten'?,Single Choice,A,Teacher13,Past Perfect,Present Continuous,Past Simple,Future
+History,US Independence,In which year did the US declare independence?,Single Choice,B,Teacher14,1770,1776,1781,1789
+Biology,Photosynthesis,What do plants produce during photosynthesis?,Single Choice,C,Teacher15,Oxygen and Water,Ozone and Sugar,Glucose and Oxygen,Carbon Dioxide and Sunlight
+Chemistry,Acids and Bases,pH of 7 indicates what kind of solution?,Single Choice,D,Teacher16,Strong Acid,Weak Base,Very Strong Base,Neutral
+Geography,Oceans,Which is the largest ocean?,Single Choice,A,Teacher17,Pacific Ocean,Atlantic Ocean,Indian Ocean,Arctic Ocean
+Programming,Python,Which symbol starts a comment in Python?,Single Choice,B,Teacher18,//, #, <!--, /*
+Economics,GDP,What does GDP stand for?,Single Choice,C,Teacher19,Global Domestic Product,General Domestic Production,Gross Domestic Product,Grand Domestic Price
+Literature,Poetry,Which poet wrote 'Ode to a Nightingale'?,Single Choice,D,Teacher20,Robert Frost,Walt Whitman,Langston Hughes,John Keats
+Math,Algebra,Which numbers are prime?,Multiple Choice,ABD,Teacher1,2,3,4,5
+Programming,Java,Which are Java keywords?,Multiple Choice,ABC,Teacher2,class,interface,private,include
+Physics,Force,What affects acceleration?,Multiple Choice,AD,Teacher3,Mass,Color,Smell,Force
+English,Tenses,Which sentences use the past perfect?,Multiple Choice,BC,Teacher4,I have eaten.,She had gone.,They had finished.,He is running.
+Biology,Cells,Which organelles are found in plant cells?,Multiple Choice,ABD,Teacher5,Cell wall,Chloroplasts,Centrioles,Vacuole
+Chemistry,Elements,Which are transition metals?,Multiple Choice,ACD,Teacher6,Iron,Copper,Silver,Gold
+Geography,Asia,Which countries are in East Asia?,Multiple Choice,ABC,Teacher7,China,Japan,South Korea,India
+History,American Revolution,Who were involved in the American Revolution?,Multiple Choice,ABD,Teacher8,Britain,France,Spain,Germany
+Economics,Demand,What factors affect demand?,Multiple Choice,ACD,Teacher9,Price,Weather,Income,Tastes
+Literature,Shakespeare,Which plays were written by Shakespeare?,Multiple Choice,ABD,Teacher10,Romeo and Juliet,Hamlet,Animal Farm,Othello
+Math,Geometry,Which are types of triangles?,Multiple Choice,ABD,Teacher11,Equilateral,Isosceles,Rectangle,Parallelogram
+Physics,Electricity,What does Ohm's law relate?,Multiple Choice,ABD,Teacher12,Voltage,Current,Resistance,Power
+English,Punctuation,Which sentences need a comma?,Multiple Choice,ACD,Teacher13,Although it was raining, we went out.,I like apples oranges and bananas.,After lunch
+History,WWII,Which countries were part of the Axis Powers?,Multiple Choice,AB,Teacher14,Germany,Italy,USA,UK
+Biology,Photosynthesis,What are products of photosynthesis?,Multiple Choice,AC,Teacher15,Glucose,Ozone,Water,Oxygen
+Chemistry,Acids and Bases,Which are weak acids?,Multiple Choice,AC,Teacher16,Acetic acid,Carbonic acid,HCl,H2SO4
+Geography,Oceans,Which oceans border Antarctica?,Multiple Choice,ABCD,Teacher17,Pacific,Atlantic,Indian,Arctic
+Programming,Python,Which data types are mutable in Python?,Multiple Choice,BC,Teacher18,Tuple,List,Dictionary,String
+Economics,Markets,Which are types of market structures?,Multiple Choice,ABCD,Teacher19,Monopoly,Oligopoly,Perfect Competition,Monopolistic Competition
+Literature,Poetry,Which are poetic devices?,Multiple Choice,ABD,Teacher20,Alliteration,Assonance,Exclamation,Imagery
+Math,Algebra,Is 2+2=5?,True/False,B,Teacher1,True,False,,
+Programming,Java,Is Java compiled into bytecode?,True/False,A,Teacher2,True,False,,
+Physics,Force,Does force cause acceleration?,True/False,A,Teacher3,True,False,,
+English,Tenses,Is 'I am going' present continuous tense?,True/False,A,Teacher4,True,False,,
+Biology,Cells,Do animal cells have cell walls?,True/False,B,Teacher5,True,False,,
+Chemistry,Elements,Is water an element?,True/False,B,Teacher6,True,False,,
+Geography,Continents,Is Australia the smallest continent?,True/False,A,Teacher7,True,False,,
+History,WWII,Did WWII start in 1939?,True/False,A,Teacher8,True,False,,
+Economics,GDP,Does GDP measure a country's total output?,True/False,A,Teacher9,True,False,,
+Literature,Shakespeare,Was Hamlet written by Charles Dickens?,True/False,B,Teacher10,True,False,,
+Math,Geometry,Is the sum of angles in a triangle 180°?,True/False,A,Teacher11,True,False,,
+Physics,Gravity,Is gravity stronger on the moon than on Earth?,True/False,B,Teacher12,True,False,,
+English,Punctuation,Should a comma be used after introductory phrases?,True/False,A,Teacher13,True,False,,
+History,US Independence,Did the US declare independence in 1776?,True/False,A,Teacher14,True,False,,
+Biology,Photosynthesis,Do plants produce carbon dioxide during photosynthesis?,True/False,B,Teacher15,True,False,,
+Chemistry,Acids and Bases,Does a pH less than 7 indicate a basic solution?,True/False,B,Teacher16,True,False,,
+Geography,Oceans,Is the Atlantic Ocean larger than the Pacific?,True/False,B,Teacher17,True,False,,
+Programming,Python,Is Python a statically typed language?,True/False,B,Teacher18,True,False,,
+Economics,Supply and Demand,If supply increases,True/False,A,Teacher19,True,False,,
+Literature,Poetry,Is rhyme required in poetry?,True/False,B,Teacher20,True,False,,
