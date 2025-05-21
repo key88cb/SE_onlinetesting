@@ -7,12 +7,20 @@
         <label>试卷名称：</label>
         <input type="text" v-model="paper.title" placeholder="请输入试卷名称" />
       </div>
-
+    <!-- 右上角按钮 -->
+      <button
+    class="view-library-btn"
+    :class="{ 'close-mode': showLibrary }"
+    @click="showLibrary = !showLibrary"
+  >
+    {{ showLibrary ? '关闭题库' : '查看题库' }}
+    </button>
       <div class="form-group">
         <label>题目列表：</label>
         <div class="question-list">
           <div v-for="(question, index) in paper.questions" :key="index" class="question-row">
             <input type="text" v-model="question.id" placeholder="题目ID" />
+            <span>题目分数:</span>
             <input type="number" v-model.number="question.score" placeholder="分数" />
             <button class="btn remove-btn" @click="removeQuestion(index)">-</button>
           </div>
@@ -62,7 +70,48 @@
         </div>
       </div>
     </div>
+    <!-- 题库模态框 -->
+    <div v-if="showLibrary" class="modal2">
+        <div>题库查看</div>
 
+        <div class="toolbar">
+          <div class="search-filter">
+            <input
+                v-model="searchQuery"
+                placeholder="输入科目或关键词搜索题目"
+                class="search-input"
+            />
+            <select v-model="selectedsubject" class="subject-filter">
+              <option value="">全部科目</option>
+              <option v-for="subject in uniquesubjects" :key="subject" :value="subject">{{ subject }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="questions-grid">
+          <div
+              v-for="question in filteredQuestions"
+              :key="question.id"
+              class="question-card"
+          >
+            <div class="question-header">
+              <span class="type-badge">{{ question.type }}</span>
+            </div>
+            <div class="question-text">{{ question.text }}</div>
+            <div class="question-tag">备注：{{ question.tag }}  </div>
+            <div class="options">
+              <div
+                  v-for="(option, index) in question.options"
+                  :key="option.value"
+                  :class="['option', { correct: option.isCorrect }]">
+                {{ String.fromCharCode(65 + index) }}. {{ option.label }}
+              </div>
+            </div>
+          </div>
+          <div v-if="filteredQuestions.length === 0" class="no-results">
+            没有找到相关题目
+          </div>
+        </div>
+     </div>
     <!-- 发布表单模态框 -->
     <div v-if="showPublishModal" class="modal">
       <div class="modal-content">
@@ -114,9 +163,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed,onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-
 const router = useRouter()
 
 // 当前试卷数据
@@ -134,7 +182,6 @@ const examSettings = ref({
   passingScore: 0,
   showAnswersAfter: 'afterEnd'
 })
-
 // 模拟题库数据
 const questionBank = ref([
   {
@@ -211,7 +258,7 @@ const questionBank = ref([
 // 控制模态框显示
 const showPreviewModal = ref(false)
 const showPublishModal = ref(false)
-
+const showLibrary = ref(false)
 // 计算预览问题
 const previewQuestions = computed(() => {
   return paper.value.questions
@@ -247,7 +294,15 @@ const previewPaper = () => {
   }
   showPreviewModal.value = true
 }
-
+onMounted(async () => {
+  try {
+    // const res =Search_for_all_questions()
+    // questions.value = res.data 
+  } catch (error) {
+    alert('加载题目失败，请检查网络或服务状态')
+    console.error(error)
+  }
+})
 // 关闭预览模态框
 const closePreviewModal = () => {
   showPreviewModal.value = false
@@ -260,6 +315,55 @@ const goToPublish = () => {
   showPublishModal.value = true
 }
 
+const Search_for_all_questions = async () => {
+  try {
+    const res = await fetch('http://localhost:8080/api/questions',{
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      query: {
+        method:'search',
+        subject: currentsubject.value,
+      }
+    })
+    if (!res.ok) {
+      throw new Error('网络错误')
+    }
+//此处需要修改
+    const data = await res.json()
+    questions.value = data
+  } catch (error) {
+    alert('加载题目失败，请检查网络或服务状态')
+    console.error(error)
+  }
+}
+const Create_Exam_Paper = async() => {
+  // 这里可以添加创建试卷的逻辑
+  try{
+    const res = await fetch('http://localhost:8080/api/questions',{
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        method:'create',
+        content:{
+          question_ids:paper.questions,
+          start_time:examSettings.value.startTime,
+          end_time:examSettings.value.endTime
+        }
+      })
+    })
+    if (!res.ok) {
+      throw new Error('网络错误')
+    }
+  }
+  catch (error) {
+    console.error('创建试卷失败:', error)
+    alert('创建试卷失败，请稍后再试')
+  }
+}
 // 取消发布
 const cancelPublish = () => {
   showPublishModal.value = false
@@ -278,9 +382,47 @@ const confirmPublish = () => {
   }
 
   alert('试卷发布成功！')
+  // Create_Exam_Paper()
   router.push('/teacher/exam-management')
 }
+// 查看题库
+// 模拟从后端获取题目数据  @search
+const searchQuery = ref('')
+const selectedsubject = ref('')
 
+// 获取所有唯一科目
+const uniquesubjects = computed(() => {
+  return [...new Set(questionBank.value.map(q => q.subject))]
+})
+
+// 过滤后的题目列表
+const filteredQuestions = computed(() => {
+  let result = [...questionBank.value]
+
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    result = result.filter(q =>
+        q.text.toLowerCase().includes(query) ||
+        q.subject.toLowerCase().includes(query)
+    )
+  }
+
+  if (selectedsubject.value) {
+    result = result.filter(q => q.subject === selectedsubject.value)
+  }
+
+  return result
+})
+
+// 判断是否为多选题
+const isMultipleChoice = computed(() => {
+  return currentQuestion.value.type === '多选'
+})
+
+// 判断是否为判断题
+const isJudgmentQuestion = computed(() => {
+  return currentQuestion.value.type === '判断'
+})
 </script>
 
 <style scoped>
@@ -302,7 +444,18 @@ h1 {
   margin-bottom: 20px;
   color: black;
 }
+.view-library-btn {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+}
 
+.view-library-btn:hover {
+  background-color: #45a049;
+}
 .form-group label {
   display: block;
   margin-bottom: 8px;
@@ -389,7 +542,40 @@ h1 {
   justify-content: center;
   z-index: 1000;
 }
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
 
+/* 弹出层 */
+.modal2 {
+  background: #fff;
+  border-radius: 8px;
+  border-color: #ccc;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 80%;
+  max-width: 800px;
+  max-height: 90%;
+  overflow: hidden;
+  position: relative;
+}
+
+/* 弹出层头部 */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
 .modal-content {
   background: white;
   padding: 25px;
@@ -422,6 +608,7 @@ h1 {
   display: flex;
   align-items: center;
   margin-bottom: 10px;
+  color:black;
 }
 
 .type-badge {
@@ -445,6 +632,7 @@ h1 {
 .options {
   margin-left: 20px;
   margin-bottom: 10px;
+  color:black
 }
 
 .option {
@@ -547,4 +735,62 @@ h1 {
   background: #f9f9f9;
   border-radius: 10px;
 }
+/* 来自questionbank的 */
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.search-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.search-input {
+  flex: 1 1 200px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1em;
+}
+
+.subject-filter {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1em;
+}
+.questions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+.question-card {
+  background-color: #282c34;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.question-text {
+  margin-bottom: 15px;
+  font-weight: bold;
+}
+.view-library-btn {
+  background-color: #4caf50; /* 默认绿色 */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.view-library-btn.close-mode {
+  background-color: #f44336; /* 红色 */
+}
+/* 此处为题库 */
 </style>

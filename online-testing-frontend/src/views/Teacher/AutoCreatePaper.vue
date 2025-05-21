@@ -143,7 +143,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed,onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -250,7 +250,6 @@ const config = ref({
 // 控制模态框显示
 const showPreviewModal = ref(false)
 const showPublishModal = ref(false)
-
 // 所有科目
 const subjects = ref(['操作系统原理', '数据库基础', '计算机网络'])
 
@@ -273,7 +272,15 @@ const filteredQuestions = computed(() => {
 
   return result
 })
-
+onMounted(async () => {
+  try {
+    // const res =Search_for_all_questions()
+    // questions.value = res.data 
+  } catch (error) {
+    alert('加载题目失败，请检查网络或服务状态')
+    console.error(error)
+  }
+})
 // 根据当前配置生成的试卷题目
 const previewQuestions = computed(() => {
   let selectedQuestions = []
@@ -340,6 +347,7 @@ const getQuestionScore = (question) => {
 
 // 预览试卷
 const previewPaper = () => {
+  var flag=0
   if (!paper.value.title.trim()) {
     alert('请填写试卷名称')
     return
@@ -363,9 +371,13 @@ const previewPaper = () => {
 
     if (availableCount < requiredCount) {
       alert(`对于${type}题型，只有${availableCount}道可用题目，少于您要求的${requiredCount}道`)
+      flag=1
+      return
     }
   })
-
+  if (flag==1){
+    return
+  }
   // 检查总题数是否为0
   const totalQuestions = previewQuestions.value.length
   if (totalQuestions === 0) {
@@ -387,13 +399,64 @@ const generateNewPaper = () => {
   previewPaper()
 }
 
+
 // 去发布
 const goToPublish = () => {
+  // Create_Exam_Paper()
   closePreviewModal()
   examSettings.value.fullScore = totalScore.value
   showPublishModal.value = true
 }
 
+const Search_for_all_questions = async () => {
+  try {
+    const res = await fetch('http://localhost:8080/api/questions',{
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      query: {
+        method:'search',
+        subject: currentsubject.value,
+      }
+    })
+    if (!res.ok) {
+      throw new Error('网络错误')
+    }
+//此处需要修改
+    const data = await res.json()
+    questions.value = data
+  } catch (error) {
+    alert('加载题目失败，请检查网络或服务状态')
+    console.error(error)
+  }
+}
+const Create_Exam_Paper = async() => {
+  // 这里可以添加创建试卷的逻辑
+  try{
+    const res = await fetch('http://localhost:8080/api/questions',{
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        method:'create',
+        content:{
+          question_ids:paper.questions,
+          start_time:examSettings.value.startTime,
+          end_time:examSettings.value.endTime
+        }
+      })
+    })
+    if (!res.ok) {
+      throw new Error('网络错误')
+    }
+  }
+  catch (error) {
+    console.error('创建试卷失败:', error)
+    alert('创建试卷失败，请稍后再试')
+  }
+}
 // 取消发布
 const cancelPublish = () => {
   showPublishModal.value = false

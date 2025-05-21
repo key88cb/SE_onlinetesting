@@ -71,4 +71,11 @@ public interface QuestionRepository extends JpaRepository<Question, Integer> { /
      * @return 如果存在则返回 true，否则返回 false
      */
     boolean existsByCreator(String creator);
+
+//    @Query("SELECT q FROM Question q WHERE q.questionType = :type AND (:tags IS EMPTY OR EXISTS (SELECT 1 FROM q.tags t WHERE t IN (:tags)))")
+//    List<Question> findByQuestionTypeAndTags(@Param("type") String type, @Param("tags") List<String> tags);
+
+    @Query(value = "SELECT * FROM question_table q WHERE q.question_type = :type AND (:tags IS NULL OR q.tags IN (:tags))", nativeQuery = true)
+    List<Question> findByQuestionTypeAndTags(@Param("type") String type, @Param("tags") List<String> tags);
+
 }

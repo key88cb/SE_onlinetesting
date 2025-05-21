@@ -1,5 +1,6 @@
 package com.example.onlinetestingbackend.controller;
 
+import com.example.onlinetestingbackend.dto.AutoPaperCreationRequestDto;
 import com.example.onlinetestingbackend.dto.ManualPaperCreationRequestDto;
 import com.example.onlinetestingbackend.service.PaperQuestionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,4 +19,11 @@ public class PaperQuestionController {
         paperQuestionService.createManualPaper(request);
         return ResponseEntity.ok("Manual paper created successfully");
     }
+
+    @PostMapping("/auto-create-paper")
+    public ResponseEntity<String> createAutoPaper(@RequestBody AutoPaperCreationRequestDto request) {
+        paperQuestionService.createAutoPaper(request);
+        return ResponseEntity.ok("Auto paper created successfully");
+    }
+
 }

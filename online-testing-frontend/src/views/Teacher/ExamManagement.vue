@@ -35,7 +35,6 @@
         <p>计划时间：{{ formatDate(exam.startTime) }} - {{ formatDate(exam.endTime) }}</p>
 
         <div class="card-actions">
-          <button class="btn edit-btn" @click.stop="editExam(exam)">编辑设置</button>
           <button class="btn delete-btn" @click.stop="deleteExam(exam)">删除考试</button>
         </div>
       </div>
@@ -557,6 +556,9 @@ const setActiveTab = (tab) => {
   showDetailModal.value = false
   showSettingsModal.value = false
   showStatsModal.value = false
+}
+const deleteExam = (exam) => {
+  exams.value = exams.value.filter(e => e.id !== exam.id)
 }
 
 // 获取所有唯一科目

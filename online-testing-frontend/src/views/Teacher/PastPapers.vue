@@ -47,7 +47,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed,onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -56,6 +56,7 @@ const router = useRouter()
 const pastPapers = ref([
   {
     id: 1,
+    paper_id: 1,
     title: '2023年操作系统原理期末考试',
     subject: '操作系统原理',
     year: 2023,
@@ -64,6 +65,7 @@ const pastPapers = ref([
   },
   {
     id: 2,
+    paper_id: 2,
     title: '2023年需求分析与设计期中考试',
     subject: '需求分析与设计',
     year: 2023,
@@ -72,6 +74,7 @@ const pastPapers = ref([
   },
   {
     id: 3,
+    paper_id: 3,
     title: '2022年数据库基础期末考试',
     subject: '数据库基础',
     year: 2022,
@@ -80,6 +83,7 @@ const pastPapers = ref([
   },
   {
     id: 4,
+    paper_id: 4,
     title: '2022年操作系统原理期中考试',
     subject: '操作系统原理',
     year: 2022,
@@ -88,6 +92,40 @@ const pastPapers = ref([
   }
 ])
 
+onMounted(async () => {
+  try {
+    // const res= await Search_for_all_past_papers()
+    // if (res) {
+    //   pastPapers.value = res
+    // } else {
+    //   alert('没有获取到试卷数据')
+    // }
+  } catch (error) {
+    alert('加载题目失败，请检查网络或服务状态')
+    console.error(error)
+  }
+})
+const Search_for_all_past_papers = async () => {
+  try {
+    const response = await fetch('http://localhost:8080/exam_paper',{
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+    },
+      body: JSON.stringify({
+        method: 'GET'
+      })
+    }
+  )
+    if (!response.ok) {
+      throw new Error('网络响应不正常')
+    }
+    const data = await response.json()
+    return data
+  } catch (error) {
+    console.error('获取试卷数据失败:', error)
+  }
+}
 const searchQuery = ref('')
 const selectedSubject = ref('')
 const selectedYear = ref('')
@@ -137,7 +175,7 @@ const clearSearch = () => {
 }
 
 const viewPaperDetails = (paper) => {
-  router.push(`/student/past-paper/${paper.id}/details`)
+  router.push(`/teacher/past-paper/${paper.paper_id}/details`)
 }
 </script>
 
