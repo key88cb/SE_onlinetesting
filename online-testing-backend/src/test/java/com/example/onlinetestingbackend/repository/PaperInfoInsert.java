@@ -17,6 +17,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @SpringBootTest
 public class PaperInfoInsert {
@@ -59,7 +60,7 @@ public class PaperInfoInsert {
                 continue; // 跳过表头
             }
             // 假设字段顺序：courseId,creator,openTime,closeTime,questionIds(分号分隔),points(分号分隔)
-            String[] values = line.split(",", -1);
+            String[] values = line.split(",",12);
             ManualPaperCreationRequestDto dto = new ManualPaperCreationRequestDto();
             dto.setCourseId(Integer.parseInt(values[0]));
             dto.setCreator(values[1]);
@@ -73,21 +74,31 @@ public class PaperInfoInsert {
             dto.setHighestScoresForMultipleChoice(Integer.parseInt(values[9]));
             dto.setHighestScoresForTrueFalse(Integer.parseInt(values[10]));
 
+            System.out.println("=== values[11] ===");
+            System.out.println(values[11]);
+
             // 题目表
             ObjectMapper objectMapper = new ObjectMapper();
             String questionsJson = values[11].trim();
+            if (questionsJson.startsWith("\"") && questionsJson.endsWith("\"")) {
+                questionsJson = questionsJson.substring(1, questionsJson.length() - 1);
+            }
+            questionsJson = questionsJson.replaceAll("\"\"", "\"");
 
             List<ManualPaperQuestionDto> questions = new ArrayList<>();
-            if (questionsJson.startsWith("[") && questionsJson.endsWith("]")) {
-                try {
-                    questions = objectMapper.readValue(
-                            questionsJson,
-                            new TypeReference<List<ManualPaperQuestionDto>>() {}
-                    );
-                } catch (Exception e) {
-                    System.out.println("⚠️ 解析 questions 字段失败: " + questionsJson);
-                    e.printStackTrace();
+            try {
+                List<Map<String, Integer>> items = objectMapper.readValue(
+                        questionsJson,
+                        new TypeReference<List<Map<String, Integer>>>(){}
+                );
+                for (Map<String, Integer> item : items) {
+                    System.out.println("=== Map<String, Integer> ===");
+                    System.out.println(item.get("questionId")+" " + item.get("points"));
+                    questions.add(new ManualPaperQuestionDto(item.get("questionId"),item.get("points")));
                 }
+            } catch (Exception e) {
+                System.out.println("⚠️ 解析 questions 字段失败: " + questionsJson);
+                e.printStackTrace();
             }
 
             dto.setQuestions(questions); // 设置问题列表
