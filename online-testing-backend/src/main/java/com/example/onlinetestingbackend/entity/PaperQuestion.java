@@ -18,7 +18,8 @@ public class PaperQuestion {
 
     @Column(name = "knowledge_points", length = 256)
     private String knowledgePoints;
-
+    @Column(name = "question_type", nullable = false, length = 20)
+    private String questionType;
     @Column(name = "A", nullable = false, length = 256)
     private String optionA;
 
@@ -73,4 +74,10 @@ public class PaperQuestion {
     public void setPaperInfo(PaperInfo pi) { this.paperInfo = pi; if (pi != null) { this.paperId = pi.getPaperId(); this.courseId = pi.getCourseId(); }}
     @Override public boolean equals(Object o) { if (this == o) return true; if (o == null || getClass() != o.getClass()) return false; PaperQuestion pq = (PaperQuestion) o; return Objects.equals(paperId, pq.paperId) && Objects.equals(courseId, pq.courseId) && Objects.equals(questionId, pq.questionId); }
     @Override public int hashCode() { return Objects.hash(paperId, courseId, questionId); }
+    public String getQuestionType() {
+        return questionType;
+    }
+    public void setQuestionType(String questiontype) {
+        this.questionType = questiontype;
+    }
 }
