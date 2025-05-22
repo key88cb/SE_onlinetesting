@@ -7,9 +7,12 @@ import com.example.onlinetestingbackend.entity.PaperQuestion;
 import com.example.onlinetestingbackend.entity.Question;
 import com.example.onlinetestingbackend.service.ExamQuestionService;
 import com.example.onlinetestingbackend.service.PaperQuestionService;
+import org.apache.catalina.connector.Response;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +26,7 @@ public class ExamPaperEditTest {
     @Autowired
     private ExamQuestionService examQuestionService;
     @Test
+    @Transactional
     void testForExam() throws Exception{
         List<PaperInfo> paperInfoList = paperInfoRepository.findAll();
         for (PaperInfo paperInfo : paperInfoList) {
@@ -71,6 +75,7 @@ public class ExamPaperEditTest {
                     plainAnswerDtoList.add(plainAnswerDto);
                 }
                 examPlainRecordDto.setStudentId(studentId);
+                examPlainRecordDto.setAnswers(plainAnswerDtoList);
                 examQuestionService.judgeResult(examPlainRecordDto);
             }
 

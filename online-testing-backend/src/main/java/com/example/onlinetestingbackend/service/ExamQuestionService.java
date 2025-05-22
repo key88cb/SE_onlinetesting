@@ -66,6 +66,9 @@ public class ExamQuestionService {
                     if(characterSet.containsAll(set)){
                         detailedResult.setPoints((score+1)/2);
                     }
+                    else{
+                        detailedResult.setPoints(0);
+                    }
                 }
             }
             else{
@@ -78,6 +81,7 @@ public class ExamQuestionService {
             }
             totalscore+=detailedResult.getPoints();
             detailedResultRepository.save(detailedResult);
+            detailedResultRepository.flush();
         }
         ExamResult examResult1=new ExamResult();
         examResult1.setPaperId(paperId);
@@ -85,5 +89,6 @@ public class ExamQuestionService {
         examResult1.setStudentId(studentId);
         examResult1.setTotalScore(totalscore);
         examResultRepository.save(examResult1);
+        examResultRepository.flush();
     }
 }
