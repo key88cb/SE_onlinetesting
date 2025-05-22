@@ -2,6 +2,7 @@ package com.example.onlinetestingbackend.repository;
 
 import com.example.onlinetestingbackend.dto.ExamPlainRecordDto;
 import com.example.onlinetestingbackend.dto.PlainAnswerDto;
+import com.example.onlinetestingbackend.entity.ExamResult;
 import com.example.onlinetestingbackend.entity.PaperInfo;
 import com.example.onlinetestingbackend.entity.PaperQuestion;
 import com.example.onlinetestingbackend.entity.Question;
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.annotation.Commit;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -27,7 +29,8 @@ public class ExamPaperEditTest {
     private ExamQuestionService examQuestionService;
     @Test
     @Transactional
-    void testForExam() throws Exception{
+    @Commit
+    void testForExam(){
         List<PaperInfo> paperInfoList = paperInfoRepository.findAll();
         for (PaperInfo paperInfo : paperInfoList) {
             List<PaperQuestion> paperQuestions=paperInfo.getPaperQuestions();
@@ -40,6 +43,7 @@ public class ExamPaperEditTest {
                 examPlainRecordDto.setCourseId(courseId);
                 List<PlainAnswerDto> plainAnswerDtoList = new ArrayList<>();
                 for (PaperQuestion paperQuestion : paperQuestions) {
+
                     String type = paperQuestion.getQuestionType();
                     String answer = "";
                     if (type.equals("Single Choice")) {
