@@ -21,4 +21,6 @@ public interface PaperQuestionRepository extends JpaRepository<PaperQuestion, Pa
 
     // 根据知识点模糊查询
     List<PaperQuestion> findByKnowledgePointsContainingAndPaperIdAndCourseId(String keyword, Integer paperId, Integer courseId);
+
+    void deleteByPaperIdAndCourseId(Integer paperId, Integer courseId);
 }

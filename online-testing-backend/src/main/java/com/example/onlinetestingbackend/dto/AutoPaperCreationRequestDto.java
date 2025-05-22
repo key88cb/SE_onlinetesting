@@ -9,6 +9,15 @@ public class AutoPaperCreationRequestDto {
     private LocalDateTime openTime;
     private LocalDateTime closeTime;
     private List<QuestionTypeConfig> questionTypeConfigs;
+    private String paperName;
+
+    public String getPaperName() {
+        return paperName;
+    }
+
+    public void setPaperName(String paperName) {
+        this.paperName = paperName;
+    }
 
     // Getters and Setters
     public Integer getCourseId() {

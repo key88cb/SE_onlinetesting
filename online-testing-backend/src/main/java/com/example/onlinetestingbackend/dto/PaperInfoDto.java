@@ -1,9 +1,13 @@
 package com.example.onlinetestingbackend.dto;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
-public class ManualPaperCreationRequestDto {
+public class PaperInfoDto {
+
+    private Integer paperId;
     private Integer courseId;
     private String creator;
     private Integer singleChoiceNum;
@@ -11,19 +15,32 @@ public class ManualPaperCreationRequestDto {
     private Integer trueFalseNum;
     private LocalDateTime openTime;
     private LocalDateTime closeTime;
-    private Integer totalScores;
     private Integer highestScoresForSingleChoice;
     private Integer highestScoresForMultipleChoice;
     private Integer highestScoresForTrueFalse;
-    private List<ManualPaperQuestionDto> questions;
+    private Integer totalScores;
     private String paperName;
 
+    private List<PaperQuestionDto> paperQuestions = new ArrayList<>();
+
+    // Constructors
+    public PaperInfoDto() {}
+
+    // Getters and Setters
     public String getPaperName() {
         return paperName;
     }
 
     public void setPaperName(String paperName) {
         this.paperName = paperName;
+    }
+
+    public Integer getPaperId() {
+        return paperId;
+    }
+
+    public void setPaperId(Integer paperId) {
+        this.paperId = paperId;
     }
 
     public Integer getCourseId() {
@@ -82,14 +99,6 @@ public class ManualPaperCreationRequestDto {
         this.closeTime = closeTime;
     }
 
-    public Integer getTotalScores() {
-        return totalScores;
-    }
-
-    public void setTotalScores(Integer totalScores) {
-        this.totalScores = totalScores;
-    }
-
     public Integer getHighestScoresForSingleChoice() {
         return highestScoresForSingleChoice;
     }
@@ -114,11 +123,33 @@ public class ManualPaperCreationRequestDto {
         this.highestScoresForTrueFalse = highestScoresForTrueFalse;
     }
 
-    public List<ManualPaperQuestionDto> getQuestions() {
-        return questions;
+    public Integer getTotalScores() {
+        return totalScores;
     }
 
-    public void setQuestions(List<ManualPaperQuestionDto> questions) {
-        this.questions = questions;
+    public void setTotalScores(Integer totalScores) {
+        this.totalScores = totalScores;
+    }
+
+    public List<PaperQuestionDto> getPaperQuestions() {
+        return paperQuestions;
+    }
+
+    public void setPaperQuestions(List<PaperQuestionDto> paperQuestions) {
+        this.paperQuestions = paperQuestions;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        PaperInfoDto that = (PaperInfoDto) o;
+        return Objects.equals(paperId, that.paperId) &&
+                Objects.equals(courseId, that.courseId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(paperId, courseId);
     }
 }

@@ -1,8 +1,6 @@
 package com.example.onlinetestingbackend.service;
 
-import com.example.onlinetestingbackend.dto.AutoPaperCreationRequestDto;
-import com.example.onlinetestingbackend.dto.ManualPaperCreationRequestDto;
-import com.example.onlinetestingbackend.dto.ManualPaperQuestionDto;
+import com.example.onlinetestingbackend.dto.*;
 import com.example.onlinetestingbackend.entity.PaperInfo;
 import com.example.onlinetestingbackend.entity.PaperQuestion;
 import com.example.onlinetestingbackend.entity.Question;
@@ -49,6 +47,7 @@ public class PaperQuestionService {
         paperInfo.setHighestScoresForSingleChoice(request.getHighestScoresForSingleChoice());
         paperInfo.setHighestScoresForMultipleChoice(request.getHighestScoresForMultipleChoice());
         paperInfo.setHighestScoresForTrueFalse(request.getHighestScoresForTrueFalse());
+        paperInfo.setPaperName(request.getPaperName());
 
         int singleChoiceNum = 0;
         int multipleChoiceNum = 0;
@@ -120,6 +119,7 @@ public class PaperQuestionService {
         paperInfo.setCreator(request.getCreator());
         paperInfo.setOpenTime(request.getOpenTime());
         paperInfo.setCloseTime(request.getCloseTime());
+        paperInfo.setPaperName(request.getPaperName());
 
 
         int totalScores = 0;
@@ -204,14 +204,79 @@ public class PaperQuestionService {
     }
 
     @Transactional
-    public void updatePaperTime(Integer paperId, Integer courseId, LocalDateTime openTime, LocalDateTime closeTime) {
+    public void updatePaperTime(Integer paperId, Integer courseId, LocalDateTime openTime, LocalDateTime closeTime, String paperName) {
         PaperInfo paperInfo = paperInfoRepository.findById(new PaperInfoId(paperId, courseId))
                 .orElseThrow(() -> new IllegalArgumentException("PaperInfo not found"));
         paperInfo.setOpenTime(openTime);
         paperInfo.setCloseTime(closeTime);
+        paperInfo.setPaperName(paperName);
         paperInfoRepository.save(paperInfo);
     }
 
+    @Transactional
+    public List<PaperInfo> findByCourseIdAndCreator(Integer courseId, String creator) {
+        return paperInfoRepository.findByCourseIdAndCreator(courseId, creator);
+    }
+
+    @Transactional
+    public PaperInfoDto findByCourseIdAndPaperId(Integer courseId, Integer paperId) {
+        PaperInfoId id = new PaperInfoId(paperId, courseId);
+        PaperInfo paperInfo = paperInfoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("PaperInfo not found"));
+
+        List<PaperQuestion> paperQuestions = paperQuestionRepository.findByPaperIdAndCourseId(paperId, courseId);
+
+        return convertToDto(paperInfo, paperQuestions);
+    }
+
+    private PaperInfoDto convertToDto(PaperInfo paperInfo, List<PaperQuestion> paperQuestions) {
+        PaperInfoDto dto = new PaperInfoDto();
+        dto.setPaperId(paperInfo.getPaperId());
+        dto.setCourseId(paperInfo.getCourseId());
+        dto.setCreator(paperInfo.getCreator());
+        dto.setOpenTime(paperInfo.getOpenTime());
+        dto.setCloseTime(paperInfo.getCloseTime());
+        dto.setSingleChoiceNum(paperInfo.getSingleChoiceNum());
+        dto.setMultipleChoiceNum(paperInfo.getMultipleChoiceNum());
+        dto.setTrueFalseNum(paperInfo.getTrueFalseNum());
+        dto.setTotalScores(paperInfo.getTotalScores());
+        dto.setHighestScoresForSingleChoice(paperInfo.getHighestScoresForSingleChoice());
+        dto.setHighestScoresForMultipleChoice(paperInfo.getHighestScoresForMultipleChoice());
+        dto.setHighestScoresForTrueFalse(paperInfo.getHighestScoresForTrueFalse());
+        dto.setPaperName(paperInfo.getPaperName());
+
+        List<PaperQuestionDto> questionDtos = new ArrayList<>();
+        for (PaperQuestion pq : paperQuestions) {
+            PaperQuestionDto qDto = new PaperQuestionDto();
+            qDto.setPaperId(pq.getPaperId());
+            qDto.setCourseId(pq.getCourseId());
+            qDto.setQuestionId(pq.getQuestionId());
+            qDto.setPoints(pq.getPoints());
+            qDto.setKnowledgePoints(pq.getKnowledgePoints());
+            qDto.setQuestionText(pq.getQuestionText());
+            qDto.setCorrectAnswer(pq.getCorrectAnswer());
+            qDto.setOptionA(pq.getOptionA());
+            qDto.setOptionB(pq.getOptionB());
+            qDto.setOptionC(pq.getOptionC());
+            qDto.setOptionD(pq.getOptionD());
+            questionDtos.add(qDto);
+        }
+
+        dto.setPaperQuestions(questionDtos);
+        return dto;
+    }
+
+
+    @Transactional
+    public void deletePaperById(Integer paperId, Integer courseId) {
+        PaperInfoId id = new PaperInfoId(paperId, courseId);
+
+        // 先删除 PaperQuestion，因为它们依赖于 PaperInfo 的主键
+        paperQuestionRepository.deleteByPaperIdAndCourseId(paperId, courseId);
+
+        // 再删除 PaperInfo
+        paperInfoRepository.deleteById(id);
+    }
     /**
      * 生成唯一的paperId
      */
@@ -220,4 +285,6 @@ public class PaperQuestionService {
         paperId = 100000 + ThreadLocalRandom.current().nextInt(900000);
         return paperId;
     }
+
+
 }
