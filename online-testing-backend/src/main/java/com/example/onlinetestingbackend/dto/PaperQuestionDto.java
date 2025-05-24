@@ -7,6 +7,7 @@ public class PaperQuestionDto {
     private Integer points;
     private String knowledgePoints;
     private String questionText;
+    private String questionType;
     private String correctAnswer;
     private String optionA;
     private String optionB;
@@ -100,5 +101,13 @@ public class PaperQuestionDto {
 
     public void setKnowledgePoints(String knowledgePoints) {
         this.knowledgePoints = knowledgePoints;
+    }
+
+    public String getQuestionType() {
+        return questionType;
+    }
+
+    public void setQuestionType(String questionType) {
+        this.questionType = questionType;
     }
 }

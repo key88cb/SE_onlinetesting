@@ -81,7 +81,7 @@ public class PaperQuestionService {
             paperQuestion.setKnowledgePoints(question.getTags());
             paperQuestion.setQuestionText(question.getQuestionText());
             paperQuestion.setCorrectAnswer(question.getCorrectAnswer());
-
+            paperQuestion.setQuestionType(question.getQuestionType());
             if (question.getOptions() != null && !question.getOptions().isEmpty()) {
                 paperQuestion.setOptionA(question.getOptions().get(0).getOptionText());
                 if (question.getOptions().size() > 1) {
@@ -171,7 +171,7 @@ public class PaperQuestionService {
                 pq.setKnowledgePoints(String.join(",", question.getTags()));
                 pq.setQuestionText(question.getQuestionText());
                 pq.setCorrectAnswer(question.getCorrectAnswer());
-
+                pq.setQuestionType(question.getQuestionType());
                 if (question.getOptions() != null && !question.getOptions().isEmpty()) {
                     pq.setOptionA(question.getOptions().get(0).getOptionText());
                     if (question.getOptions().size() > 1) {
@@ -255,6 +255,7 @@ public class PaperQuestionService {
             qDto.setKnowledgePoints(pq.getKnowledgePoints());
             qDto.setQuestionText(pq.getQuestionText());
             qDto.setCorrectAnswer(pq.getCorrectAnswer());
+            qDto.setQuestionType(pq.getQuestionType());
             qDto.setOptionA(pq.getOptionA());
             qDto.setOptionB(pq.getOptionB());
             qDto.setOptionC(pq.getOptionC());

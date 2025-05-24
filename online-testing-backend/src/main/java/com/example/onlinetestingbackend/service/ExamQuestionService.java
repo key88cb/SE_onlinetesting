@@ -1,0 +1,264 @@
+package com.example.onlinetestingbackend.service;
+
+import com.example.onlinetestingbackend.dto.*;
+import com.example.onlinetestingbackend.entity.*;
+import com.example.onlinetestingbackend.entity.id.ExamResultId;
+import com.example.onlinetestingbackend.entity.id.PaperInfoId;
+import com.example.onlinetestingbackend.entity.PaperInfo;
+import com.example.onlinetestingbackend.repository.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.*;
+
+@Service
+public class ExamQuestionService {
+
+    @Autowired
+    private ExamResultRepository examResultRepository;
+    @Autowired
+    private QuestionRepository questionRepository;
+    @Autowired
+    private PaperInfoRepository paperInfoRepository;
+    @Autowired
+    private PaperQuestionRepository paperQuestionRepository;
+    @Autowired
+    private DetailedResultRepository detailedResultRepository;
+    @Autowired
+    private TemporarySubmissionRepository temporarySubmissionRepository;
+    private static Set<Character> toUniqueCharacterSet(String str) {
+        Set<Character> set = new HashSet<>();
+        for (char c : str.toCharArray()) {
+            set.add(c);
+        }
+        return set;
+    }
+    @Transactional
+    public void judgeResult(ExamPlainRecordDto examResult) {
+        try {
+            int paperId = examResult.getPaperId();
+            int courseId = examResult.getCourseId();
+            int studentId = examResult.getStudentId();
+            int totalscore = 0;
+            List<PlainAnswerDto> plainAnswerDtoList = examResult.getAnswers();
+            List<DetailedResult> DetailResults = new ArrayList<>();
+            for (PlainAnswerDto plainAnswerDto : plainAnswerDtoList) {
+                int questionId = plainAnswerDto.getQuestionId();
+                PaperQuestion question = paperQuestionRepository.findByPaperIdAndCourseIdAndQuestionId(paperId, courseId, questionId);
+                String answerbystudent = plainAnswerDto.getAnswer();
+                String answer = question.getCorrectAnswer();
+                String type = question.getQuestionType();
+                int score = question.getPoints();
+                DetailedResult detailedResult = new DetailedResult();
+                detailedResult.setPaperId(paperId);
+                detailedResult.setCourseId(courseId);
+                detailedResult.setStudentId(studentId);
+                detailedResult.setStudentAnswer(answerbystudent);
+                detailedResult.setQuestionId(questionId);
+                detailedResult.setCorrectAnswer(answer);
+                if (type.equals("Multiple Choice")) {
+                    if (answerbystudent.equals(answer)) {
+                        detailedResult.setPoints(score);
+                    } else {
+                        Set<Character> characterSet = toUniqueCharacterSet(answer);
+                        Set<Character> set = toUniqueCharacterSet(answerbystudent);
+                        if (characterSet.containsAll(set)) {
+                            detailedResult.setPoints((score + 1) / 2);
+                        } else {
+                            detailedResult.setPoints(0);
+                        }
+                    }
+                } else {
+                    if (answerbystudent.equals(answer)) {
+                        detailedResult.setPoints(score);
+                    } else {
+                        detailedResult.setPoints(0);
+                    }
+                }
+                totalscore += detailedResult.getPoints();
+                DetailResults.add(detailedResult);
+            }
+            detailedResultRepository.saveAll(DetailResults);
+            ExamResult examResult1 = new ExamResult();
+            examResult1.setPaperId(paperId);
+            examResult1.setCourseId(courseId);
+            examResult1.setStudentId(studentId);
+            examResult1.setTotalScore(totalscore);
+            examResultRepository.save(examResult1);
+            Optional<ExamResult> temp = examResultRepository.findByPaperIdAndCourseIdAndStudentId(paperId,courseId,studentId)
+                    .stream().findFirst();
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            System.out.println(e.getMessage());
+            throw new RuntimeException("评分失败", e); // 重新抛出异常，确保事务回滚
+
+        }
+    }
+    @Transactional
+    public void editResultforonestudent(ScoreEditDto scoreEditDto) {
+        int paperId = scoreEditDto.getPaperId();
+        int courseId = scoreEditDto.getCourseId();
+        int studentId = scoreEditDto.getStudentId();
+        int questionId = scoreEditDto.getQuestionId();
+        int score = scoreEditDto.getScore();
+        int totalscore = 0;
+        DetailedResult detailedResult =detailedResultRepository.findByPaperIdAndCourseIdAndStudentIdAndQuestionId(paperId,courseId,studentId,questionId);
+        Optional<ExamResult> examResult=examResultRepository.findByPaperIdAndCourseIdAndStudentId(paperId,courseId,studentId);
+        if (!examResult.isPresent()) {
+            System.err.println("未查到对应学生");
+            return;
+        }
+        int totalscoretemp=examResult.get().getTotalScore();
+        int score2=scoreEditDto.getScore();
+        int scoretemp=score-score2;
+        totalscore=totalscoretemp+scoretemp;
+        ExamResult examResult1=new ExamResult();
+        examResult1.setPaperId(paperId);
+        examResult1.setCourseId(courseId);
+        examResult1.setStudentId(studentId);
+        examResult1.setTotalScore(totalscore);
+        examResultRepository.save(examResult1);
+    }
+    @Transactional
+    public void editResultformanystudent(List<ScoreEditDto> scoreEditDtos) {
+        for (ScoreEditDto scoreEditDto : scoreEditDtos) {
+        int paperId = scoreEditDto.getPaperId();
+        int courseId = scoreEditDto.getCourseId();
+        int studentId = scoreEditDto.getStudentId();
+        int questionId = scoreEditDto.getQuestionId();
+        int score = scoreEditDto.getScore();
+        int totalscore = 0;
+        DetailedResult detailedResult = detailedResultRepository.findByPaperIdAndCourseIdAndStudentIdAndQuestionId(paperId, courseId, studentId, questionId);
+        Optional<ExamResult> examResult = examResultRepository.findByPaperIdAndCourseIdAndStudentId(paperId, courseId, studentId);
+        if (!examResult.isPresent()) {
+            System.err.println("未查到对应学生");
+            return;
+        }
+        int totalscoretemp = examResult.get().getTotalScore();
+        int score2 = detailedResult.getPoints();
+        int scoretemp = score - score2;
+        totalscore = totalscoretemp + scoretemp;
+        ExamResult examResult1 = new ExamResult();
+        examResult1.setPaperId(paperId);
+        examResult1.setCourseId(courseId);
+        examResult1.setStudentId(studentId);
+        examResult1.setTotalScore(totalscore);
+        ExamResult temp=examResultRepository.save(examResult1);
+        System.out.println("<UNK>");
+        }
+    }
+
+    @Transactional
+    public String checkExamStatus(PaperInfoDto paperInfoDto) {
+        int paperId = paperInfoDto.getPaperId();
+        int courseId = paperInfoDto.getCourseId();
+
+        // 根据复合主键查找试卷信息
+        Optional<PaperInfo> paperInfoOpt = paperInfoRepository.findById(new PaperInfoId(paperId, courseId));
+        if (paperInfoOpt.isEmpty()) {
+            return "无效的试卷或课程";
+        }
+
+        PaperInfo paperInfo = paperInfoOpt.get();
+        LocalDateTime now = LocalDateTime.now();  // 使用 java.util.Date
+
+        LocalDateTime openTime = paperInfo.getOpenTime();
+        LocalDateTime closeTime = paperInfo.getCloseTime();
+
+        if (now.isBefore(openTime)) {
+            return "考试尚未开始";
+        } else if (now.isAfter(closeTime)) {
+            return "考试已结束";
+        } else {
+            return "进入考试";
+        }
+    }
+
+    @Transactional
+    public void submitExamManually(ExamPlainRecordDto dto) throws Exception {
+        int paperId = dto.getPaperId();
+        int courseId = dto.getCourseId();
+        int studentId = dto.getStudentId();
+
+        Optional<PaperInfo> paperInfoOpt = paperInfoRepository.findById(new PaperInfoId(paperId, courseId));
+        if (paperInfoOpt.isEmpty()) {
+            throw new RuntimeException("无效的试卷");
+        }
+
+        PaperInfo paperInfo = paperInfoOpt.get();
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime closeTime = paperInfo.getCloseTime();
+
+//        if (now.isAfter(closeTime)) {
+//            throw new RuntimeException("考试已结束，无法手动提交");
+//        }
+        try {
+            String answerJson = serializeAnswers(dto);
+            TemporarySubmission temporarySubmission = new TemporarySubmission();
+            ExamResultId examResultId = new ExamResultId();
+            examResultId.setPaperId(paperId);
+            examResultId.setCourseId(courseId);
+            examResultId.setStudentId(studentId);
+            temporarySubmission.setPaperId(paperId);
+            temporarySubmission.setCourseId(courseId);
+            temporarySubmission.setStudentId(studentId);
+            temporarySubmission.setSubmissionTime(now);
+            temporarySubmission.setAnswersJson(answerJson);
+            temporarySubmissionRepository.save(temporarySubmission);
+//            ExamPlainRecordDto examPlainRecordDto =deserializeAnswers(temporarySubmission.getAnswersJson());
+//            judgeResult(examPlainRecordDto);
+
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("保存考试temp失败");
+        }
+    }
+
+    @Scheduled(cron = "0 0/1 * * * ?")
+    @Transactional
+    public void autoSubmitExams() {
+        List<PaperInfo> papers = paperInfoRepository.findAll();
+        LocalDateTime now = LocalDateTime.now();
+
+        for (PaperInfo paper : papers) {
+            int paperId = paper.getPaperId();
+            int courseId = paper.getCourseId();
+            LocalDateTime closeTime = paper.getCloseTime();
+
+            if (now.isBefore(closeTime)) {
+                continue;
+            }
+
+            List<TemporarySubmission> submissions = temporarySubmissionRepository.findByPaperIdAndCourseId(paperId, courseId);
+
+            for (TemporarySubmission temp : submissions) {
+                try {
+
+                    ExamPlainRecordDto dto = deserializeAnswers(temp.getAnswersJson());
+
+                    judgeResult(dto);
+
+                    temporarySubmissionRepository.deleteById(temp.getId());
+                } catch (Exception e) {
+                    System.err.println("自动交卷失败：" + e.getMessage());
+                }
+            }
+        }
+    }
+
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    private ExamPlainRecordDto deserializeAnswers(String json) throws Exception {
+        return objectMapper.readValue(json, ExamPlainRecordDto.class);
+    }
+    private String serializeAnswers(ExamPlainRecordDto dto) throws Exception {
+    return objectMapper.writeValueAsString(dto);
+}
+}
