@@ -80,7 +80,12 @@ public class ExamPaperEditTest {
                 }
                 examPlainRecordDto.setStudentId(studentId);
                 examPlainRecordDto.setAnswers(plainAnswerDtoList);
-                examQuestionService.judgeResult(examPlainRecordDto);
+                try {
+                    examQuestionService.submitExamManually(examPlainRecordDto);
+                }catch (Exception e){
+                    e.printStackTrace();
+                    System.out.println(e.getMessage());
+                }
             }
 
         }

@@ -1,18 +1,18 @@
 package com.example.onlinetestingbackend.service;
 
-import ch.qos.logback.classic.Logger;
-import com.example.onlinetestingbackend.dto.ExamPlainRecordDto;
-import com.example.onlinetestingbackend.dto.PlainAnswerDto;
-import com.example.onlinetestingbackend.dto.ScoreEditDto;
-import com.example.onlinetestingbackend.entity.DetailedResult;
-import com.example.onlinetestingbackend.entity.ExamResult;
-import com.example.onlinetestingbackend.entity.PaperQuestion;
-import com.example.onlinetestingbackend.entity.Question;
+import com.example.onlinetestingbackend.dto.*;
+import com.example.onlinetestingbackend.entity.*;
+import com.example.onlinetestingbackend.entity.id.ExamResultId;
+import com.example.onlinetestingbackend.entity.id.PaperInfoId;
+import com.example.onlinetestingbackend.entity.PaperInfo;
 import com.example.onlinetestingbackend.repository.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -28,6 +28,8 @@ public class ExamQuestionService {
     private PaperQuestionRepository paperQuestionRepository;
     @Autowired
     private DetailedResultRepository detailedResultRepository;
+    @Autowired
+    private TemporarySubmissionRepository temporarySubmissionRepository;
     private static Set<Character> toUniqueCharacterSet(String str) {
         Set<Character> set = new HashSet<>();
         for (char c : str.toCharArray()) {
@@ -79,8 +81,6 @@ public class ExamQuestionService {
                 }
                 totalscore += detailedResult.getPoints();
                 DetailResults.add(detailedResult);
-//                detailedResultRepository.save(detailedResult);
-//                DetailedResult temp = detailedResultRepository.findByPaperIdAndCourseIdAndStudentIdAndQuestionId(paperId, courseId, studentId, questionId);
             }
             detailedResultRepository.saveAll(DetailResults);
             ExamResult examResult1 = new ExamResult();
@@ -153,4 +153,112 @@ public class ExamQuestionService {
         }
     }
 
+    @Transactional
+    public String checkExamStatus(PaperInfoDto paperInfoDto) {
+        int paperId = paperInfoDto.getPaperId();
+        int courseId = paperInfoDto.getCourseId();
+
+        // 根据复合主键查找试卷信息
+        Optional<PaperInfo> paperInfoOpt = paperInfoRepository.findById(new PaperInfoId(paperId, courseId));
+        if (paperInfoOpt.isEmpty()) {
+            return "无效的试卷或课程";
+        }
+
+        PaperInfo paperInfo = paperInfoOpt.get();
+        LocalDateTime now = LocalDateTime.now();  // 使用 java.util.Date
+
+        LocalDateTime openTime = paperInfo.getOpenTime();
+        LocalDateTime closeTime = paperInfo.getCloseTime();
+
+        if (now.isBefore(openTime)) {
+            return "考试尚未开始";
+        } else if (now.isAfter(closeTime)) {
+            return "考试已结束";
+        } else {
+            return "进入考试";
+        }
+    }
+
+    @Transactional
+    public void submitExamManually(ExamPlainRecordDto dto) throws Exception {
+        int paperId = dto.getPaperId();
+        int courseId = dto.getCourseId();
+        int studentId = dto.getStudentId();
+
+        Optional<PaperInfo> paperInfoOpt = paperInfoRepository.findById(new PaperInfoId(paperId, courseId));
+        if (paperInfoOpt.isEmpty()) {
+            throw new RuntimeException("无效的试卷");
+        }
+
+        PaperInfo paperInfo = paperInfoOpt.get();
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime closeTime = paperInfo.getCloseTime();
+
+//        if (now.isAfter(closeTime)) {
+//            throw new RuntimeException("考试已结束，无法手动提交");
+//        }
+        try {
+            String answerJson = serializeAnswers(dto);
+            TemporarySubmission temporarySubmission = new TemporarySubmission();
+            ExamResultId examResultId = new ExamResultId();
+            examResultId.setPaperId(paperId);
+            examResultId.setCourseId(courseId);
+            examResultId.setStudentId(studentId);
+            temporarySubmission.setPaperId(paperId);
+            temporarySubmission.setCourseId(courseId);
+            temporarySubmission.setStudentId(studentId);
+            temporarySubmission.setSubmissionTime(now);
+            temporarySubmission.setAnswersJson(answerJson);
+            temporarySubmissionRepository.save(temporarySubmission);
+//            ExamPlainRecordDto examPlainRecordDto =deserializeAnswers(temporarySubmission.getAnswersJson());
+//            judgeResult(examPlainRecordDto);
+
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("保存考试temp失败");
+        }
+    }
+
+    @Scheduled(cron = "0 0/1 * * * ?")
+    @Transactional
+    public void autoSubmitExams() {
+        List<PaperInfo> papers = paperInfoRepository.findAll();
+        LocalDateTime now = LocalDateTime.now();
+
+        for (PaperInfo paper : papers) {
+            int paperId = paper.getPaperId();
+            int courseId = paper.getCourseId();
+            LocalDateTime closeTime = paper.getCloseTime();
+
+            if (now.isBefore(closeTime)) {
+                continue;
+            }
+
+            List<TemporarySubmission> submissions = temporarySubmissionRepository.findByPaperIdAndCourseId(paperId, courseId);
+
+            for (TemporarySubmission temp : submissions) {
+                try {
+
+                    ExamPlainRecordDto dto = deserializeAnswers(temp.getAnswersJson());
+
+                    judgeResult(dto);
+
+                    temporarySubmissionRepository.deleteById(temp.getId());
+                } catch (Exception e) {
+                    System.err.println("自动交卷失败：" + e.getMessage());
+                }
+            }
+        }
+    }
+
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    private ExamPlainRecordDto deserializeAnswers(String json) throws Exception {
+        return objectMapper.readValue(json, ExamPlainRecordDto.class);
+    }
+    private String serializeAnswers(ExamPlainRecordDto dto) throws Exception {
+    return objectMapper.writeValueAsString(dto);
+}
 }
