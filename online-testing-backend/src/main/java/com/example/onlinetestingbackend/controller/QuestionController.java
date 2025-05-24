@@ -9,11 +9,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-// 需要校验
+// 可能需要校验
 //import jakarta.validation.Valid;
 import java.util.List;
 @RestController
 @RequestMapping("/api/questions")
+// controller处要自己加上下面这行跨域部分 之后@getmapping里面要写相对位置而不是绝对位置 这样最后好改动！
+// 后端的dto要充分利用到 现在的dto类过多 如果再创建dto的话请自己创建文件夹!
+// 后面的部分是直接遵循restful规则编写的 也可以只post或get 一切以代码方便使用为准！
+@CrossOrigin(origins = "http://localhost:5173")
 public class QuestionController {
     private final QuestionService questionService;
     @Autowired
@@ -22,6 +26,7 @@ public class QuestionController {
     }
     @PostMapping
     public ResponseEntity<QuestionDto> createQuestion(/*@Valid*/ @RequestBody QuestionDto questionDto) {
+        // 返回的请求体有可能不是典型的数据类型，比如一张查找表，这时可以自己创建dto
         QuestionDto createdQuestion = questionService.createQuestion(questionDto);
         return new ResponseEntity<>(createdQuestion, HttpStatus.CREATED);
     }
@@ -38,7 +43,7 @@ public class QuestionController {
             @RequestParam(required = false) String subjectCategory,
             @RequestParam(required = false) String questionType,
             @RequestParam(required = false) String tags // 假设按标签模糊搜索
-            // 可以根据您的 QuestionRepository 和 QuestionService 添加更多查询参数
+            // 可以根据 QuestionRepository 和 QuestionService 添加更多查询参数
     ) {
         List<QuestionDto> questions;
         if (subjectCategory != null) {
@@ -68,12 +73,12 @@ public class QuestionController {
         // 返回 HTTP 204 No Content 表示成功删除且响应体为空
         return ResponseEntity.noContent().build();
     }
+    // 十分建议在类中加这个全局异常处理器 调试起来会很方便！
      @ControllerAdvice
      public class GlobalExceptionHandler {
          @ExceptionHandler(ResourceNotFoundException.class)
          public ResponseEntity<String> handleResourceNotFoundException(ResourceNotFoundException ex) {
              return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
          }
-         //TODO: 添加其他异常的处理方法
      }
 }
