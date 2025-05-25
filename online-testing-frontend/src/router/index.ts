@@ -12,7 +12,7 @@ import StudentPastPapers from '../views/student/PastPapers.vue'
 // 新增学生页面
 import StudentResultDetail from '../views/student/ResultDetail.vue'
 import StudentPastPaperDetail from '../views/student/PastPaperDetail.vue'
-
+import ExamDetail from '../views/Teacher/ExamDetails.vue'
 // 教师页面
 import TeacherDashboard from '../views/teacher/Dashboard.vue'
 import QuestionBank from '../views/teacher/QuestionBank.vue'
@@ -78,6 +78,11 @@ const routes = [
     path: '/teacher/question-bank',
     name: 'QuestionBank',
     component: QuestionBank
+  },
+  {
+    path:'/teacher/exams_detail/:courseId/:paperId',
+    name: 'ExamsDetail',
+    component: ExamDetail
   },
   {
     path: '/teacher/question-bank',

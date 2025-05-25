@@ -54,7 +54,7 @@ public class PaperInfo {
 
     @Column(name = "paper_name")
     private String paperName;
-    
+
     @OneToMany(mappedBy = "paperInfo", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<PaperQuestion> paperQuestions = new ArrayList<>();
 

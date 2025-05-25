@@ -26,7 +26,7 @@
     <div class="paperInfos-list" v-if="currentTab === 'notStarted'">
       <div
           v-for="paperInfo in notStartedpaperInfos"
-          :key="paperInfo.id"
+          :key="paperInfo.paperId"
           class="paperInfo-card"
       >
       <h3>考试名称:{{ paperInfo.paperName }}</h3>
@@ -42,11 +42,11 @@
     <div class="paperInfos-list" v-if="currentTab === 'ongoing'">
       <div
           v-for="paperInfo in ongoingpaperInfos"
-          :key="paperInfo.id"
+          :key="paperInfo.paperId"
           class="paperInfo-card"
       >
       <h3>考试名称:{{ paperInfo.paperName }}</h3>
-        <p>当前时间：进行中（{{ paperInfo.studentsCount }}人参考）</p>
+        <!-- <p>当前时间：进行中（{{ paperInfo.studentsCount }}人参考）</p> -->
         <p>剩余时间：{{ formatTime(paperInfo.remainingTime) }}</p>
       </div>
     </div>
@@ -54,11 +54,14 @@
     <div class="paperInfos-list" v-if="currentTab === 'ended'">
       <div
           v-for="paperInfo in endedpaperInfos"
-          :key="paperInfo.id"
+          :key="paperInfo.paperId"
           class="paperInfo-card ended-paperInfo"
       >
         <h3>考试名称:{{ paperInfo.paperName }}</h3>
         <p>考试时间：{{ formatDate(paperInfo.openTime) }} - {{ formatDate(paperInfo.closeTime) }}</p>
+        <div class="paperInfo-actions">
+          <button class="delete-button" @click="searchforinfo(paperInfo.paperId,paperInfo.courseId)">查看考试详情</button>
+        </div>
       </div>
     </div>
 
@@ -98,7 +101,6 @@
 <script setup>
 import { ref, computed, watch,onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import moment from 'moment'
 const router = useRouter()
 onMounted(() => {
   fetchPaperInfos();
@@ -125,15 +127,7 @@ const fetchPaperInfos = async() => {
       throw new Error('网络错误')
     }
 //此处需要修改
-    // console.log(res)
     var data =await res.json()
-    // console.log(data)
-    // if(!Array.isArray(data)){
-    //   data=[data]
-    // }
-  //     paperInfos.value = data.map(paper => ({
-  //     ...paper,
-  // }))
   paperInfos.value = data
   console.log(paperInfos.value)
     // paperInfos.value = data
@@ -202,6 +196,9 @@ const openSettingsModal=(paperInfo)=>{
   showSettingsModal.value = true
   currentPaperInfo.value = paperInfo
   selectedpaperInfo.value = paperInfo
+}
+const searchforinfo=(id,courseId)=>{
+  router.push(`/teacher/exams_detail/${courseId}/${id}`)
 }
 const savepaperInfoSettings = async () => {
   try{

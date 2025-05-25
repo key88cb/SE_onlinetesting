@@ -65,9 +65,9 @@ public class PaperQuestionController {
         return ResponseEntity.ok(dtos);
     }
 
-    @PostMapping("/query-paper-and-questions")
-    public ResponseEntity<PaperInfoDto> queryPaperAndQuestions(@RequestBody QueryPaperQuestionRequestDto request) {
-        PaperInfoDto paperAndQuestions = paperQuestionService.findByCourseIdAndPaperId(request.getCourseId(), request.getPaperId());
+    @GetMapping("/query-paper-and-questions")
+    public ResponseEntity<PaperInfoDto> queryPaperAndQuestions(@RequestParam Integer courseId,@RequestParam Integer paperId) {
+        PaperInfoDto paperAndQuestions = paperQuestionService.findByCourseIdAndPaperId(courseId,paperId);
         return ResponseEntity.ok(paperAndQuestions);
     }
 
