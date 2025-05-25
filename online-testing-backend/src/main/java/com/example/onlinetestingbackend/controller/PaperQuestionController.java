@@ -2,8 +2,10 @@ package com.example.onlinetestingbackend.controller;
 
 import com.example.onlinetestingbackend.dto.*;
 import com.example.onlinetestingbackend.entity.PaperInfo;
+import com.example.onlinetestingbackend.exception.ResourceNotFoundException;
 import com.example.onlinetestingbackend.service.PaperQuestionService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,9 +43,11 @@ public class PaperQuestionController {
         return ResponseEntity.ok("Paper time updated successfully");
     }
 
-    @PostMapping("/query-papers")
-    public ResponseEntity<List<PaperInfoDto>> queryPapers(@RequestBody QueryPaperRequestDto request) {
-        List<PaperInfo> papers = paperQuestionService.findByCourseIdAndCreator(request.getCourseId(), request.getCreator());
+    @GetMapping("/query-papers")
+    public ResponseEntity<List<PaperInfoDto>> queryPapers(@RequestParam Integer courseId, @RequestParam String creator) {
+        System.out.println(creator);
+        System.out.println(courseId);
+        List<PaperInfo> papers = paperQuestionService.findByCourseIdAndCreator(courseId, creator);
         List<PaperInfoDto> dtos = new ArrayList<>();
 
         for (PaperInfo paperInfo : papers) {
@@ -72,4 +76,11 @@ public class PaperQuestionController {
         paperQuestionService.deletePaperById(request.getPaperId(), request.getCourseId());
         return ResponseEntity.ok("Paper and its questions deleted successfully");
     }
+    @ControllerAdvice
+     public class GlobalExceptionHandler {
+         @ExceptionHandler(ResourceNotFoundException.class)
+         public ResponseEntity<String> handleResourceNotFoundException(ResourceNotFoundException ex) {
+             return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+         }
+     }
 }
