@@ -1,9 +1,6 @@
 package com.example.onlinetestingbackend.controller;
 
-import com.example.onlinetestingbackend.dto.ExamPlainRecordDto;
-import com.example.onlinetestingbackend.dto.ExamresultDto;
-import com.example.onlinetestingbackend.dto.RecordDto;
-import com.example.onlinetestingbackend.dto.RecordsDto;
+import com.example.onlinetestingbackend.dto.*;
 import com.example.onlinetestingbackend.service.ExamQuestionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -31,12 +28,21 @@ public class ExamResultController {
         RecordDto recordDto=examQuestionService.searchbycourseIdandpaperIdandstudentId(courseId,paperId,studentId);
         return ResponseEntity.ok(recordDto);
     }
-    @GetMapping("search-exam_result-for-all")
+    @PostMapping("/edit-score")
+    public ResponseEntity<String> editScore(@RequestBody ScoreEditDto dto) {
+        try {
+            examQuestionService.editResultforonestudent(dto);
+            return ResponseEntity.ok("成绩已更新");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("修改失败：" + e.getMessage());
+        }
+    }
+    @GetMapping("search-examResult-for-all")
     public  ResponseEntity<List<ExamresultDto>> getAbstractExamResult(@RequestParam Integer paperId, @RequestParam Integer courseId){
         List<ExamresultDto> body=examQuestionService.searchexamresultbybycourseIdandpaperId(courseId,paperId);
         return ResponseEntity.ok(body);
     }
-    @GetMapping("search-exam_result-for-one")
+    @GetMapping("search-examResult-for-one")
     public  ResponseEntity<ExamresultDto> getAbstractExamResultForOne(@RequestParam Integer paperId, @RequestParam Integer courseId,@RequestParam Integer studentId){
         ExamresultDto body=examQuestionService.searchexamresultbybycourseIdandpaperIdandstudentId(courseId,paperId,studentId);
         return ResponseEntity.ok(body);

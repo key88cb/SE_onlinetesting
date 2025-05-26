@@ -197,8 +197,8 @@ const openSettingsModal=(paperInfo)=>{
   currentPaperInfo.value = paperInfo
   selectedpaperInfo.value = paperInfo
 }
-const searchforinfo=(id,courseId)=>{
-  router.push(`/teacher/exams_detail/${courseId}/${id}`)
+const searchforinfo=(paperId,courseId)=>{
+  router.push(`/teacher/exams_detail/${courseId}/${paperId}`)
 }
 const savepaperInfoSettings = async () => {
   try{

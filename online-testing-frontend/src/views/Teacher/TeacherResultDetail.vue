@@ -16,7 +16,9 @@
 
   <div class="question-list">
     <h2>考试题目</h2>
-
+    <div class="edit-button">
+          <button class="btn edit-btn" @click="showSettingsModal = !showSettingsModal">{{ showSettingsModal ? '取消修改' : '编辑分数' }}</button>
+        </div>
     <div class="questions-container">
       <div
           v-for="(record, index) in EditedRecord()"
@@ -49,8 +51,15 @@
           </div> 
           </div>
         </div>
+        <div v-if="showSettingsModal" class="modal">
+        <div class="modal-content">
+          <h3>修改分数</h3>
+          <label for="newScore">新分数:</label>
+          <input type="number" id="newScore" v-model="record.editscore" />
+          <button @click="saveNewScore(record.editscore,record.courseId,record.paperId,record.questionId)">保存</button>
+        </div>
       </div>
-
+      </div>
       <div v-if="paperInfo.paperQuestions.length === 0" class="no-questions">
         暂无考试题目
       </div>
@@ -63,7 +72,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-
+const showSettingsModal = ref(false)
 const route = useRoute()
 const router = useRouter()
 const paperInfo = ref({
@@ -203,6 +212,7 @@ const EditedRecord=()=>{
       ...question,
       studentAnswer: recordq ? recordq.studentAnswer : '',
       getpoints: recordq ? recordq.points : 0,
+      editscore: recordq ? recordq.points : 0, // 编辑分数
     };
   });
 }
@@ -252,7 +262,35 @@ console.log(paperInfo.value)
   console.error(error)
 }
 }
-
+const saveNewScore=async(newScore,courseId,paperId,questionId)=>{
+  const studentId = parseInt(route.params.studentId)
+  console.log("修改分数",newScore,courseId,paperId,studentId,questionId)
+  try {
+    const url = `http://localhost:8080/api/exam/edit-score`;
+      const res=await fetch(url,{
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        courseId: courseId,
+        paperId: paperId,
+        studentId: studentId,
+        questionId:questionId,
+        score: newScore
+      }
+    )
+    })
+    if (!res.ok) {
+      throw new Error('网络错误')
+    }
+    console.log("修改分数成功")
+  }  catch (error) {
+    alert('修改分数失败，请检查网络或服务状态')
+    console.error(error)
+  }
+  fetchrecords(paperId, courseId, studentId);
+}
 // 日期格式化
 const formatDate = (dateString) => {
 const date = new Date(dateString)

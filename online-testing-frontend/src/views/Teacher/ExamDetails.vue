@@ -1,6 +1,7 @@
 <template>
     <div class="actions">
       <button class="btn back-btn" @click="goBack">返回列表</button>
+      <button class="btn back-btn" @click="intoStudentScore">查看学生答题情况</button>
     </div>
   <div class="exam-details">
     <h1>考试详情 - {{ paperInfo.paperName }}</h1>
@@ -179,7 +180,7 @@ const fetchexamresults = async (paperId, courseId) => {
       courseId: courseId,
       paperId: paperId,
     });
-    const url = `http://localhost:8080/api/exam/search-exam_result-for-all?${params}`;
+    const url = `http://localhost:8080/api/exam/search-examResult-for-all?${params}`;
       const res=await fetch(url,{
       method: 'GET',
       headers: {
@@ -337,6 +338,9 @@ const formatDate = (dateString) => {
 const goBack = () => {
   router.push('/teacher/exam-management')
 }
+const intoStudentScore = () => {
+  router.push('/teacher/exam-details-student-score/' + paperInfo.value.courseId + '/' + paperInfo.value.paperId)
+}
 </script>
 
 <style scoped>
@@ -474,5 +478,9 @@ h1 {
   transition: height 0.3s ease;
   text-align: center;
   padding-top: 5px;
+}
+.actions {
+  display: flex;
+  justify-content: space-between;
 }
 </style>

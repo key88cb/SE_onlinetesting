@@ -107,6 +107,15 @@ public class ExamQuestionService {
         int score = scoreEditDto.getScore();
         int totalscore = 0;
         DetailedResult detailedResult =detailedResultRepository.findByPaperIdAndCourseIdAndStudentIdAndQuestionId(paperId,courseId,studentId,questionId);
+        DetailedResult detailedResult1 = new DetailedResult();
+        detailedResult1.setPaperId(paperId);
+        detailedResult1.setCourseId(courseId);
+        detailedResult1.setStudentId(studentId);
+        detailedResult1.setQuestionId(questionId);
+        detailedResult1.setPoints(score);
+        detailedResult1.setCorrectAnswer(detailedResult.getCorrectAnswer());
+        detailedResult1.setStudentAnswer(detailedResult.getStudentAnswer());
+        detailedResultRepository.save(detailedResult1);
         Optional<ExamResult> examResult=examResultRepository.findByPaperIdAndCourseIdAndStudentId(paperId,courseId,studentId);
         if (!examResult.isPresent()) {
             System.err.println("未查到对应学生");
@@ -344,7 +353,7 @@ public class ExamQuestionService {
         ExamresultDto examresultDto = new ExamresultDto();
         Optional<ExamResult> examResult =examResultRepository.findByPaperIdAndCourseIdAndStudentId(paperId,courseId,studentId);
         examresultDto.setStudentId(studentId);
-        if (examResult.isPresent()) {
+        if (!examResult.isPresent()) {
             examresultDto.setTotalScore(-1);
             return examresultDto;
         }
