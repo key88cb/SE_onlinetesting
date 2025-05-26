@@ -1,6 +1,7 @@
 package com.example.onlinetestingbackend.service;
 
 import com.example.onlinetestingbackend.dto.*;
+import com.example.onlinetestingbackend.dto.tempclass.AnalyseData;
 import com.example.onlinetestingbackend.entity.*;
 import com.example.onlinetestingbackend.entity.id.ExamResultId;
 import com.example.onlinetestingbackend.entity.id.PaperInfoId;
@@ -20,8 +21,6 @@ public class ExamQuestionService {
 
     @Autowired
     private ExamResultRepository examResultRepository;
-    @Autowired
-    private QuestionRepository questionRepository;
     @Autowired
     private PaperInfoRepository paperInfoRepository;
     @Autowired
@@ -178,7 +177,74 @@ public class ExamQuestionService {
             return "进入考试";
         }
     }
+    @Transactional
+    public RecordsDto searchbycourseIdandpaperId(Integer courseId, Integer paperId) {
+        RecordsDto results = new RecordsDto();
+        List<DetailedResult> temp=detailedResultRepository.findByPaperIdAndCourseId(paperId,courseId);
+        Map<Integer, Map<Integer, AnalyseData>> statsMap = new HashMap<>();
 
+        for (DetailedResult record : temp) {
+            Integer questionId = record.getQuestionId();
+            String studentAnswer = record.getStudentAnswer();
+            Integer points = record.getPoints();
+
+            // 如果没有这个课程，创建一个 map
+            statsMap.putIfAbsent(courseId, new HashMap<>());
+            Map<Integer, AnalyseData> questionMap = statsMap.get(courseId);
+
+            // 如果没有这道题，初始化一个 AnalyseData
+            questionMap.putIfAbsent(questionId, new AnalyseData());
+            AnalyseData data = questionMap.get(questionId);
+
+            // 记录一次答题
+            data.recordAnswer(studentAnswer, points);
+        }
+        Map<Integer, AnalyseData> questionMap = statsMap.get(courseId);
+        List<AnalyseDto> analyseResult = new ArrayList<>();
+        for (Integer questionId : questionMap.keySet()) {
+            AnalyseData data = questionMap.get(questionId);
+
+            AnalyseDto dto = new AnalyseDto();
+            dto.setAvgscore(data.getAverageScore());
+
+            // 将选项 A/B/C/D 的计数顺序放入 List<Integer>
+            List<Integer> counts = new ArrayList<>();
+            counts.add(data.getOptionCounts().get("A"));
+            counts.add(data.getOptionCounts().get("B"));
+            counts.add(data.getOptionCounts().get("C"));
+            counts.add(data.getOptionCounts().get("D"));
+
+            dto.setCounts(counts);
+            dto.setQuestionId(questionId);
+            analyseResult.add(dto);
+    }
+        results.setCourseId(courseId);
+        results.setPaperId(paperId);
+        results.setAnalyses(analyseResult);
+        return results;
+}
+    @Transactional
+    public RecordDto searchbycourseIdandpaperIdandstudentId(Integer courseId, Integer paperId, Integer studentId) {
+       List<DetailedResult> result=detailedResultRepository.findByPaperIdAndCourseIdAndStudentId(paperId,courseId,studentId);
+       List<DetailedResultDto> resultDtos=new ArrayList<>();
+       RecordDto recordDto=new RecordDto();
+       recordDto.setPaperId(paperId);
+       recordDto.setCourseId(courseId);
+       recordDto.setStudentId(studentId);
+       for(DetailedResult detailedResult:result){
+           DetailedResultDto detailedResultDto=new DetailedResultDto();
+           detailedResultDto.setPaperId(paperId);
+           detailedResultDto.setCourseId(courseId);
+           detailedResultDto.setStudentId(studentId);
+           detailedResultDto.setQuestionId(detailedResult.getQuestionId());
+           detailedResultDto.setCorrectAnswer(detailedResult.getCorrectAnswer());
+           detailedResultDto.setPoints(detailedResult.getPoints());
+           detailedResultDto.setStudentAnswer(detailedResult.getStudentAnswer());
+           resultDtos.add(detailedResultDto);
+       }
+       recordDto.setDetailedResults(resultDtos);
+       return recordDto;
+    }
     @Transactional
     public void submitExamManually(ExamPlainRecordDto dto) throws Exception {
         int paperId = dto.getPaperId();
@@ -219,6 +285,18 @@ public class ExamQuestionService {
             e.printStackTrace();
             System.err.println("保存考试temp失败");
         }
+    }
+    @Transactional
+    public List<ExamresultDto> searchexamresultbybycourseIdandpaperId(Integer courseId,Integer paperId){
+        List<ExamresultDto> examresultDtos=new ArrayList<>();
+        List<ExamResult> examResults = examResultRepository.findByPaperIdAndCourseId(paperId,courseId);
+        for (ExamResult examResult : examResults) {
+            ExamresultDto examresultDto=new ExamresultDto();
+            examresultDto.setStudentId(examResult.getStudentId());
+            examresultDto.setTotalScore(examResult.getTotalScore());
+            examresultDtos.add(examresultDto);
+        }
+        return examresultDtos;
     }
 
     @Scheduled(cron = "0 0/1 * * * ?")
@@ -261,4 +339,16 @@ public class ExamQuestionService {
     private String serializeAnswers(ExamPlainRecordDto dto) throws Exception {
     return objectMapper.writeValueAsString(dto);
 }
+
+    public ExamresultDto searchexamresultbybycourseIdandpaperIdandstudentId(Integer courseId, Integer paperId, Integer studentId) {
+        ExamresultDto examresultDto = new ExamresultDto();
+        Optional<ExamResult> examResult =examResultRepository.findByPaperIdAndCourseIdAndStudentId(paperId,courseId,studentId);
+        examresultDto.setStudentId(studentId);
+        if (examResult.isPresent()) {
+            examresultDto.setTotalScore(-1);
+            return examresultDto;
+        }
+        examresultDto.setTotalScore(examResult.get().getTotalScore());
+        return examresultDto;
+    }
 }
