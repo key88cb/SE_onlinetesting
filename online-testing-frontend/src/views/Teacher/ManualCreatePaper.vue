@@ -331,6 +331,7 @@ const Search_for_all_questions = async () => {
       throw new Error('网络错误')
     }
 //此处需要修改
+    console.log(res)
     const data = await res.json()
     questions.value = data
   } catch (error) {
