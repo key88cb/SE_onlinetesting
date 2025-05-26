@@ -81,7 +81,7 @@ public class ExamPaperEditTest {
                 examPlainRecordDto.setStudentId(studentId);
                 examPlainRecordDto.setAnswers(plainAnswerDtoList);
                 try {
-                    examQuestionService.submitExamManually(examPlainRecordDto);
+                    examQuestionService.judgeResult(examPlainRecordDto);
                 }catch (Exception e){
                     e.printStackTrace();
                     System.out.println(e.getMessage());

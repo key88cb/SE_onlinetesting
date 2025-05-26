@@ -13,20 +13,23 @@
         <strong>试卷总分：</strong>{{ paperInfo.totalScores }}
       </div>
     </div>
-
+    
     <div class="question-list">
       <h2>考试题目</h2>
-
       <div class="questions-container">
         <div
-            v-for="(question, index) in paperInfo.paperQuestions"
-            :key="question.questionid"
+            v-for="(question, index) in EditedpaperQuestions()"
+            :key="question.questionId"
             class="question-card"
         >
           <div class="question-header">
             <span class="type-badge">{{ question.questionType }}</span>
             <span class="question-number">{{ index + 1 }}. {{ question.questionText }}</span>
-            <span class="question-score">{{ question.points }}分</span>
+            <span class="question-score">
+              <span class="question-score1">得分率&nbsp;</span>
+              <span class="question-score2">{{question.avgScore}}&nbsp;/&nbsp;</span>
+              <span class="question-score">{{ question.points }}分</span>
+            </span>
           </div>
           <div class="options">
             <div
@@ -34,13 +37,50 @@
                 :key="option.value"
                 :class="['option', { correct: option.isCorrect }]"
             >
+            <div class="option-question">
               {{ String.fromCharCode(65 + optionIndex) }}. {{ option.label }}
+            </div>
+            <div> &nbsp;&nbsp;{{ option.count }}人选择该选项</div>
             </div>
           </div>
         </div>
 
         <div v-if="paperInfo.paperQuestions.length === 0" class="no-questions">
           暂无考试题目
+        </div>
+
+      </div>
+    </div>
+    <div class="charts-container">
+      <h2>分数分布</h2>
+      <div class="chart">
+        <div class="score-distribution"
+        >
+        
+          <div
+            v-for="range in scoreDistribution()"
+            :key="range.label"
+            class="distribution-bar"
+            :style="{
+              height: range.percentage + '%',
+              width: '80px',
+              margin: '0 25px',
+              display: 'flex',
+              flexDirection: 'column-reverse',
+              justifyContent: 'flex-end',
+              alignItems: 'center',
+              backgroundColor: '#42b883',
+              color: '#fff',
+              fontSize: '12px'
+            }"
+          >
+            <div class="bar-label" style="text-align: center;">
+              {{ range.label }}
+            </div>
+            <div class="bar-value" style="text-align: center;">
+              {{ range.count }}人<br>({{ range.percentage }}%)
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -54,6 +94,25 @@ import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
 const router = useRouter()
+const allexamresults=ref([{
+  studentId:1,
+  totalScore: 65,},
+  {
+  studentId:2,
+  totalScore: 70,
+  }
+]
+)
+const allresults = ref({
+  courseId: 201,
+  paperId: 101,
+  analyses:[{
+    avgscore:1.1,
+    counts:[3,2,1,1],
+    questionId:1
+  }
+  ]
+})
 const paperInfo = ref({
   paperId: 101,
   courseId: 201,
@@ -109,16 +168,134 @@ onMounted(() => {
   const paperId = parseInt(route.params.paperId)
   const courseId = parseInt(route.params.courseId)
   fetchPaperQuestions(paperId, courseId);
+  fetchresult(paperId, courseId);
+  fetchexamresults(paperId, courseId);
 })
+const fetchexamresults = async (paperId, courseId) => {
+  // console.log(constId.value,creator.value)
+  // 模拟网络延迟
+    try {
+      const params = new URLSearchParams({
+      courseId: courseId,
+      paperId: paperId,
+    });
+    const url = `http://localhost:8080/api/exam/search-exam_result-for-all?${params}`;
+      const res=await fetch(url,{
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+    })
+    if (!res.ok) {
+      throw new Error('网络错误')
+    }
+    const data =await res.json()
+    console.log("examresults:",data)
+    allexamresults.value = data
+  }  catch (error) {
+    alert('加载examresults失败，请检查网络或服务状态')
+    console.error(error)
+  }
+}
+const fetchresult = async (paperId, courseId) => { 
+  // console.log(constId.value,creator.value)
+  // 模拟网络延迟
+    try {
+      const params = new URLSearchParams({
+      courseId: courseId,
+      paperId: paperId,
+    });
+    const url = `http://localhost:8080/api/exam/search-exam-for-all?${params}`;
+      const res=await fetch(url,{
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+    })
+    if (!res.ok) {
+      throw new Error('网络错误')
+    }
+//此处需要修改
+  const data =await res.json()
+  allresults.value = data
+  console.log(allresults.value)
+  console.log('hey')
+    // paperInfos.value = data
+  } catch (error) {
+    alert('加载答题数据失败，请检查网络或服务状态')
+    console.error(error)
+  }
+}
+const EditedpaperQuestions = () => {
+  const questions = paperInfo.value.paperQuestions;
+  console.log(questions)
+  return questions.map(question => {
+    const analysis = allresults.value.analyses.find(
+      item => item.questionId === question.questionId
+    );
 
+    return {
+      ...question,
+      avgScore: analysis?.avgscore.toFixed(2) ?? 0,
+      counts: analysis?.counts ?? [0, 0, 0, 0]
+    };
+  });
+};
+const scoreDistribution =() => {
+      const distribution = {
+        '90%以上': 0,
+        '80%-90%': 0,
+        '70%-80%': 0,
+        '60%-70%': 0,
+        '60%以下': 0,
+      };
 
+      const total = allexamresults.value.length;
+
+      allexamresults.value.forEach(result => {
+        const percent = (result.totalScore / paperInfo.totalScores) * 100;
+if (percent >= 90) {
+          distribution['90%以上']++;
+        } else if (percent >= 80) {
+          distribution['80%-90%']++;
+        } else if (percent >= 70) {
+          distribution['70%-80%']++;
+        } else if (percent >= 60) {
+          distribution['60%-70%']++;
+        } else {
+          distribution['60%以下']++;
+        }
+      });
+      console.log("分数分布:",distribution)
+      // 转换成数组用于渲染
+      return Object.keys(distribution).map(label => {
+        const count = distribution[label];
+        const percentage = total ? ((count / total) * 100).toFixed(1) : 0;
+        return {
+          label,
+          count,
+          percentage
+        };
+      });
+    }
 const getoptions = (question) => {
-  const letters = ['A', 'B', 'C', 'D']
-  return letters.map(letter => ({
+  if(question.questionType ==="True/False"){
+    const letters = ['A', 'B']
+  return letters.map((letter,index) => ({
     value: letter,
     label: question[`option${letter}`],
-    isCorrect: question.correctAnswer.includes(letter)
+    isCorrect: question.correctAnswer.includes(letter),
+    count: question.counts[index]
   }))
+  }{
+  const letters = ['A', 'B', 'C', 'D']
+  return letters.map((letter,index) => ({
+    value: letter,
+    label: question[`option${letter}`],
+    isCorrect: question.correctAnswer.includes(letter),
+    count: question.counts[index]
+  }))
+  }
 }
 const fetchPaperQuestions = async (paperId, courseId) => {
   // console.log(constId.value,creator.value)
@@ -141,7 +318,7 @@ const fetchPaperQuestions = async (paperId, courseId) => {
 //此处需要修改
   const data =await res.json()
   paperInfo.value = data
-  console.log(paperInfo.value)
+  console.log("paperInfo:",paperInfo.value)
   // console.log('hey')
     // paperInfos.value = data
   } catch (error) {
@@ -155,7 +332,6 @@ const formatDate = (dateString) => {
   const date = new Date(dateString)
   return date.toLocaleString('zh-CN')
 }
-
 
 // 返回考试列表
 const goBack = () => {
@@ -230,7 +406,14 @@ h1 {
 
 .question-score {
   font-weight: bold;
-  color: #0d47a1;
+}
+.question-score1{ 
+  font-weight: bold;
+  color:red;
+}
+.question-score2{
+  font-weight: bold;
+  color:green;
 }
 
 .options {
@@ -275,5 +458,21 @@ h1 {
 
 .back-btn:hover {
   background-color: #444;
+}
+.score-distribution {
+  width:1000px;
+  display: flex;
+  align-items: flex-end;
+  height: 300px;
+  border: 1px solid #ddd;
+  margin:0 auto;
+  padding: 20px;
+  background-color: #f9f9f9;
+}
+
+.distribution-bar {
+  transition: height 0.3s ease;
+  text-align: center;
+  padding-top: 5px;
 }
 </style>
