@@ -21,7 +21,8 @@ import ManualCreatePaper from '../views/teacher/ManualCreatePaper.vue' // 手动
 import AutoCreatePaper from '../views/teacher/AutoCreatePaper.vue'
 import TeacherPastPapers from '../views/teacher/PastPapers.vue'
 import ExamManagement from '../views/teacher/ExamManagement.vue'
-
+import StudentsScores from '../views/teacher/ExamStudentScore.vue'
+import TeacherResultDetail from '../views/teacher/TeacherResultDetail.vue'
 const routes = [
   {
     path: '/',
@@ -64,7 +65,7 @@ const routes = [
   },
   // 新增路由
   {
-    path: '/student/result/:id/details',
+    path: '/student/result/:courseId/:paperId/:studentId',
     name: 'StudentResultDetails',
     component: StudentResultDetail
   },
@@ -113,6 +114,16 @@ const routes = [
     path: '/teacher/exam-management',
     name: 'ExamManagement',
     component: ExamManagement
+  },
+  {
+    path: '/teacher/exam-details-student-score/:courseId/:paperId',
+    name: 'StudentsScores',
+    component: StudentsScores
+  },
+  {
+    path: '/teacher/exam-detail/student-exam-detail/:courseId/:paperId/:studentId',
+    name: 'TeacherResultDetail',
+    component: TeacherResultDetail
   }
 ]
 
