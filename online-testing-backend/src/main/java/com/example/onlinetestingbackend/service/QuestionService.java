@@ -184,4 +184,25 @@ public class QuestionService {
         // 删除 Question 时，与之关联的 Option 应该会被自动删除。
         questionRepository.deleteById(questionId);
     }
+
+    public List<QuestionDto> findQuestionsByCriteria(String subjectCategory, String questionType, List<String> tags) {
+        List<Question> questions;
+
+        if (questionType != null && tags != null) {
+            questions = questionRepository.findByQuestionTypeAndTags(questionType, tags);
+        } else if (subjectCategory != null) {
+            questions = questionRepository.findBySubjectCategory(subjectCategory);
+        } else if (questionType != null) {
+            questions = questionRepository.findByQuestionType(questionType);
+        } else if (tags != null) {
+            questions = questionRepository.findByTags(tags);
+        } else {
+            questions = questionRepository.findAll();
+        }
+
+        return questions.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
 }

@@ -42,22 +42,13 @@ public class QuestionController {
     public ResponseEntity<List<QuestionDto>> getAllQuestions(
             @RequestParam(required = false) String subjectCategory,
             @RequestParam(required = false) String questionType,
-            @RequestParam(required = false) String tags // 假设按标签模糊搜索
-            // 可以根据 QuestionRepository 和 QuestionService 添加更多查询参数
+            @RequestParam(required = false) List<String> tags
     ) {
-        List<QuestionDto> questions;
-        if (subjectCategory != null) {
-            questions = questionService.findBySubjectCategory(subjectCategory);
-        } else if (questionType != null) {
-            questions = questionService.findByQuestionType(questionType);
-        } else if (tags != null) {
-            questions = questionService.findByTagsContaining(tags);
-        }
-        else {
-            questions = questionService.getAllQuestions();
-        }
+        List<QuestionDto> questions = questionService.findQuestionsByCriteria(subjectCategory, questionType, tags);
         return ResponseEntity.ok(questions);
     }
+
+
 
     // 4. 更新题目 (PUT /api/questions/{id})
     @PutMapping("/{id}")
@@ -74,11 +65,11 @@ public class QuestionController {
         return ResponseEntity.noContent().build();
     }
     // 十分建议在类中加这个全局异常处理器 调试起来会很方便！
-     @ControllerAdvice
-     public class GlobalExceptionHandler {
-         @ExceptionHandler(ResourceNotFoundException.class)
-         public ResponseEntity<String> handleResourceNotFoundException(ResourceNotFoundException ex) {
-             return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
-         }
-     }
+    @ControllerAdvice
+    public class GlobalExceptionHandler {
+        @ExceptionHandler(ResourceNotFoundException.class)
+        public ResponseEntity<String> handleResourceNotFoundException(ResourceNotFoundException ex) {
+            return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+        }
+    }
 }
