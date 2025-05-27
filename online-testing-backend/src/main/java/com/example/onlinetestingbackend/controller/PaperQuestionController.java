@@ -2,10 +2,8 @@ package com.example.onlinetestingbackend.controller;
 
 import com.example.onlinetestingbackend.dto.*;
 import com.example.onlinetestingbackend.entity.PaperInfo;
-import com.example.onlinetestingbackend.exception.ResourceNotFoundException;
 import com.example.onlinetestingbackend.service.PaperQuestionService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,6 +19,7 @@ public class PaperQuestionController {
 
     @PostMapping("/manual-create-paper")
     public ResponseEntity<String> createManualPaper(@RequestBody ManualPaperCreationRequestDto request) {
+        System.out.println("Received request: " + request);
         paperQuestionService.createManualPaper(request);
         return ResponseEntity.ok("Manual paper created successfully");
     }
@@ -43,11 +42,9 @@ public class PaperQuestionController {
         return ResponseEntity.ok("Paper time updated successfully");
     }
 
-    @GetMapping("/query-papers")
-    public ResponseEntity<List<PaperInfoDto>> queryPapers(@RequestParam Integer courseId, @RequestParam String creator) {
-        System.out.println(creator);
-        System.out.println(courseId);
-        List<PaperInfo> papers = paperQuestionService.findByCourseIdAndCreator(courseId, creator);
+    @PostMapping("/query-papers")
+    public ResponseEntity<List<PaperInfoDto>> queryPapers(@RequestBody QueryPaperRequestDto request) {
+        List<PaperInfo> papers = paperQuestionService.findByCourseIdAndCreator(request.getCourseId(), request.getCreator());
         List<PaperInfoDto> dtos = new ArrayList<>();
 
         for (PaperInfo paperInfo : papers) {
@@ -65,9 +62,9 @@ public class PaperQuestionController {
         return ResponseEntity.ok(dtos);
     }
 
-    @GetMapping("/query-paper-and-questions")
-    public ResponseEntity<PaperInfoDto> queryPaperAndQuestions(@RequestParam Integer courseId,@RequestParam Integer paperId) {
-        PaperInfoDto paperAndQuestions = paperQuestionService.findByCourseIdAndPaperId(courseId,paperId);
+    @PostMapping("/query-paper-and-questions")
+    public ResponseEntity<PaperInfoDto> queryPaperAndQuestions(@RequestBody QueryPaperQuestionRequestDto request) {
+        PaperInfoDto paperAndQuestions = paperQuestionService.findByCourseIdAndPaperId(request.getCourseId(), request.getPaperId());
         return ResponseEntity.ok(paperAndQuestions);
     }
 
@@ -76,11 +73,4 @@ public class PaperQuestionController {
         paperQuestionService.deletePaperById(request.getPaperId(), request.getCourseId());
         return ResponseEntity.ok("Paper and its questions deleted successfully");
     }
-    @ControllerAdvice
-     public class GlobalExceptionHandler {
-         @ExceptionHandler(ResourceNotFoundException.class)
-         public ResponseEntity<String> handleResourceNotFoundException(ResourceNotFoundException ex) {
-             return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
-         }
-     }
 }

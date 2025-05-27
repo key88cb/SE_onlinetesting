@@ -10,6 +10,15 @@ public class AutoPaperCreationRequestDto {
     private LocalDateTime closeTime;
     private List<QuestionTypeConfig> questionTypeConfigs;
     private String paperName;
+    private List<ManualPaperQuestionDto> questions;
+
+    public List<ManualPaperQuestionDto> getQuestions() {
+        return questions;
+    }
+
+    public void setQuestions(List<ManualPaperQuestionDto> questions) {
+        this.questions = questions;
+    }
 
     public String getPaperName() {
         return paperName;

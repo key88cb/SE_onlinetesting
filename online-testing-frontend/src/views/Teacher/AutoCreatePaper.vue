@@ -7,13 +7,16 @@
         <label>试卷名称：</label>
         <input type="text" v-model="paper.title" placeholder="请输入试卷名称" />
       </div>
-
       <div class="form-group">
-        <label>考试科目：</label>
-        <select v-model="paper.subject">
-          <option value="">请选择科目</option>
-          <option v-for="subject in subjects" :key="subject" :value="subject">{{ subject }}</option>
+        <label>考试课程班级：</label>
+        <select v-model="paper.course">
+          <option value="">请选择考试课程班级</option>
+          <option v-for="course in courses" :key="course" :value="course">{{ course }}</option>
         </select>
+      </div>
+      <div class="form-group">
+        <label>出卷人：</label>
+        <input type="text" v-model="paper.creator" placeholder="请输入出卷人" />
       </div>
 
       <div class="form-group">
@@ -25,20 +28,50 @@
         </div>
       </div>
 
-      <div class="form-group">
+      <div class="form-group input-group-container">
         <label>每种题型数量：</label>
-        <div class="quantity-inputs">
-          <div class="input-group">
-            <span>单选题：</span>
-            <input type="number" min="0" max="50" v-model.number="config.singleChoiceCount" />
+        <div class="quantity-inputs full-width">
+          <div class="input-unit-group">
+            <span class="input-label">单选题：</span>
+            <input type="number" min="0" max="50" v-model.number="config.singleChoiceCount"
+                   :disabled="!config.types.includes('单选')" />
+            <span class="unit">道</span>
           </div>
-          <div class="input-group">
-            <span>多选题：</span>
-            <input type="number" min="0" max="50" v-model.number="config.multiChoiceCount" />
+          <div class="input-unit-group">
+            <span class="input-label">多选题：</span>
+            <input type="number" min="0" max="50" v-model.number="config.multiChoiceCount"
+                   :disabled="!config.types.includes('多选')" />
+            <span class="unit">道</span>
           </div>
-          <div class="input-group">
-            <span>判断题：</span>
-            <input type="number" min="0" max="50" v-model.number="config.judgmentCount" />
+          <div class="input-unit-group">
+            <span class="input-label">判断题：</span>
+            <input type="number" min="0" max="50" v-model.number="config.judgmentCount"
+                   :disabled="!config.types.includes('判断')" />
+            <span class="unit">道</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group input-group-container">
+        <label>每种题型单题分数：</label>
+        <div class="quantity-inputs full-width">
+          <div class="input-unit-group">
+            <span class="input-label">单选题：</span>
+            <input type="number" min="1" max="10" v-model.number="config.singleChoiceScore"
+                   :disabled="!config.types.includes('单选')" />
+            <span class="unit">分</span>
+          </div>
+          <div class="input-unit-group">
+            <span class="input-label">多选题：</span>
+            <input type="number" min="1" max="10" v-model.number="config.multiChoiceScore"
+                   :disabled="!config.types.includes('多选')" />
+            <span class="unit">分</span>
+          </div>
+          <div class="input-unit-group">
+            <span class="input-label">判断题：</span>
+            <input type="number" min="1" max="10" v-model.number="config.judgmentScore"
+                   :disabled="!config.types.includes('判断')" />
+            <span class="unit">分</span>
           </div>
         </div>
       </div>
@@ -61,16 +94,16 @@
         <div class="preview-questions">
           <div v-for="(question, index) in previewQuestions" :key="question.id" class="question-preview">
             <div class="question-header">
-              <span class="type-badge">{{ question.type }}</span>
-              <span class="question-number">{{ index + 1 }}. {{ question.text }}</span>
-              <span class="score">{{ question.score }}分</span>
+              <span class="type-badge">{{ question.questionType }}</span>
+              <span class="question-number">{{ index + 1 }}. {{ question.questionText }}</span>
+              <span class="score">{{ question.points }}分</span>
             </div>
             <div class="options">
               <div
                   v-for="(option, optionIndex) in question.options"
                   :key="option.value"
                   :class="['option', { correct: option.isCorrect }]">
-                {{ String.fromCharCode(65 + optionIndex) }}. {{ option.label }}
+                {{ String.fromCharCode(65 + optionIndex) }}. {{ option.optionText }}
               </div>
             </div>
           </div>
@@ -107,30 +140,8 @@
         </div>
 
         <div class="form-group">
-          <label>考试时长：</label>
-          <div class="duration-picker">
-            <input type="number" min="10" v-model.number="examSettings.duration" />
-            <span>分钟</span>
-          </div>
-        </div>
-
-        <div class="form-group">
           <label>试卷总分：</label>
           <input type="number" min="1" v-model.number="examSettings.fullScore" disabled />
-        </div>
-
-        <div class="form-group">
-          <label>及格分数：</label>
-          <input type="number" min="0" :max="examSettings.fullScore" v-model.number="examSettings.passingScore" />
-        </div>
-
-        <div class="form-group">
-          <label>是否允许查看答案：</label>
-          <select v-model="examSettings.showAnswersAfter">
-            <option value="immediately">立即显示</option>
-            <option value="afterEnd">考试结束后显示</option>
-            <option value="never">不显示</option>
-          </select>
         </div>
 
         <div class="modal-buttons">
@@ -143,15 +154,17 @@
 </template>
 
 <script setup>
-import { ref, computed,onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+
 
 const router = useRouter()
 
 // 当前试卷数据
 const paper = ref({
   title: '',
-  subject: '',
+  course: '',
+  creator: '',
   questions: []
 })
 
@@ -159,84 +172,11 @@ const paper = ref({
 const examSettings = ref({
   startTime: '',
   endTime: '',
-  duration: 60,
   fullScore: 0,
-  passingScore: 0,
-  showAnswersAfter: 'afterEnd'
 })
 
 // 题库数据
-const questionBank = ref([
-  {
-    id: 1,
-    type: '单选',
-    subject: '操作系统原理',
-    text: '进程和线程的主要区别是什么？',
-    options: [
-      { value: 'A', label: '资源分配的基本单位', isCorrect: false },
-      { value: 'B', label: 'CPU调度的基本单位', isCorrect: true },
-      { value: 'C', label: '程序运行环境描述', isCorrect: false }
-    ]
-  },
-  {
-    id: 2,
-    type: '多选',
-    subject: '数据库基础',
-    text: '下列哪些是关系型数据库？',
-    options: [
-      { value: 'A', label: 'MySQL', isCorrect: true },
-      { value: 'B', label: 'MongoDB', isCorrect: false },
-      { value: 'C', label: 'PostgreSQL', isCorrect: true },
-      { value: 'D', label: 'Oracle', isCorrect: true }
-    ]
-  },
-  {
-    id: 3,
-    type: '判断',
-    subject: '计算机网络',
-    text: 'HTTP协议是无状态的协议。',
-    options: [
-      { value: 'A', label: '正确', isCorrect: true },
-      { value: 'B', label: '错误', isCorrect: false }
-    ]
-  },
-  {
-    id: 4,
-    type: '单选',
-    subject: '操作系统原理',
-    text: '以下哪个调度算法可能导致某些进程长期得不到执行？',
-    options: [
-      { value: 'A', label: '先来先服务(FCFS)', isCorrect: false },
-      { value: 'B', label: '短作业优先(SJF)', isCorrect: true },
-      { value: 'C', label: '轮转(RR)', isCorrect: false },
-      { value: 'D', label: '多级反馈队列', isCorrect: false }
-    ]
-  },
-  {
-    id: 5,
-    type: '单选',
-    subject: '数据库基础',
-    text: '在数据库设计中，规范化的主要目的是什么？',
-    options: [
-      { value: 'A', label: '提高查询速度', isCorrect: false },
-      { value: 'B', label: '减少冗余和更新异常', isCorrect: true },
-      { value: 'C', label: '增加数据量', isCorrect: false },
-      { value: 'D', label: '提升并发性能', isCorrect: false }
-    ]
-  },
-  {
-    id: 6,
-    type: '多选',
-    subject: '计算机网络',
-    text: '下列关于TCP/IP协议的说法哪些是正确的？',
-    options: [
-      { value: 'A', label: 'TCP是面向连接的协议', isCorrect: true },
-      { value: 'B', label: 'IP负责路由寻址', isCorrect: true },
-      { value: 'C', label: 'TCP保证传输可靠性', isCorrect: true },
-      { value: 'D', label: 'IP提供可靠传输', isCorrect: false }
-    ]
-  }
-])
+const confirmedQuestions = ref([])
 
 // 组卷配置
 const config = ref({
@@ -244,226 +184,170 @@ const config = ref({
   singleChoiceCount: 2,
   multiChoiceCount: 1,
   judgmentCount: 1,
-  topics: ''
+  topics: '',
+  singleChoiceScore: 2,
+  multiChoiceScore: 3,
+  judgmentScore: 1
 })
 
 // 控制模态框显示
 const showPreviewModal = ref(false)
 const showPublishModal = ref(false)
+
 // 所有科目
-const subjects = ref(['操作系统原理', '数据库基础', '计算机网络'])
+const courses = ref(['操作系统原理', '数据库基础', '计算机网络'])
 
 // 计算预览问题
-const filteredQuestions = computed(() => {
-  let result = [...questionBank.value]
-
-  // 按科目过滤
-  if (paper.value.subject) {
-    result = result.filter(q => q.subject === paper.value.subject)
-  }
-
-  // 按考点过滤
-  if (config.value.topics) {
-    const topicKeywords = config.value.topics.toLowerCase().split(',').map(t => t.trim())
-    result = result.filter(q =>
-        topicKeywords.some(topic => q.text.toLowerCase().includes(topic))
-    )
-  }
-
-  return result
-})
-onMounted(async () => {
-  try {
-    // const res =Search_for_all_questions()
-    // questions.value = res.data 
-  } catch (error) {
-    alert('加载题目失败，请检查网络或服务状态')
-    console.error(error)
-  }
-})
-// 根据当前配置生成的试卷题目
 const previewQuestions = computed(() => {
-  let selectedQuestions = []
-
-  // 如果没有选择任何题型，直接返回空数组
-  if (config.value.types.length === 0) {
-    return []
-  }
-
-  // 获取符合要求的题目
-  let filtered = filteredQuestions.value
-
-  // 如果没有匹配的题目，直接返回空数组
-  if (!filtered.length) {
-    return []
-  }
-
-  // 按照题型分别随机抽取题目
-  config.value.types.forEach(type => {
-    const count = getCountByType(type)
-    const availableQuestions = filtered.filter(q => q.type === type)
-
-    if (availableQuestions.length >= count) {
-      // 如果有足够的题目，随机选取
-      const randomQuestions = getRandomQuestions(availableQuestions, count)
-      selectedQuestions = [...selectedQuestions, ...randomQuestions]
-    } else {
-      // 如果题目不足，全部加入
-      selectedQuestions = [...selectedQuestions, ...availableQuestions]
-    }
-  })
-
-  // 添加分数配置
-  return selectedQuestions.map(question => ({
+  return paper.value.questions.map(question => ({
     ...question,
-    score: getQuestionScore(question)
+    points: getQuestionScore(question)
   }))
 })
 
 // 计算总分
 const totalScore = computed(() => {
-  return previewQuestions.value.reduce((sum, q) => sum + q.score, 0)
+  return previewQuestions.value.reduce((sum, q) => sum + q.points, 0)
 })
 
-// 获取各题型数量
-const getCountByType = (type) => {
-  switch (type) {
-    case '单选': return config.value.singleChoiceCount
-    case '多选': return config.value.multiChoiceCount
-    case '判断': return config.value.judgmentCount
+// 根据题型动态计算每题分数
+function getQuestionScore(question) {
+  switch (question.questionType) {
+    case 'Single Choice': return config.value.singleChoiceScore
+    case 'Multiple Choice': return config.value.multiChoiceScore
+    case 'True/False': return config.value.judgmentScore
     default: return 0
   }
 }
 
-// 根据题型动态计算每题分数
-const getQuestionScore = (question) => {
-  switch (question.type) {
-    case '单选': return 2
-    case '多选': return 3
-    case '判断': return 1
-    default: return 0
+async function fetchQuestionsFromAPI(params = {}) {
+  try {
+    const url = new URL('http://localhost:8080/api/questions')
+    if (params.questionType) url.searchParams.append('questionType', params.questionType)
+    if (params.tags) url.searchParams.append('tags', params.tags)
+
+    const res = await fetch(url, {method: 'GET'})
+    if (!res.ok) throw new Error('加载题库失败')
+    const data = await res.json()
+    return data
+  } catch (error) {
+    alert(error.message)
+    return []
   }
 }
 
 // 预览试卷
-const previewPaper = () => {
-  var flag=0
-  if (!paper.value.title.trim()) {
+async function previewPaper() {
+  if (!paper.value.title) {
     alert('请填写试卷名称')
     return
   }
-
-  if (!paper.value.subject) {
-    alert('请选择考试科目')
+  if (!paper.value.course) {
+    alert('请选择考试课程')
+    return
+  }
+  if (!paper.value.creator) {
+    alert('请填写出卷人')
     return
   }
 
-  // 检查是否有题型被选中
-  if (config.value.types.length === 0) {
-    alert('请选择至少一种题型')
+  const availableQuestions = {}
+  // 检查题目数量是否超过题库总量
+  for (const type of config.value.types) {
+    let questionTypeBackend = ''
+    if (type === '单选') questionTypeBackend = 'Single Choice'
+    else if (type === '多选') questionTypeBackend = 'Multiple Choice'
+    else if (type === '判断') questionTypeBackend = 'True/False'
+
+    // 获取该题型的总数量
+    const topics = config.value.topics?.trim()
+    const tags = topics ? topics.split(',').map(t => t.trim()).filter(Boolean) : []
+
+    const questions = await fetchQuestionsFromAPI({
+      questionType: questionTypeBackend,
+      tags: tags.join(',')  // 传递给后端 API
+    })
+
+    availableQuestions[type] = questions.length
+  }
+
+  // 检查用户输入的题数是否超过题库数量
+  const errors = []
+
+  if (config.value.types.includes('单选') && config.value.singleChoiceCount > availableQuestions['单选']) {
+    errors.push(`单选题请求 ${config.value.singleChoiceCount} 道，题库仅提供 ${availableQuestions['单选']} 道`)
+  }
+  if (config.value.types.includes('多选') && config.value.multiChoiceCount > availableQuestions['多选']) {
+    errors.push(`多选题请求 ${config.value.multiChoiceCount} 道，题库仅提供 ${availableQuestions['多选']} 道`)
+  }
+  if (config.value.types.includes('判断') && config.value.judgmentCount > availableQuestions['判断']) {
+    errors.push(`判断题请求 ${config.value.judgmentCount} 道，题库仅提供 ${availableQuestions['判断']} 道`)
+  }
+
+  if (errors.length > 0) {
+    alert('题数超出题库限制：\n' + errors.join('\n'))
     return
   }
 
-  // 检查题目数量是否足够
-  config.value.types.forEach(type => {
-    const requiredCount = getCountByType(type)
-    const availableCount = filteredQuestions.value.filter(q => q.type === type).length
+  let selectedQuestions = []
+  // 获取所有配置的题型
+  for (const type of config.value.types) {
+    let questionTypeBackend = ''
+    if (type === '单选') questionTypeBackend = 'Single Choice'
+    else if (type === '多选') questionTypeBackend = 'Multiple Choice'
+    else if (type === '判断') questionTypeBackend = 'True/False'
+    // 获取题目数量
+    let count = 0
+    if (type === '单选') count = config.value.singleChoiceCount
+    else if (type === '多选') count = config.value.multiChoiceCount
+    else if (type === '判断') count = config.value.judgmentCount
+    if (count <= 0) continue
 
-    if (availableCount < requiredCount) {
-      alert(`对于${type}题型，只有${availableCount}道可用题目，少于您要求的${requiredCount}道`)
-      flag=1
-      return
-    }
-  })
-  if (flag==1){
-    return
-  }
-  // 检查总题数是否为0
-  const totalQuestions = previewQuestions.value.length
-  if (totalQuestions === 0) {
-    alert('根据您的设置，无法生成包含任何题目的试卷')
-    return
-  }
+    // 调用 API 查询题目
+    const questions = await fetchQuestionsFromAPI({
+      questionType: questionTypeBackend,
+      tags: config.value.topics
+    })
 
+    // 随机选取题目
+    const shuffled = [...questions].sort(() => 0.5 - Math.random())
+    selectedQuestions.push(...shuffled.slice(0, count))
+  }
+  // 对每个问题进行过滤，判断题只显示 A/B
+  const filteredQuestions = selectedQuestions.map(question => ({
+    ...question,
+    options: question.questionType === 'True/False'
+        ? question.options.slice(0, 2)
+        : question.options
+  }))
+
+  // 更新试卷预览
+  paper.value.questions = filteredQuestions
+  confirmedQuestions.value = [...filteredQuestions]
+  examSettings.value.fullScore = totalScore.value
   showPreviewModal.value = true
 }
 
 // 关闭预览模态框
-const closePreviewModal = () => {
+function closePreviewModal() {
   showPreviewModal.value = false
 }
 
 // 重新生成试卷
-const generateNewPaper = () => {
+function generateNewPaper() {
   closePreviewModal()
   previewPaper()
 }
 
-
 // 去发布
-const goToPublish = () => {
-  // Create_Exam_Paper()
+function goToPublish() {
   closePreviewModal()
   examSettings.value.fullScore = totalScore.value
   showPublishModal.value = true
 }
 
-const Search_for_all_questions = async () => {
-  try {
-    const res = await fetch('http://localhost:8080/api/questions',{
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      query: {
-        method:'search',
-        subject: currentsubject.value,
-      }
-    })
-    if (!res.ok) {
-      throw new Error('网络错误')
-    }
-//此处需要修改
-    const data = await res.json()
-    questions.value = data
-  } catch (error) {
-    alert('加载题目失败，请检查网络或服务状态')
-    console.error(error)
-  }
-}
-const Create_Exam_Paper = async() => {
-  // 这里可以添加创建试卷的逻辑
-  try{
-    const res = await fetch('http://localhost:8080/api/questions',{
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        method:'create',
-        content:{
-          question_ids:paper.questions,
-          start_time:examSettings.value.startTime,
-          end_time:examSettings.value.endTime
-        }
-      })
-    })
-    if (!res.ok) {
-      throw new Error('网络错误')
-    }
-  }
-  catch (error) {
-    console.error('创建试卷失败:', error)
-    alert('创建试卷失败，请稍后再试')
-  }
-}
-// 取消发布
-const cancelPublish = () => {
-  showPublishModal.value = false
-}
-
-// 确认发布
-const confirmPublish = () => {
+// 发布试卷
+async function confirmPublish() {
   if (!examSettings.value.startTime || !examSettings.value.endTime) {
     alert('请填写完整的考试时间')
     return
@@ -474,19 +358,87 @@ const confirmPublish = () => {
     return
   }
 
-  alert('试卷发布成功！')
-  router.push('/teacher/exam-management')
+  try {
+    const payload = {
+      courseId: getCourseIdFromName(paper.value.course),
+      creator: paper.value.creator,
+      openTime: new Date(examSettings.value.startTime).toISOString().slice(0, 19),
+      closeTime: new Date(examSettings.value.endTime).toISOString().slice(0, 19),
+      paperName: paper.value.title,
+      questionTypeConfigs: buildQuestionTypeConfigs(),
+      questions: confirmedQuestions.value.map(q => ({
+        questionId: q.questionId,
+        points: getQuestionScore(q)
+      }))
+    }
+
+    const res = await fetch('http://localhost:8080/api/paper-questions/auto-create-paper', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        })
+
+    if (res.status === 200) {
+      alert('试卷发布成功！')
+      showPublishModal.value = false
+      await router.push('/teacher/exam-management')
+    }
+  } catch (error) {
+    console.error(error)
+    alert('发布试卷失败')
+  }
 }
 
-// 获取随机题目
-const getRandomQuestions = (questionsList, count) => {
-  const shuffled = [...questionsList].sort(() => Math.random() - 0.5)
-  return shuffled.slice(0, count)
+function getCourseIdFromName(courseName) {
+  // 假设这里根据 courseName 映射为实际 courseId，比如：
+  switch (courseName) {
+    case '操作系统原理': return 1
+    case '数据库基础': return 2
+    case '计算机网络': return 3
+    default: return -1
+  }
 }
 
-// 获取指定类型的题目数量
-const getTypeQuestionCount = (type) => {
-  return filteredQuestions.value.filter(q => q.type === type).length
+function buildQuestionTypeConfigs() {
+  const types = []
+  const topics = config.value.topics?.trim()
+
+  // 判断是否为空或空白字符串
+  const tags = topics ? topics.split(',').map(t => t.trim()).filter(Boolean) : null
+
+  if (config.value.types.includes('单选')) {
+    types.push({
+      type: 'Single Choice',
+      numberOfQuestions: config.value.singleChoiceCount,
+      pointsPerQuestion: config.value.singleChoiceScore,
+      tags: tags
+    })
+  }
+  if (config.value.types.includes('多选')) {
+    types.push({
+      type: 'Multiple Choice',
+      numberOfQuestions: config.value.multiChoiceCount,
+      pointsPerQuestion: config.value.multiChoiceScore,
+      tags: tags
+    })
+  }
+  if (config.value.types.includes('判断')) {
+    types.push({
+      type: 'True/False',
+      numberOfQuestions: config.value.judgmentCount,
+      pointsPerQuestion: config.value.judgmentScore,
+      tags: tags
+    })
+  }
+  return types
+}
+
+
+// 取消发布
+async function cancelPublish() {
+  showPublishModal.value = false
 }
 </script>
 
@@ -697,14 +649,16 @@ h1{
   background-color: #388e3c;
 }
 
-.datetime-pickers {
-  display: flex;
-  gap: 10px;
-  align-items: center;
+.datetime-pickers input[type="datetime-local"] {
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 1em;
 }
 
 .datetime-pickers span {
-  color: #666;
+  margin: 0 10px;
+  color: #555;
 }
 
 .duration-picker {
@@ -751,5 +705,43 @@ h1{
   padding: 40px;
   background: #f9f9f9;
   border-radius: 10px;
+}
+
+.input-group-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.quantity-inputs.full-width {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.input-unit-group {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+.input-label {
+  white-space: nowrap;
+  margin-right: 8px;
+  font-weight: normal;
+  color: #333;
+}
+
+.input-unit-group input[type="number"] {
+  width: 100%;
+  padding-right: 20px; /* 为单位留出空间 */
+  text-align: center;
+}
+
+.unit {
+  position: absolute;
+  right: 8px;
+  color: #666;
+  font-size: 0.9em;
+  pointer-events: none;
 }
 </style>

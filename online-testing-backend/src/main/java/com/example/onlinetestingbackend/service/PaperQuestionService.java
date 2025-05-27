@@ -128,50 +128,22 @@ public class PaperQuestionService {
         int trueFalseNum = 0;
 
         List<PaperQuestion> paperQuestions = new ArrayList<>();
+        if (request.getQuestions() != null && !request.getQuestions().isEmpty()) {
+            // 使用前端传入的题目列表
+            for (ManualPaperQuestionDto dto : request.getQuestions()) {
+                Question question = questionRepository.findById(dto.getQuestionId())
+                        .orElseThrow(() -> new IllegalArgumentException("Question not found"));
 
-        // Step 2: 根据每个题型配置获取题目
-        for (AutoPaperCreationRequestDto.QuestionTypeConfig config : request.getQuestionTypeConfigs()) {
-            String type = config.getType();
-            Integer num = config.getNumberOfQuestions();
-            Integer points = config.getPointsPerQuestion();
-            List<String> tags = config.getTags();
-
-            // 查询符合条件的题目（可根据 tag 和题型过滤）
-            List<Question> questions = questionRepository.findByQuestionTypeAndTags(type, tags);
-
-            if (questions.size() < num) {
-                throw new IllegalArgumentException("Not enough questions for type: " + type);
-            }
-
-            // 随机抽取指定数量的题目
-            List<Question> selectedQuestions = questions.stream()
-                    .sorted((q1, q2) -> ThreadLocalRandom.current().nextInt(-1, 2))
-                    .limit(num)
-                    .toList();
-
-            // 统计题型数量
-            if ("Single Choice".equalsIgnoreCase(type)) {
-                singleChoiceNum += selectedQuestions.size();
-                paperInfo.setHighestScoresForSingleChoice(points);
-            } else if ("Multiple Choice".equalsIgnoreCase(type)) {
-                multipleChoiceNum += selectedQuestions.size();
-                paperInfo.setHighestScoresForMultipleChoice(points);
-            } else if ("True/False".equalsIgnoreCase(type)) {
-                trueFalseNum += selectedQuestions.size();
-                paperInfo.setHighestScoresForTrueFalse(points);
-            }
-
-            // 构建 PaperQuestion 并计算总分
-            for (Question question : selectedQuestions) {
                 PaperQuestion pq = new PaperQuestion();
                 pq.setPaperId(paperId);
                 pq.setCourseId(request.getCourseId());
                 pq.setQuestionId(question.getQuestionId());
-                pq.setPoints(points);
+                pq.setPoints(dto.getPoints());
                 pq.setKnowledgePoints(String.join(",", question.getTags()));
                 pq.setQuestionText(question.getQuestionText());
                 pq.setCorrectAnswer(question.getCorrectAnswer());
                 pq.setQuestionType(question.getQuestionType());
+
                 if (question.getOptions() != null && !question.getOptions().isEmpty()) {
                     pq.setOptionA(question.getOptions().get(0).getOptionText());
                     if (question.getOptions().size() > 1) {
@@ -185,9 +157,35 @@ public class PaperQuestionService {
                     }
                 }
 
-                pq.setPaperInfo(paperInfo); // 关联 PaperInfo
+                pq.setPaperInfo(paperInfo);
                 paperQuestions.add(pq);
-                totalScores += points;
+
+                // 统计分数与题型数量
+                String type = question.getQuestionType();
+                if ("Single Choice".equalsIgnoreCase(type)) {
+                    singleChoiceNum++;
+                } else if ("Multiple Choice".equalsIgnoreCase(type)) {
+                    multipleChoiceNum++;
+                } else if ("True/False".equalsIgnoreCase(type)) {
+                    trueFalseNum++;
+                }
+                totalScores += dto.getPoints();
+            }
+        }
+
+        // Step 2: 根据每个题型配置获取题目
+        for (AutoPaperCreationRequestDto.QuestionTypeConfig config : request.getQuestionTypeConfigs()) {
+            String type = config.getType();
+            Integer num = config.getNumberOfQuestions();
+            Integer points = config.getPointsPerQuestion();
+            List<String> tags = config.getTags();
+
+            if ("Single Choice".equalsIgnoreCase(type)) {
+                paperInfo.setHighestScoresForSingleChoice(points);
+            } else if ("Multiple Choice".equalsIgnoreCase(type)) {
+                paperInfo.setHighestScoresForMultipleChoice(points);
+            } else if ("True/False".equalsIgnoreCase(type)) {
+                paperInfo.setHighestScoresForTrueFalse(points);
             }
         }
 
