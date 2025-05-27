@@ -1,63 +1,91 @@
 <template>
+    <div class="actions">
+      <button class="btn back-btn" @click="goBack">返回列表</button>
+      <button class="btn back-btn" @click="intoStudentScore">查看学生答题情况</button>
+    </div>
   <div class="exam-details">
-    <h1>考试详情 - {{ currentExam.title }}</h1>
+    <h1>考试详情 - {{ paperInfo.paperName }}</h1>
 
     <div class="exam-info">
       <div class="info-item">
-        <strong>考试科目：</strong>{{ currentExam.subject }}
+        <strong>考试时间：</strong>{{ formatDate(paperInfo.openTime) }} 至 {{ formatDate(paperInfo.closeTime) }}
       </div>
       <div class="info-item">
-        <strong>考试时间：</strong>{{ formatDate(currentExam.startTime) }} 至 {{ formatDate(currentExam.endTime) }}
-      </div>
-      <div class="info-item">
-        <strong>考试时长：</strong>{{ currentExam.duration }}分钟
-      </div>
-      <div class="info-item">
-        <strong>试卷总分：</strong>{{ currentExam.fullScore }}
-      </div>
-      <div class="info-item">
-        <strong>及格分数：</strong>{{ currentExam.passingScore }}
-      </div>
-      <div class="info-item">
-        <strong>试题总数：</strong>{{ currentExam.questions.length }}
+        <strong>试卷总分：</strong>{{ paperInfo.totalScores }}
       </div>
     </div>
-
+    
     <div class="question-list">
       <h2>考试题目</h2>
-
       <div class="questions-container">
         <div
-            v-for="(question, index) in currentExam.questions"
-            :key="question.id"
+            v-for="(question, index) in EditedpaperQuestions()"
+            :key="question.questionId"
             class="question-card"
         >
           <div class="question-header">
-            <span class="type-badge">{{ question.type }}</span>
-            <span class="question-number">{{ index + 1 }}. {{ question.text }}</span>
-            <span class="question-score">{{ question.score }}分</span>
+            <span class="type-badge">{{ question.questionType }}</span>
+            <span class="question-number">{{ index + 1 }}. {{ question.questionText }}</span>
+            <span class="question-score">
+              <span class="question-score1">得分率&nbsp;</span>
+              <span class="question-score2">{{question.avgScore}}&nbsp;/&nbsp;</span>
+              <span class="question-score">{{ question.points }}分</span>
+            </span>
           </div>
           <div class="options">
             <div
-                v-for="(option, optionIndex) in question.options"
+                v-for="(option, optionIndex) in getoptions(question)"
                 :key="option.value"
                 :class="['option', { correct: option.isCorrect }]"
             >
+            <div class="option-question">
               {{ String.fromCharCode(65 + optionIndex) }}. {{ option.label }}
+            </div>
+            <div> &nbsp;&nbsp;{{ option.count }}人选择该选项</div>
             </div>
           </div>
         </div>
 
-        <div v-if="currentExam.questions.length === 0" class="no-questions">
+        <div v-if="paperInfo.paperQuestions.length === 0" class="no-questions">
           暂无考试题目
+        </div>
+
+      </div>
+    </div>
+    <div class="charts-container">
+      <h2>分数分布</h2>
+      <div class="chart">
+        <div class="score-distribution"
+        >
+        
+          <div
+            v-for="range in scoreDistribution()"
+            :key="range.label"
+            class="distribution-bar"
+            :style="{
+              height: range.percentage + '%',
+              width: '80px',
+              margin: '0 25px',
+              display: 'flex',
+              flexDirection: 'column-reverse',
+              justifyContent: 'flex-end',
+              alignItems: 'center',
+              backgroundColor: '#42b883',
+              color: '#fff',
+              fontSize: '12px'
+            }"
+          >
+            <div class="bar-label" style="text-align: center;">
+              {{ range.label }}
+            </div>
+            <div class="bar-value" style="text-align: center;">
+              {{ range.count }}人<br>({{ range.percentage }}%)
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="actions">
-      <button class="btn edit-btn" @click="editExam">编辑考试</button>
-      <button class="btn back-btn" @click="goBack">返回列表</button>
-    </div>
   </div>
 </template>
 
@@ -67,141 +95,238 @@ import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
 const router = useRouter()
-
-// 模拟考试数据
-const exams = ref([
+const allexamresults=ref([{
+  studentId:1,
+  totalScore: 65,},
   {
-    id: 1,
-    title: '操作系统原理期中考试',
-    subject: '操作系统原理',
-    startTime: new Date(Date.now() + 86400000).toISOString(),
-    endTime: new Date(Date.now() + 86400000 + 3600000).toISOString(),
-    duration: 60,
-    fullScore: 100,
-    passingScore: 60,
-    questions: [1, 2, 3, 4, 5],
-    studentsCount: 0
-  },
-  {
-    id: 2,
-    title: '数据库基础期末考试',
-    subject: '数据库基础',
-    startTime: new Date().toISOString(),
-    endTime: new Date(Date.now() + 7200000).toISOString(),
-    duration: 90,
-    fullScore: 100,
-    passingScore: 60,
-    questions: [2, 6, 1, 5, 3],
-    studentsCount: 32
-  },
-  {
-    id: 3,
-    title: '计算机网络期中考试',
-    subject: '计算机网络',
-    startTime: new Date(Date.now() - 3600000).toISOString(),
-    endTime: new Date(Date.now() + 3600000).toISOString(),
-    duration: 60,
-    fullScore: 75,
-    passingScore: 45,
-    questions: [3, 7, 1, 2, 5],
-    studentsCount: 18
+  studentId:2,
+  totalScore: 70,
   }
-])
-
-// 模拟题目数据
-const questions = ref([
-  {
-    id: 1,
-    type: '单选',
-    subject: '操作系统原理',
-    text: '进程和线程的主要区别是什么？',
-    options: [
-      { value: 'A', label: '资源分配的基本单位', isCorrect: false },
-      { value: 'B', label: 'CPU调度的基本单位', isCorrect: true },
-      { value: 'C', label: '程序运行环境描述', isCorrect: false }
-    ],
-    score: 2
-  },
-  {
-    id: 2,
-    type: '多选',
-    subject: '数据库基础',
-    text: '下列哪些是关系型数据库？',
-    options: [
-      { value: 'A', label: 'MySQL', isCorrect: true },
-      { value: 'B', label: 'MongoDB', isCorrect: false },
-      { value: 'C', label: 'PostgreSQL', isCorrect: true },
-      { value: 'D', label: 'Oracle', isCorrect: true }
-    ],
-    score: 3
-  },
-  {
-    id: 3,
-    type: '判断',
-    subject: '计算机网络',
-    text: 'HTTP协议是无状态的协议。',
-    options: [
-      { value: 'A', label: '正确', isCorrect: true },
-      { value: 'B', label: '错误', isCorrect: false }
-    ],
-    score: 1
-  },
-  {
-    id: 4,
-    type: '单选',
-    subject: '操作系统原理',
-    text: '以下哪个调度算法可能导致某些进程长期得不到执行？',
-    options: [
-      { value: 'A', label: '先来先服务(FCFS)', isCorrect: false },
-      { value: 'B', label: '短作业优先(SJF)', isCorrect: true },
-      { value: 'C', label: '轮转(RR)', isCorrect: false },
-      { value: 'D', label: '多级反馈队列', isCorrect: false }
-    ],
-    score: 2
-  },
-  {
-    id: 5,
-    type: '单选',
-    subject: '数据库基础',
-    text: '在数据库设计中，规范化的主要目的是什么？',
-    options: [
-      { value: 'A', label: '提高查询速度', isCorrect: false },
-      { value: 'B', label: '减少冗余和更新异常', isCorrect: true },
-      { value: 'C', label: '增加数据量', isCorrect: false },
-      { value: 'D', label: '提升并发性能', isCorrect: false }
-    ],
-    score: 2
-  },
-  {
-    id: 6,
-    type: '多选',
-    subject: '计算机网络',
-    text: '下列关于TCP/IP协议的说法哪些是正确的？',
-    options: [
-      { value: 'A', label: 'TCP是面向连接的协议', isCorrect: true },
-      { value: 'B', label: 'IP负责路由寻址', isCorrect: true },
-      { value: 'C', label: 'TCP保证传输可靠性', isCorrect: true },
-      { value: 'D', label: 'IP提供可靠传输', isCorrect: false }
-    ],
-    score: 3
+]
+)
+const allresults = ref({
+  courseId: 201,
+  paperId: 101,
+  analyses:[{
+    avgscore:1.1,
+    counts:[3,2,1,1],
+    questionId:1
   }
-])
-
-// 当前考试
-const currentExam = ref(null)
-
-onMounted(() => {
-  const examId = parseInt(route.params.id)
-  currentExam.value = exams.value.find(exam => exam.id == examId)
-
-  // 填充完整考试信息
-  if (currentExam.value) {
-    currentExam.value.questions = currentExam.value.questions.map(id => {
-      const question = questions.value.find(q => q.id == id)
-      return question ? { ...question } : null
-    }).filter(Boolean)
-  }
+  ]
 })
+const paperInfo = ref({
+  paperId: 101,
+  courseId: 201,
+  creator: '张老师',
+  singleChoiceNum: 5,
+  multipleChoiceNum: 3,
+  trueFalseNum: 2,
+  openTime: new Date().toISOString(), // 当前时间
+  closeTime: new Date(Date.now() + 86400000).toISOString(), // 当前时间 + 1 天
+  highestScoresForSingleChoice: 25,
+  highestScoresForMultipleChoice: 30,
+  highestScoresForTrueFalse: 10,
+  totalScores: 65,
+  paperName: '操作系统原理期中考试',
+  paperQuestions:[
+    {
+      paperId: 101,
+      courseId: 201,
+      questionId: 1,
+      points: 5,
+      knowledgePoints: 'Java基础语法',
+      questionText: '下列哪个是合法的标识符？',
+      questionType: '单选题',
+      correctAnswer: 'B',
+      options: ['2variable', '_variable', '@variable', 'variable#'],
+    },
+    {
+      paperId: 101,
+      courseId: 201,
+      questionId: 2,
+      points: 5,
+      knowledgePoints: '面向对象编程',
+      questionText: '下列哪些是面向对象的特性？',
+      questionType: '多选题',
+      correctAnswer: 'A,B,C',
+      options: ['封装', '继承', '多态', '函数式'],
+    },
+    {
+      paperId: 101,
+      courseId: 201,
+      questionId: 3,
+      points: 5,
+      knowledgePoints: 'Java异常处理',
+      questionText: 'finally块一定会被执行。',
+      questionType: '判断题',
+      correctAnswer: 'B',
+      options: ['正确', '错误'],
+    }
+  ]
+  })
+onMounted(() => {
+  console.log(route.params)
+  const paperId = parseInt(route.params.paperId)
+  const courseId = parseInt(route.params.courseId)
+  fetchPaperQuestions(paperId, courseId);
+  fetchresult(paperId, courseId);
+  fetchexamresults(paperId, courseId);
+})
+const fetchexamresults = async (paperId, courseId) => {
+  // console.log(constId.value,creator.value)
+  // 模拟网络延迟
+    try {
+      const params = new URLSearchParams({
+      courseId: courseId,
+      paperId: paperId,
+    });
+    const url = `http://localhost:8080/api/exam/search-examResult-for-all?${params}`;
+      const res=await fetch(url,{
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+    })
+    if (!res.ok) {
+      throw new Error('网络错误')
+    }
+    const data =await res.json()
+    console.log("examresults:",data)
+    allexamresults.value = data
+  }  catch (error) {
+    alert('加载examresults失败，请检查网络或服务状态')
+    console.error(error)
+  }
+}
+const fetchresult = async (paperId, courseId) => { 
+  // console.log(constId.value,creator.value)
+  // 模拟网络延迟
+    try {
+      const params = new URLSearchParams({
+      courseId: courseId,
+      paperId: paperId,
+    });
+    const url = `http://localhost:8080/api/exam/search-exam-for-all?${params}`;
+      const res=await fetch(url,{
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+    })
+    if (!res.ok) {
+      throw new Error('网络错误')
+    }
+//此处需要修改
+  const data =await res.json()
+  allresults.value = data
+  console.log(allresults.value)
+  console.log('hey')
+    // paperInfos.value = data
+  } catch (error) {
+    alert('加载答题数据失败，请检查网络或服务状态')
+    console.error(error)
+  }
+}
+const EditedpaperQuestions = () => {
+  const questions = paperInfo.value.paperQuestions;
+  console.log(questions)
+  return questions.map(question => {
+    const analysis = allresults.value.analyses.find(
+      item => item.questionId === question.questionId
+    );
+
+    return {
+      ...question,
+      avgScore: analysis?.avgscore.toFixed(2) ?? 0,
+      counts: analysis?.counts ?? [0, 0, 0, 0]
+    };
+  });
+};
+const scoreDistribution =() => {
+      const distribution = {
+        '90%以上': 0,
+        '80%-90%': 0,
+        '70%-80%': 0,
+        '60%-70%': 0,
+        '60%以下': 0,
+      };
+
+      const total = allexamresults.value.length;
+
+      allexamresults.value.forEach(result => {
+        const percent = (result.totalScore / paperInfo.totalScores) * 100;
+if (percent >= 90) {
+          distribution['90%以上']++;
+        } else if (percent >= 80) {
+          distribution['80%-90%']++;
+        } else if (percent >= 70) {
+          distribution['70%-80%']++;
+        } else if (percent >= 60) {
+          distribution['60%-70%']++;
+        } else {
+          distribution['60%以下']++;
+        }
+      });
+      console.log("分数分布:",distribution)
+      // 转换成数组用于渲染
+      return Object.keys(distribution).map(label => {
+        const count = distribution[label];
+        const percentage = total ? ((count / total) * 100).toFixed(1) : 0;
+        return {
+          label,
+          count,
+          percentage
+        };
+      });
+    }
+const getoptions = (question) => {
+  if(question.questionType ==="True/False"){
+    const letters = ['A', 'B']
+  return letters.map((letter,index) => ({
+    value: letter,
+    label: question[`option${letter}`],
+    isCorrect: question.correctAnswer.includes(letter),
+    count: question.counts[index]
+  }))
+  }{
+  const letters = ['A', 'B', 'C', 'D']
+  return letters.map((letter,index) => ({
+    value: letter,
+    label: question[`option${letter}`],
+    isCorrect: question.correctAnswer.includes(letter),
+    count: question.counts[index]
+  }))
+  }
+}
+const fetchPaperQuestions = async (paperId, courseId) => {
+  // console.log(constId.value,creator.value)
+  // 模拟网络延迟
+    try {
+      const params = new URLSearchParams({
+      courseId: courseId,
+      paperId: paperId,
+    });
+    const url = `http://localhost:8080/api/paper-questions/query-paper-and-questions?${params}`;
+      const res=await fetch(url,{
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+    })
+    if (!res.ok) {
+      throw new Error('网络错误')
+    }
+//此处需要修改
+  const data =await res.json()
+  paperInfo.value = data
+  console.log("paperInfo:",paperInfo.value)
+  // console.log('hey')
+    // paperInfos.value = data
+  } catch (error) {
+    alert('加载考试状态失败，请检查网络或服务状态')
+    console.error(error)
+  }
+}
 
 // 日期格式化
 const formatDate = (dateString) => {
@@ -209,15 +334,12 @@ const formatDate = (dateString) => {
   return date.toLocaleString('zh-CN')
 }
 
-// 编辑考试
-const editExam = () => {
-  alert('进入编辑模式')
-  // 这里可以跳转到编辑页面或打开编辑模态框
-}
-
 // 返回考试列表
 const goBack = () => {
   router.push('/teacher/exam-management')
+}
+const intoStudentScore = () => {
+  router.push('/teacher/exam-details-student-score/' + paperInfo.value.courseId + '/' + paperInfo.value.paperId)
 }
 </script>
 
@@ -235,8 +357,7 @@ h1 {
   border-radius: 10px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
-  display: flex;
-  flex-wrap: wrap;
+  justify-content: space-between;
   gap: 20px;
 }
 
@@ -289,7 +410,14 @@ h1 {
 
 .question-score {
   font-weight: bold;
-  color: #0d47a1;
+}
+.question-score1{ 
+  font-weight: bold;
+  color:red;
+}
+.question-score2{
+  font-weight: bold;
+  color:green;
 }
 
 .options {
@@ -309,11 +437,6 @@ h1 {
   color: #2e7d32;
 }
 
-.actions {
-  margin-top: 20px;
-  display: flex;
-  gap: 15px;
-}
 
 .btn {
   padding: 8px 16px;
@@ -339,5 +462,25 @@ h1 {
 
 .back-btn:hover {
   background-color: #444;
+}
+.score-distribution {
+  width:1000px;
+  display: flex;
+  align-items: flex-end;
+  height: 300px;
+  border: 1px solid #ddd;
+  margin:0 auto;
+  padding: 20px;
+  background-color: #f9f9f9;
+}
+
+.distribution-bar {
+  transition: height 0.3s ease;
+  text-align: center;
+  padding-top: 5px;
+}
+.actions {
+  display: flex;
+  justify-content: space-between;
 }
 </style>

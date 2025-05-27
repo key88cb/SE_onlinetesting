@@ -3,7 +3,7 @@
 *.log
 *.tmp
 *.bak
-
+temp/
 # IDE specific
 .idea/
 *.iml

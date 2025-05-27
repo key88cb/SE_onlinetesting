@@ -98,10 +98,6 @@ onMounted(() => {
   }
 })
 
-// 组件卸载时清除定时器，防止内存泄漏
-onUnmounted(() => {
-  clearInterval(intervalId)
-})
 
 // 切换下拉菜单
 const toggleDropdown = () => {
