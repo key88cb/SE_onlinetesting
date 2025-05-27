@@ -3,32 +3,43 @@
     <h1>手动组卷</h1>
 
     <div class="paper-form">
-      <div class="form-group">
+      <div class="form-group paper-info-group">
         <label>试卷名称：</label>
         <input type="text" v-model="paper.title" placeholder="请输入试卷名称" />
+        <label>课程信息：</label>
+        <input type="number" v-model="paper.courseId" placeholder="请输入班级名称" />
+        <label>创建者：</label>
+        <input type="text" v-model="paper.creator" placeholder="请输入出卷人名称" />
       </div>
     <!-- 右上角按钮 -->
-      <button
-    class="view-library-btn"
-    :class="{ 'close-mode': showLibrary }"
-    @click="showLibrary = !showLibrary"
-  >
-    {{ showLibrary ? '关闭题库' : '查看题库' }}
-    </button>
+<!--      <button-->
+<!--    class="view-library-btn"-->
+<!--    :class="{ 'close-mode': showLibrary }"-->
+<!--    @click="showLibrary = !showLibrary"-->
+<!--  >-->
+<!--    {{ showLibrary ? '关闭题库' : '查看题库' }}-->
+<!--    </button>-->
       <div class="form-group">
         <label>题目列表：</label>
         <div class="question-list">
           <div v-for="(question, index) in paper.questions" :key="index" class="question-row">
-            <input type="text" v-model="question.id" placeholder="题目ID" />
+            <input type="text" :value="question.questionText || question.questionId" disabled />
             <span>题目分数:</span>
             <input type="number" v-model.number="question.score" placeholder="分数" />
             <button class="btn remove-btn" @click="removeQuestion(index)">-</button>
           </div>
         </div>
-        <button class="btn add-btn" @click="addQuestionRow">+ 下一行</button>
+<!--        <button class="btn add-btn" @click="addQuestionRow">+ 下一行</button>-->
       </div>
 
       <div class="form-actions">
+        <button
+            class="view-library-btn"
+            :class="{ 'close-mode': showLibrary }"
+            @click="showLibrary = !showLibrary"
+        >
+          {{ showLibrary ? '关闭题库' : '查看题库' }}
+        </button>
         <button class="btn preview-btn" @click="previewPaper">预览试卷</button>
       </div>
     </div>
@@ -41,8 +52,8 @@
         <div class="preview-questions">
           <div v-for="(item, index) in previewQuestions" :key="item.id" class="question-preview">
             <div class="question-header">
-              <span class="type-badge">{{ item.type }}</span>
-              <span class="question-number">{{ index + 1 }}. {{ item.text }}</span>
+              <span class="type-badge">{{ item.questionType }}</span>
+              <span class="question-number">{{ index + 1 }}. {{ item.questionText }}</span>
               <span class="score">{{ item.score }}分</span>
             </div>
             <div class="options">
@@ -50,7 +61,7 @@
                   v-for="(option, optionIndex) in item.options"
                   :key="option.value"
                   :class="['option', { correct: option.isCorrect }]">
-                {{ String.fromCharCode(65 + optionIndex) }}. {{ option.label }}
+                {{ String.fromCharCode(65 + optionIndex) }}. {{ option.optionText }}
               </div>
             </div>
           </div>
@@ -70,6 +81,7 @@
         </div>
       </div>
     </div>
+
     <!-- 题库模态框 -->
     <div v-if="showLibrary" class="modal2">
         <div>题库查看</div>
@@ -90,20 +102,23 @@
         <div class="questions-grid">
           <div
               v-for="question in filteredQuestions"
-              :key="question.id"
+              :key="question.questionId"
               class="question-card"
           >
+            <button class="add-question-btn" @click="openAddScoreModal(question)">
+                +
+            </button>
             <div class="question-header">
-              <span class="type-badge">{{ question.type }}</span>
+              <span class="type-badge">{{ question.questionType }}</span>
             </div>
-            <div class="question-text">{{ question.text }}</div>
-            <div class="question-tag">备注：{{ question.tag }}  </div>
+            <div class="question-text">{{ question.questionText }}</div>
+            <div class="question-tag">备注：{{ question.tags }}  </div>
             <div class="options">
               <div
                   v-for="(option, index) in question.options"
-                  :key="option.value"
-                  :class="['option', { correct: option.isCorrect }]">
-                {{ String.fromCharCode(65 + index) }}. {{ option.label }}
+                  :key="option.optionIdValue"
+                  :class="['option', { correct: question.correctAnswer.includes(option.optionIdValue) }]">
+                {{ String.fromCharCode(65 + index) }}. {{ option.optionText }}
               </div>
             </div>
           </div>
@@ -112,6 +127,7 @@
           </div>
         </div>
      </div>
+
     <!-- 发布表单模态框 -->
     <div v-if="showPublishModal" class="modal">
       <div class="modal-content">
@@ -127,30 +143,8 @@
         </div>
 
         <div class="form-group">
-          <label>考试时长：</label>
-          <div class="duration-picker">
-            <input type="number" min="10" v-model.number="examSettings.duration" />
-            <span>分钟</span>
-          </div>
-        </div>
-
-        <div class="form-group">
           <label>试卷总分：</label>
           <input type="number" min="1" v-model.number="examSettings.fullScore" disabled />
-        </div>
-
-        <div class="form-group">
-          <label>及格分数：</label>
-          <input type="number" min="0" :max="examSettings.fullScore" v-model.number="examSettings.passingScore" />
-        </div>
-
-        <div class="form-group">
-          <label>是否允许查看答案：</label>
-          <select v-model="examSettings.showAnswersAfter">
-            <option value="immediately">立即显示</option>
-            <option value="afterEnd">考试结束后显示</option>
-            <option value="never">不显示</option>
-          </select>
         </div>
 
         <div class="modal-buttons">
@@ -160,110 +154,56 @@
       </div>
     </div>
   </div>
+
+  <!-- 设置分数弹窗提醒 -->
+  <div v-if="showAddScoreModal" class="modal">
+    <div class="modal-content" style="max-width: 400px;">
+      <h3>设置分数</h3>
+      <div style="margin-bottom: 20px;">
+        <div>题目：{{ currentAddQuestion?.text }}</div>
+        <input type="number" v-model.number="addScoreValue" min="1" placeholder="请输入分数" style="width: 100%; margin-top: 10px;" />
+      </div>
+      <div class="modal-buttons">
+        <button class="btn cancel-btn" @click="showAddScoreModal = false">取消</button>
+        <button class="btn confirm-btn" @click="confirmAddQuestion">确定</button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed,onMounted } from 'vue'
+import { ref, watch, computed,onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 const router = useRouter()
 
 // 当前试卷数据
 const paper = ref({
   title: '',
-  questions: [{ id: '', score: 0 }]
+  courseId: null,
+  creator: '',
+  questions: []
 })
 
 // 考试设置
 const examSettings = ref({
   startTime: '',
   endTime: '',
-  duration: 60,
   fullScore: 0,
-  passingScore: 0,
-  showAnswersAfter: 'afterEnd'
 })
+
 // 模拟题库数据
-const questionBank = ref([
-  {
-    id: 1,
-    type: '单选',
-    subject: '操作系统原理',
-    text: '进程和线程的主要区别是什么？',
-    options: [
-      { value: 'A', label: '资源分配的基本单位', isCorrect: false },
-      { value: 'B', label: 'CPU调度的基本单位', isCorrect: true },
-      { value: 'C', label: '程序运行环境描述', isCorrect: false }
-    ]
-  },
-  {
-    id: 2,
-    type: '多选',
-    subject: '数据库基础',
-    text: '下列哪些是关系型数据库？',
-    options: [
-      { value: 'A', label: 'MySQL', isCorrect: true },
-      { value: 'B', label: 'MongoDB', isCorrect: false },
-      { value: 'C', label: 'PostgreSQL', isCorrect: true },
-      { value: 'D', label: 'Oracle', isCorrect: true }
-    ]
-  },
-  {
-    id: 3,
-    type: '判断',
-    subject: '计算机网络',
-    text: 'HTTP协议是无状态的协议。',
-    options: [
-      { value: 'A', label: '正确', isCorrect: true },
-      { value: 'B', label: '错误', isCorrect: false }
-    ]
-  },
-  {
-    id: 4,
-    type: '单选',
-    subject: '操作系统原理',
-    text: '以下哪个调度算法可能导致某些进程长期得不到执行？',
-    options: [
-      { value: 'A', label: '先来先服务(FCFS)', isCorrect: false },
-      { value: 'B', label: '短作业优先(SJF)', isCorrect: true },
-      { value: 'C', label: '轮转(RR)', isCorrect: false },
-      { value: 'D', label: '多级反馈队列', isCorrect: false }
-    ]
-  },
-  {
-    id: 5,
-    type: '单选',
-    subject: '数据库基础',
-    text: '在数据库设计中，规范化的主要目的是什么？',
-    options: [
-      { value: 'A', label: '提高查询速度', isCorrect: false },
-      { value: 'B', label: '减少冗余和更新异常', isCorrect: true },
-      { value: 'C', label: '增加数据量', isCorrect: false },
-      { value: 'D', label: '提升并发性能', isCorrect: false }
-    ]
-  },
-  {
-    id: 6,
-    type: '多选',
-    subject: '计算机网络',
-    text: '下列关于TCP/IP协议的说法哪些是正确的？',
-    options: [
-      { value: 'A', label: 'TCP是面向连接的协议', isCorrect: true },
-      { value: 'B', label: 'IP负责路由寻址', isCorrect: true },
-      { value: 'C', label: 'TCP保证传输可靠性', isCorrect: true },
-      { value: 'D', label: 'IP提供可靠传输', isCorrect: false }
-    ]
-  }
-])
+const questionBank = ref([])
 
 // 控制模态框显示
 const showPreviewModal = ref(false)
 const showPublishModal = ref(false)
 const showLibrary = ref(false)
+
 // 计算预览问题
 const previewQuestions = computed(() => {
   return paper.value.questions
       .map(item => {
-        const question = questionBank.value.find(q => q.id == item.id)
+        const question = questionBank.value.find(q => q.questionId == item.id) // 这里使用了q.id,是错的
         return question ? { ...question, score: item.score } : null
       })
       .filter(Boolean)
@@ -273,11 +213,6 @@ const previewQuestions = computed(() => {
 const totalScore = computed(() => {
   return previewQuestions.value.reduce((sum, q) => sum + q.score, 0)
 })
-
-// 添加题目行
-const addQuestionRow = () => {
-  paper.value.questions.push({ id: '', score: 0 })
-}
 
 // 移除题目行
 const removeQuestion = (index) => {
@@ -296,8 +231,8 @@ const previewPaper = () => {
 }
 onMounted(async () => {
   try {
-    // const res =Search_for_all_questions()
-    // questions.value = res.data 
+     // const res =Search_for_all_questions()
+     // questions.value = res.data
   } catch (error) {
     alert('加载题目失败，请检查网络或服务状态')
     console.error(error)
@@ -339,28 +274,22 @@ const Search_for_all_questions = async () => {
     console.error(error)
   }
 }
-const Create_Exam_Paper = async() => {
-  // 这里可以添加创建试卷的逻辑
-  try{
-    const res = await fetch('http://localhost:8080/api/questions',{
+const Create_Exam_Paper = async (requestData) => {
+  try {
+    const res = await fetch('http://localhost:8080/api/paper-questions/manual-create-paper', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        method:'create',
-        content:{
-          question_ids:paper.questions,
-          start_time:examSettings.value.startTime,
-          end_time:examSettings.value.endTime
-        }
-      })
+      body: JSON.stringify(requestData)
     })
     if (!res.ok) {
       throw new Error('网络错误')
     }
-  }
-  catch (error) {
+
+    alert('试卷发布成功！')
+    router.push('/teacher/exam-management')
+  } catch (error) {
     console.error('创建试卷失败:', error)
     alert('创建试卷失败，请稍后再试')
   }
@@ -382,9 +311,27 @@ const confirmPublish = () => {
     return
   }
 
-  alert('试卷发布成功！')
-  // Create_Exam_Paper()
-  router.push('/teacher/exam-management')
+  // 构建请求数据
+  const manualPaperRequest = {
+    courseId: paper.value.courseId,
+    creator: paper.value.creator,
+    singleChoiceNum: 0, // 这些字段可以由后端自动统计
+    multipleChoiceNum: 0,
+    trueFalseNum: 0,
+    openTime: new Date(examSettings.value.startTime).toISOString().slice(0, 19),
+    closeTime: new Date(examSettings.value.endTime).toISOString().slice(0, 19),
+    totalScores: totalScore.value,
+    highestScoresForSingleChoice: 0, // 可选，留空让后端处理
+    highestScoresForMultipleChoice: 0,
+    highestScoresForTrueFalse: 0,
+    questions: paper.value.questions.map(q => ({
+      questionId: q.id,
+      points: q.score
+    })),
+    paperName: paper.value.title
+  }
+
+  Create_Exam_Paper(manualPaperRequest)
 }
 // 查看题库
 // 模拟从后端获取题目数据  @search
@@ -393,26 +340,65 @@ const selectedsubject = ref('')
 
 // 获取所有唯一科目
 const uniquesubjects = computed(() => {
-  return [...new Set(questionBank.value.map(q => q.subject))]
+  return [...new Set(questionBank.value.map(q => q.subjectCategory))].filter(Boolean)
 })
 
 // 过滤后的题目列表
+// const filteredQuestions = computed(() => {
+//   let result = [...questionBank.value]
+//
+//   if (searchQuery.value) {
+//     const query = searchQuery.value.toLowerCase()
+//     result = result.filter(q =>
+//         q.text.toLowerCase().includes(query) ||
+//         q.subject.toLowerCase().includes(query)
+//     )
+//   }
+//
+//   if (selectedsubject.value) {
+//     result = result.filter(q => q.subject === selectedsubject.value)
+//   }
+//
+//   return result
+// })
+
+const fetchQuestions = async () => {
+  try {
+    const res = await fetch('http://localhost:8080/api/questions')
+    if (!res.ok) throw new Error('网络错误')
+    const data = await res.json()
+
+    questionBank.value = data.map(q => {
+      if (q.questionType === 'True/False' && q.options && q.options.length > 2) {
+        q.options = q.options.slice(0, 2)
+      }
+      return q
+    })
+  } catch (error) {
+    alert('加载题目失败，请检查网络或服务状态')
+    console.error(error)
+  }
+}
+
+onMounted(fetchQuestions)
+
 const filteredQuestions = computed(() => {
-  let result = [...questionBank.value]
+  return questionBank.value.filter(question => {
+    // 1. 科目筛选条件
+    const subjectMatch = !selectedsubject.value ||
+        question.subjectCategory === selectedsubject.value
 
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    result = result.filter(q =>
-        q.text.toLowerCase().includes(query) ||
-        q.subject.toLowerCase().includes(query)
-    )
-  }
+    // 2. 搜索词筛选条件（同时搜索题干、标签和选项文本）
+    const searchTerm = searchQuery.value.toLowerCase()
+    const searchMatch = !searchQuery.value ||
+        question.questionText.toLowerCase().includes(searchTerm) ||
+        (question.tags && question.tags.toLowerCase().includes(searchTerm)) ||
+        (question.options && question.options.some(
+            opt => opt.optionText.toLowerCase().includes(searchTerm)
+        ))
 
-  if (selectedsubject.value) {
-    result = result.filter(q => q.subject === selectedsubject.value)
-  }
-
-  return result
+    return subjectMatch && searchMatch
+  })
 })
 
 // 判断是否为多选题
@@ -424,6 +410,38 @@ const isMultipleChoice = computed(() => {
 const isJudgmentQuestion = computed(() => {
   return currentQuestion.value.type === '判断'
 })
+
+
+//添加题目的方法
+const showAddScoreModal = ref(false)
+const currentAddQuestion = ref(null)
+const addScoreValue = ref(1)
+
+const openAddScoreModal = (question) => {
+  currentAddQuestion.value = question
+  addScoreValue.value = 1
+  showAddScoreModal.value = true
+}
+
+const confirmAddQuestion = () => {
+  if (!addScoreValue.value || addScoreValue.value <= 0) {
+    alert('请输入有效分数')
+    return
+  }
+  // 检查是否已添加
+  if (paper.value.questions.some(q => q.id == currentAddQuestion.value.questionId)) {
+    alert('该题已在题目列表中')
+    showAddScoreModal.value = false
+    return
+  }
+  // 添加到题目列表 - 使用一致的数据结构
+  paper.value.questions.push({
+    id: currentAddQuestion.value.questionId, // 使用 questionId 而不是 id
+    score: addScoreValue.value,
+    questionText: currentAddQuestion.value.questionText // 保存题干
+  })
+  showAddScoreModal.value = false
+}
 </script>
 
 <style scoped>
@@ -445,8 +463,17 @@ h1 {
   margin-bottom: 20px;
   color: black;
 }
+
+.paper-info-group {
+  border: 2px solid #0d47a1;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 24px;
+  background: #f5f8ff;
+}
+
 .view-library-btn {
-  background-color: #4caf50;
+  background-color: #2e7d32;
   color: white;
   border: none;
   padding: 10px 20px;
@@ -480,6 +507,7 @@ h1 {
 
 .question-row {
   display: flex;
+  align-items: center;
   gap: 10px;
   margin-bottom: 10px;
 }
@@ -517,7 +545,12 @@ h1 {
 
 .form-actions {
   margin-top: 20px;
-  text-align: right;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  border-radius: 0 0 10px 10px;
+  padding: 0 10px 20px 10px;
 }
 
 .preview-btn {
@@ -562,11 +595,11 @@ h1 {
   border-radius: 8px;
   border-color: #ccc;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  width: 80%;
-  max-width: 800px;
+  width: 100%;
   max-height: 90%;
   overflow: hidden;
   position: relative;
+  margin-top: 40px; /* 新增：与上方间隔 */
 }
 
 /* 弹出层头部 */
@@ -775,6 +808,26 @@ h1 {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+}
+.add-question-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #0d47a1;
+  color: #f0f0f0;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  font-size: 20px;
+  cursor: pointer;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: normal;
+  padding: 0;
 }
 .question-text {
   margin-bottom: 15px;
