@@ -1,31 +1,51 @@
 <template>
-  <div class="manual-create-paper">
-    <h1>手动组卷</h1>
+  <div class="auto-create-paper">
+    <h1>自动组卷</h1>
 
     <div class="paper-form">
       <div class="form-group">
         <label>试卷名称：</label>
         <input type="text" v-model="paper.title" placeholder="请输入试卷名称" />
       </div>
-    <!-- 右上角按钮 -->
-      <button
-    class="view-library-btn"
-    :class="{ 'close-mode': showLibrary }"
-    @click="showLibrary = !showLibrary"
-  >
-    {{ showLibrary ? '关闭题库' : '查看题库' }}
-    </button>
+
       <div class="form-group">
-        <label>题目列表：</label>
-        <div class="question-list">
-          <div v-for="(question, index) in paper.questions" :key="index" class="question-row">
-            <input type="text" v-model="question.id" placeholder="题目ID" />
-            <span>题目分数:</span>
-            <input type="number" v-model.number="question.score" placeholder="分数" />
-            <button class="btn remove-btn" @click="removeQuestion(index)">-</button>
+        <label>考试科目：</label>
+        <select v-model="paper.subject">
+          <option value="">请选择科目</option>
+          <option v-for="subject in subjects" :key="subject" :value="subject">{{ subject }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>题型分布：</label>
+        <div class="checkbox-group">
+          <label><input type="checkbox" v-model="config.types" value="单选" /> 单选题</label>
+          <label><input type="checkbox" v-model="config.types" value="多选" /> 多选题</label>
+          <label><input type="checkbox" v-model="config.types" value="判断" /> 判断题</label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>每种题型数量：</label>
+        <div class="quantity-inputs">
+          <div class="input-group">
+            <span>单选题：</span>
+            <input type="number" min="0" max="50" v-model.number="config.singleChoiceCount" />
+          </div>
+          <div class="input-group">
+            <span>多选题：</span>
+            <input type="number" min="0" max="50" v-model.number="config.multiChoiceCount" />
+          </div>
+          <div class="input-group">
+            <span>判断题：</span>
+            <input type="number" min="0" max="50" v-model.number="config.judgmentCount" />
           </div>
         </div>
-        <button class="btn add-btn" @click="addQuestionRow">+ 下一行</button>
+      </div>
+
+      <div class="form-group">
+        <label>考点范围：</label>
+        <input type="text" v-model="config.topics" placeholder="输入考点关键词，用逗号分隔" />
       </div>
 
       <div class="form-actions">
@@ -39,15 +59,15 @@
         <h2>试卷预览 - {{ paper.title }}</h2>
 
         <div class="preview-questions">
-          <div v-for="(item, index) in previewQuestions" :key="item.id" class="question-preview">
+          <div v-for="(question, index) in previewQuestions" :key="question.id" class="question-preview">
             <div class="question-header">
-              <span class="type-badge">{{ item.type }}</span>
-              <span class="question-number">{{ index + 1 }}. {{ item.text }}</span>
-              <span class="score">{{ item.score }}分</span>
+              <span class="type-badge">{{ question.type }}</span>
+              <span class="question-number">{{ index + 1 }}. {{ question.text }}</span>
+              <span class="score">{{ question.score }}分</span>
             </div>
             <div class="options">
               <div
-                  v-for="(option, optionIndex) in item.options"
+                  v-for="(option, optionIndex) in question.options"
                   :key="option.value"
                   :class="['option', { correct: option.isCorrect }]">
                 {{ String.fromCharCode(65 + optionIndex) }}. {{ option.label }}
@@ -66,52 +86,12 @@
 
         <div class="modal-buttons">
           <button class="btn close-btn" @click="closePreviewModal">关闭</button>
+          <button class="btn generate-btn" @click="generateNewPaper">重新生成</button>
           <button class="btn publish-btn" @click="goToPublish">去发布</button>
         </div>
       </div>
     </div>
-    <!-- 题库模态框 -->
-    <div v-if="showLibrary" class="modal2">
-        <div>题库查看</div>
 
-        <div class="toolbar">
-          <div class="search-filter">
-            <input
-                v-model="searchQuery"
-                placeholder="输入科目或关键词搜索题目"
-                class="search-input"
-            />
-            <select v-model="selectedsubject" class="subject-filter">
-              <option value="">全部科目</option>
-              <option v-for="subject in uniquesubjects" :key="subject" :value="subject">{{ subject }}</option>
-            </select>
-          </div>
-        </div>
-        <div class="questions-grid">
-          <div
-              v-for="question in filteredQuestions"
-              :key="question.id"
-              class="question-card"
-          >
-            <div class="question-header">
-              <span class="type-badge">{{ question.type }}</span>
-            </div>
-            <div class="question-text">{{ question.text }}</div>
-            <div class="question-tag">备注：{{ question.tag }}  </div>
-            <div class="options">
-              <div
-                  v-for="(option, index) in question.options"
-                  :key="option.value"
-                  :class="['option', { correct: option.isCorrect }]">
-                {{ String.fromCharCode(65 + index) }}. {{ option.label }}
-              </div>
-            </div>
-          </div>
-          <div v-if="filteredQuestions.length === 0" class="no-results">
-            没有找到相关题目
-          </div>
-        </div>
-     </div>
     <!-- 发布表单模态框 -->
     <div v-if="showPublishModal" class="modal">
       <div class="modal-content">
@@ -165,12 +145,14 @@
 <script setup>
 import { ref, computed,onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+
 const router = useRouter()
 
 // 当前试卷数据
 const paper = ref({
   title: '',
-  questions: [{ id: '', score: 0 }]
+  subject: '',
+  questions: []
 })
 
 // 考试设置
@@ -182,7 +164,8 @@ const examSettings = ref({
   passingScore: 0,
   showAnswersAfter: 'afterEnd'
 })
-// 模拟题库数据
+
+// 题库数据
 const questionBank = ref([
   {
     id: 1,
@@ -255,45 +238,40 @@ const questionBank = ref([
   }
 ])
 
+// 组卷配置
+const config = ref({
+  types: ['单选'],
+  singleChoiceCount: 2,
+  multiChoiceCount: 1,
+  judgmentCount: 1,
+  topics: ''
+})
+
 // 控制模态框显示
 const showPreviewModal = ref(false)
 const showPublishModal = ref(false)
-const showLibrary = ref(false)
+// 所有科目
+const subjects = ref(['操作系统原理', '数据库基础', '计算机网络'])
+
 // 计算预览问题
-const previewQuestions = computed(() => {
-  return paper.value.questions
-      .map(item => {
-        const question = questionBank.value.find(q => q.id == item.id)
-        return question ? { ...question, score: item.score } : null
-      })
-      .filter(Boolean)
-})
+const filteredQuestions = computed(() => {
+  let result = [...questionBank.value]
 
-// 计算总分
-const totalScore = computed(() => {
-  return previewQuestions.value.reduce((sum, q) => sum + q.score, 0)
-})
-
-// 添加题目行
-const addQuestionRow = () => {
-  paper.value.questions.push({ id: '', score: 0 })
-}
-
-// 移除题目行
-const removeQuestion = (index) => {
-  if (paper.value.questions.length > 1) {
-    paper.value.questions.splice(index, 1)
+  // 按科目过滤
+  if (paper.value.subject) {
+    result = result.filter(q => q.subject === paper.value.subject)
   }
-}
 
-// 预览试卷
-const previewPaper = () => {
-  if (previewQuestions.value.length === 0) {
-    alert('请先添加有效题目')
-    return
+  // 按考点过滤
+  if (config.value.topics) {
+    const topicKeywords = config.value.topics.toLowerCase().split(',').map(t => t.trim())
+    result = result.filter(q =>
+        topicKeywords.some(topic => q.text.toLowerCase().includes(topic))
+    )
   }
-  showPreviewModal.value = true
-}
+
+  return result
+})
 onMounted(async () => {
   try {
     // const res =Search_for_all_questions()
@@ -303,13 +281,128 @@ onMounted(async () => {
     console.error(error)
   }
 })
+// 根据当前配置生成的试卷题目
+const previewQuestions = computed(() => {
+  let selectedQuestions = []
+
+  // 如果没有选择任何题型，直接返回空数组
+  if (config.value.types.length === 0) {
+    return []
+  }
+
+  // 获取符合要求的题目
+  let filtered = filteredQuestions.value
+
+  // 如果没有匹配的题目，直接返回空数组
+  if (!filtered.length) {
+    return []
+  }
+
+  // 按照题型分别随机抽取题目
+  config.value.types.forEach(type => {
+    const count = getCountByType(type)
+    const availableQuestions = filtered.filter(q => q.type === type)
+
+    if (availableQuestions.length >= count) {
+      // 如果有足够的题目，随机选取
+      const randomQuestions = getRandomQuestions(availableQuestions, count)
+      selectedQuestions = [...selectedQuestions, ...randomQuestions]
+    } else {
+      // 如果题目不足，全部加入
+      selectedQuestions = [...selectedQuestions, ...availableQuestions]
+    }
+  })
+
+  // 添加分数配置
+  return selectedQuestions.map(question => ({
+    ...question,
+    score: getQuestionScore(question)
+  }))
+})
+
+// 计算总分
+const totalScore = computed(() => {
+  return previewQuestions.value.reduce((sum, q) => sum + q.score, 0)
+})
+
+// 获取各题型数量
+const getCountByType = (type) => {
+  switch (type) {
+    case '单选': return config.value.singleChoiceCount
+    case '多选': return config.value.multiChoiceCount
+    case '判断': return config.value.judgmentCount
+    default: return 0
+  }
+}
+
+// 根据题型动态计算每题分数
+const getQuestionScore = (question) => {
+  switch (question.type) {
+    case '单选': return 2
+    case '多选': return 3
+    case '判断': return 1
+    default: return 0
+  }
+}
+
+// 预览试卷
+const previewPaper = () => {
+  var flag=0
+  if (!paper.value.title.trim()) {
+    alert('请填写试卷名称')
+    return
+  }
+
+  if (!paper.value.subject) {
+    alert('请选择考试科目')
+    return
+  }
+
+  // 检查是否有题型被选中
+  if (config.value.types.length === 0) {
+    alert('请选择至少一种题型')
+    return
+  }
+
+  // 检查题目数量是否足够
+  config.value.types.forEach(type => {
+    const requiredCount = getCountByType(type)
+    const availableCount = filteredQuestions.value.filter(q => q.type === type).length
+
+    if (availableCount < requiredCount) {
+      alert(`对于${type}题型，只有${availableCount}道可用题目，少于您要求的${requiredCount}道`)
+      flag=1
+      return
+    }
+  })
+  if (flag==1){
+    return
+  }
+  // 检查总题数是否为0
+  const totalQuestions = previewQuestions.value.length
+  if (totalQuestions === 0) {
+    alert('根据您的设置，无法生成包含任何题目的试卷')
+    return
+  }
+
+  showPreviewModal.value = true
+}
+
 // 关闭预览模态框
 const closePreviewModal = () => {
   showPreviewModal.value = false
 }
 
+// 重新生成试卷
+const generateNewPaper = () => {
+  closePreviewModal()
+  previewPaper()
+}
+
+
 // 去发布
 const goToPublish = () => {
+  // Create_Exam_Paper()
   closePreviewModal()
   examSettings.value.fullScore = totalScore.value
   showPublishModal.value = true
@@ -331,7 +424,6 @@ const Search_for_all_questions = async () => {
       throw new Error('网络错误')
     }
 //此处需要修改
-    console.log(res)
     const data = await res.json()
     questions.value = data
   } catch (error) {
@@ -383,54 +475,26 @@ const confirmPublish = () => {
   }
 
   alert('试卷发布成功！')
-  // Create_Exam_Paper()
   router.push('/teacher/exam-management')
 }
-// 查看题库
-// 模拟从后端获取题目数据  @search
-const searchQuery = ref('')
-const selectedsubject = ref('')
 
-// 获取所有唯一科目
-const uniquesubjects = computed(() => {
-  return [...new Set(questionBank.value.map(q => q.subject))]
-})
+// 获取随机题目
+const getRandomQuestions = (questionsList, count) => {
+  const shuffled = [...questionsList].sort(() => Math.random() - 0.5)
+  return shuffled.slice(0, count)
+}
 
-// 过滤后的题目列表
-const filteredQuestions = computed(() => {
-  let result = [...questionBank.value]
-
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    result = result.filter(q =>
-        q.text.toLowerCase().includes(query) ||
-        q.subject.toLowerCase().includes(query)
-    )
-  }
-
-  if (selectedsubject.value) {
-    result = result.filter(q => q.subject === selectedsubject.value)
-  }
-
-  return result
-})
-
-// 判断是否为多选题
-const isMultipleChoice = computed(() => {
-  return currentQuestion.value.type === '多选'
-})
-
-// 判断是否为判断题
-const isJudgmentQuestion = computed(() => {
-  return currentQuestion.value.type === '判断'
-})
+// 获取指定类型的题目数量
+const getTypeQuestionCount = (type) => {
+  return filteredQuestions.value.filter(q => q.type === type).length
+}
 </script>
 
 <style scoped>
-h1 {
-  color: #000000;
+h1{
+  color: black;
 }
-.manual-create-paper {
+.auto-create-paper {
   padding: 20px;
 }
 
@@ -443,20 +507,9 @@ h1 {
 
 .form-group {
   margin-bottom: 20px;
-  color: black;
-}
-.view-library-btn {
-  background-color: #4caf50;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
-  cursor: pointer;
+  color: #000000;
 }
 
-.view-library-btn:hover {
-  background-color: #45a049;
-}
 .form-group label {
   display: block;
   margin-bottom: 8px;
@@ -464,7 +517,8 @@ h1 {
 }
 
 .form-group input[type="text"],
-.form-group input[type="number"] {
+.form-group input[type="number"],
+.form-group select {
   width: 100%;
   padding: 8px;
   border: 1px solid #ccc;
@@ -472,52 +526,37 @@ h1 {
   font-size: 1em;
 }
 
-.question-list {
-  background: #f5f5f5;
-  padding: 15px;
-  border-radius: 6px;
-}
-
-.question-row {
+.checkbox-group {
   display: flex;
+  gap: 15px;
+  margin-top: 8px;
+}
+
+.checkbox-group label {
+  font-weight: normal;
+}
+
+.quantity-inputs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  align-items: center;
+}
+
+.input-group {
+  display: flex;
+  align-items: center;
   gap: 10px;
-  margin-bottom: 10px;
 }
 
-.question-row input {
-  flex: 1;
+.input-group span {
+  white-space: nowrap;
 }
 
-.question-row input:first-child {
-  flex: 3;
-}
-
-.question-row input:last-child {
-  flex: 1;
-}
-
-.remove-btn {
-  background-color: #c62828;
-  color: white;
-  padding: 6px 10px;
-  border-radius: 4px;
-  font-size: 1.2em;
-  line-height: 1;
-}
-
-.add-btn {
-  background-color: #0d47a1;
-  color: white;
-  padding: 8px 16px;
-}
-
-.add-btn:hover {
-  background-color: #1565c0;
-}
-
-.form-actions {
-  margin-top: 20px;
-  text-align: right;
+.input-group input[type="number"] {
+  width: 60px;
+  height: 30px;
+  text-align: center;
 }
 
 .preview-btn {
@@ -543,40 +582,7 @@ h1 {
   justify-content: center;
   z-index: 1000;
 }
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
 
-/* 弹出层 */
-.modal2 {
-  background: #fff;
-  border-radius: 8px;
-  border-color: #ccc;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  width: 80%;
-  max-width: 800px;
-  max-height: 90%;
-  overflow: hidden;
-  position: relative;
-}
-
-/* 弹出层头部 */
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px;
-  border-bottom: 1px solid #e0e0e0;
-}
 .modal-content {
   background: white;
   padding: 25px;
@@ -609,7 +615,6 @@ h1 {
   display: flex;
   align-items: center;
   margin-bottom: 10px;
-  color:black;
 }
 
 .type-badge {
@@ -623,6 +628,7 @@ h1 {
 .question-number {
   flex: 1;
   margin: 0 10px;
+  font-weight: bold;
 }
 
 .score {
@@ -633,7 +639,6 @@ h1 {
 .options {
   margin-left: 20px;
   margin-bottom: 10px;
-  color:black
 }
 
 .option {
@@ -672,9 +677,20 @@ h1 {
   background-color: #444;
 }
 
+.generate-btn {
+  background-color: #0d47a1;
+  color: white;
+  padding: 10px 20px;
+}
+
+.generate-btn:hover {
+  background-color: #1565c0;
+}
+
 .publish-btn {
   background-color: #2e7d32;
   color: white;
+  padding: 10px 20px;
 }
 
 .publish-btn:hover {
@@ -736,62 +752,4 @@ h1 {
   background: #f9f9f9;
   border-radius: 10px;
 }
-/* 来自questionbank的 */
-.toolbar {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
-.search-filter {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-.search-input {
-  flex: 1 1 200px;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 1em;
-}
-
-.subject-filter {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 1em;
-}
-.questions-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-}
-.question-card {
-  background-color: #282c34;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-.question-text {
-  margin-bottom: 15px;
-  font-weight: bold;
-}
-.view-library-btn {
-  background-color: #4caf50; /* 默认绿色 */
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.view-library-btn.close-mode {
-  background-color: #f44336; /* 红色 */
-}
-/* 此处为题库 */
 </style>

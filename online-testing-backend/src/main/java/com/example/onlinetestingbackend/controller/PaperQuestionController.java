@@ -21,7 +21,6 @@ public class PaperQuestionController {
 
     @PostMapping("/manual-create-paper")
     public ResponseEntity<String> createManualPaper(@RequestBody ManualPaperCreationRequestDto request) {
-        System.out.println("Received request: " + request);
         paperQuestionService.createManualPaper(request);
         return ResponseEntity.ok("Manual paper created successfully");
     }
