@@ -1,157 +1,128 @@
 <template>
-  <div class="page-wrapper">
-    <h1 class="page-title">考试信息</h1>
+  <div class="student-dashboard">
+    <h1>考试信息</h1>
 
-    <div class="page-card">
-      <div class="search-bar">
-        <input
-            v-model="searchQuery"
-            placeholder="输入课程名称进行搜索"
-            class="form-input"
-        />
-        <button @click="clearSearch" class="btn btn-primary">清除</button>
-      </div>
+    <div class="search-bar">
+      <input
+          v-model="searchQuery"
+          placeholder="输入课程Id或者考试名称进行搜索"
+          class="search-input"
+      />
+      <button @click="clearSearch" class="clear-btn">清除</button>
+    </div>
 
-      <div class="tabs">
+    <div class="tabs">
+      <button
+          :class="['tab-btn', { active: currentTab === 'ongoing' }]"
+          @click="setActiveTab('ongoing')"
+      >
+        进行中考试
+      </button>
+      <button
+          :class="['tab-btn', { active: currentTab === 'notStarted' }]"
+          @click="setActiveTab('notStarted')"
+      >
+        未开始考试
+      </button>
+    </div>
+
+    <div class="exam-list">
+      <div
+          v-for="exam in filteredExams"
+          :key="exam.paperId"
+          class="exam-card"
+          @click="viewExamDetails(exam)"
+      >
+        <h3>考试名称：{{ exam.paperName }}</h3>
+        <p>课程ID：{{ exam.courseId }}</p>
+        <p>出卷人：{{ exam.creator }}</p>
+        <p v-if="currentTab === 'ongoing'">
+          结束时间：{{ formatDate(exam.closeTime) }}
+        </p>
+        <p v-if="currentTab === 'notStarted'">
+          开始时间：{{ formatDate(exam.openTime) }}
+        </p>
         <button
-            :class="['btn', { 'btn-primary': activeTab === 'ongoing' }]"
-            @click="setActiveTab('ongoing')"
+            class="start-btn"
+            :disabled="!isExamOngoing(exam)"
+            @click.stop="viewExamDetails(exam)"
         >
-          进行中考试
-        </button>
-        <button
-            :class="['btn', { 'btn-primary': activeTab === 'upcoming' }]"
-            @click="setActiveTab('upcoming')"
-        >
-          未开始考试
+          {{ isExamOngoing(exam) ? '去考试' : '考试未开始' }}
         </button>
       </div>
-
-      <div class="exam-list">
-        <div
-            v-for="exam in filteredExams"
-            :key="exam.id"
-            class="exam-card"
-            @click="viewExamDetails(exam)"
-        >
-          <h3 class="section-title">{{ exam.course }}</h3>
-          <div class="exam-info">
-            <p><span class="tag tag-primary">科目</span> {{ exam.subject }}</p>
-            <p v-if="activeTab === 'ongoing'">
-              <span class="tag tag-warning">剩余时间</span> {{ formatTime(exam.remainingTime) }}
-            </p>
-            <p v-if="activeTab === 'upcoming'">
-              <span class="tag tag-info">开始时间</span> {{ formatDate(exam.startTime) }}
-            </p>
-            <p><span class="tag tag-secondary">出卷人</span> {{ exam.teacher }}</p>
-          </div>
-
-          <button
-              class="btn btn-primary"
-              :disabled="!isExamOngoing(exam)"
-              @click.stop="viewExamDetails(exam)"
-          >
-            {{ isExamOngoing(exam) ? '去考试' : '考试未开始' }}
-          </button>
-        </div>
-
-        <div v-if="filteredExams.length === 0" class="empty-state">
-          没有找到相关考试
-        </div>
+      <div v-if="filteredExams.length === 0" class="no-results">
+        没有找到相关考试
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-// 示例数据 - 实际应从API获取
-const exams = ref([
-  {
-    id: 1,
-    course: '计算机基础',
-    subject: '操作系统原理',
-    teacher: '张老师',
-    startTime: new Date().toISOString(),
-    endTime: new Date(Date.now() + 3600 * 1000).toISOString(), // 1小时后结束
-    remainingTime: 3600,
-    totalQuestions: 20,
-    fullScore: 100
-  },
-  {
-    id: 2,
-    course: '软件工程',
-    subject: '需求分析与设计',
-    teacher: '李老师',
-    startTime: new Date(Date.now() + 86400 * 1000).toISOString(), // 一天后开始
-    endTime: new Date(Date.now() + 86400 * 1000 + 3600 * 1000).toISOString(),
-    remainingTime: 3600,
-    totalQuestions: 15,
-    fullScore: 75
-  }
-])
-
+const currentTab = ref('ongoing')
+const notStartedExams = ref([])
+const ongoingExams = ref([])
 const searchQuery = ref('')
-const activeTab = ref('ongoing')
 
-// 判断考试是否进行中
-const isExamOngoing = (exam) => {
-  const now = new Date()
-  return new Date(exam.startTime) <= now && now <= new Date(exam.endTime)
-}
-
-// 跳转至考试详情页
-const viewExamDetails = (exam) => {
-  router.push(`/student/exam/${exam.id}/detail`)
-}
-
-// 格式化日期
-const formatDate = (dateString) => {
-  const date = new Date(dateString)
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
-}
-
-// 格式化剩余时间
-const formatTime = (seconds) => {
-  const hrs = Math.floor(seconds / 3600)
-  const mins = Math.floor((seconds % 3600) / 60)
-  const secs = seconds % 60
-  return `${pad(hrs)}:${pad(mins)}:${pad(secs)}`
-}
-
-// 辅助函数：补零
-const pad = (num) => String(num).padStart(2, '0')
-
-// 过滤逻辑
-const filteredExams = computed(() => {
-  let result = [...exams.value]
-
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    result = result.filter(exam =>
-        exam.course.toLowerCase().includes(query) ||
-        exam.subject.toLowerCase().includes(query)
-    )
+// 拉取考试数据
+const fetchExams = async () => {
+  try {
+    const [notStartedRes, ongoingRes] = await Promise.all([
+      axios.get('http://localhost:8080/api/paper-questions/exams', { params: { status: 'notStarted' } }),
+      axios.get('http://localhost:8080/api/paper-questions/exams', { params: { status: 'ongoing' } })
+    ])
+    notStartedExams.value = notStartedRes.data || []
+    ongoingExams.value = ongoingRes.data || []
+  } catch (e) {
+    console.error('获取考试信息失败', e)
   }
+}
 
-  const now = new Date()
-  if (activeTab.value === 'ongoing') {
-    result = result.filter(exam => new Date(exam.startTime) <= now && now <= new Date(exam.endTime))
-  } else if (activeTab.value === 'upcoming') {
-    result = result.filter(exam => new Date(exam.startTime) > now)
-  }
-
-  return result
+onMounted(() => {
+  fetchExams()
 })
 
 // 切换 tab
 const setActiveTab = (tab) => {
-  activeTab.value = tab
+  currentTab.value = tab
 }
+
+// 判断考试是否进行中
+const isExamOngoing = (exam) => {
+  const now = new Date()
+  return new Date(exam.openTime) <= now && now <= new Date(exam.closeTime)
+}
+
+// 跳转至考试详情页
+const viewExamDetails = (exam) => {
+  router.push(`/student/exam/${exam.paperId}/detail`)
+}
+
+// 格式化日期
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+const pad = (num) => String(num).padStart(2, '0')
+
+// 搜索和筛选
+const filteredExams = computed(() => {
+  let exams = currentTab.value === 'ongoing' ? ongoingExams.value : notStartedExams.value
+  if (searchQuery.value) {
+    const query = searchQuery.value.trim().toLowerCase()
+    exams = exams.filter(exam =>
+        String(exam.courseId).includes(query) ||
+        (exam.paperName && exam.paperName.toLowerCase().includes(query))
+    )
+  }
+  return exams
+})
 
 // 清除搜索
 const clearSearch = () => {
@@ -160,88 +131,119 @@ const clearSearch = () => {
 </script>
 
 <style scoped>
+h1{
+  color: black;
+}
+.student-dashboard {
+  padding: 20px;
+}
+
 .search-bar {
   display: flex;
-  gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: 20px;
 }
 
-.search-bar .form-input {
+.search-input {
   flex: 1;
-  border-radius: var(--border-radius-md) 0 0 var(--border-radius-md);
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px 0 0 6px;
+  font-size: 1em;
 }
 
-.search-bar .btn {
-  border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0;
+.clear-btn {
+  padding: 10px 20px;
+  background-color: #0d47a1;
+  color: white;
+  border: none;
+  border-radius: 0 6px 6px 0;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.clear-btn:hover {
+  background-color: #1565c0;
 }
 
 .tabs {
   display: flex;
-  gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: 20px;
 }
 
-.tabs .btn {
+.tab-btn {
   flex: 1;
-  background-color: var(--background-light);
-  color: var(--text-color);
+  padding: 12px;
+  background-color: #e0e0e0;
+  color: #333;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  margin-right: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s;
 }
 
-.tabs .btn.btn-primary {
+.tab-btn.active {
+  background-color: #0d47a1;
   color: white;
+}
+
+.tab-btn:last-child {
+  margin-right: 0;
 }
 
 .exam-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--spacing-lg);
+  gap: 20px;
 }
 
 .exam-card {
   background: white;
-  padding: var(--spacing-lg);
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-sm);
+  color: black;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   cursor: pointer;
-  transition: var(--transition-base);
-  border: 1px solid var(--border-color);
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .exam-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
-.exam-info {
-  margin: var(--spacing-md) 0;
+.exam-card h3 {
+  margin-top: 0;
+  color: #0d47a1;
 }
 
-.exam-info p {
-  margin: var(--spacing-sm) 0;
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
+.start-btn {
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #0d47a1;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s;
 }
 
-.exam-card .btn {
-  width: 100%;
-  margin-top: var(--spacing-md);
+.start-btn:hover:not([disabled]) {
+  background-color: #1565c0;
 }
 
-.exam-card .btn:disabled {
-  background-color: var(--text-light);
+.start-btn[disabled] {
+  background-color: #ccc;
+  color: #666;
   cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
 }
 
-@media (max-width: 768px) {
-  .exam-list {
-    grid-template-columns: 1fr;
-  }
-  
-  .tabs {
-    flex-direction: column;
-  }
+.no-results {
+  text-align: center;
+  color: #666;
+  padding: 40px;
+  background: #f9f9f9;
+  border-radius: 10px;
 }
 </style>
