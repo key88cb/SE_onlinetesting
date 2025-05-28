@@ -260,7 +260,7 @@ const submitExam = async () => {
   }
   console.log(dto)
   try {
-    const res = await fetch('http://localhost:8080/api/exam/submit', {
+    const res = await fetch('http://localhost:8080/api/exam/submit-exam', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

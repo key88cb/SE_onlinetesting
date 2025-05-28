@@ -455,7 +455,7 @@ async function confirmPublish() {
       if (examSettings.value.endTime) localStorage.setItem('autoCreatePaper_lastEndTime', examSettings.value.endTime);
 
       // Reset form for next creation
-      paper.value = getInitialPaperData();
+      //paper.value = getInitialPaperData();
       config.value = { // Reset config to defaults
         types: ['单选'],
         singleChoiceCount: 5,
