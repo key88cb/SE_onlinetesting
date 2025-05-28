@@ -309,21 +309,83 @@ const previewPaper = () => {
     alert('请先添加题目到试卷列表。');
     return;
   }
-  const currentPreviewQuestions = previewQuestions.value;
-  const unresolvedCount = currentPreviewQuestions.filter(q => q.questionType === '未知 (Unresolved)').length;
+  showPreviewModal.value = true
+}
+// onMounted(async () => {
+//   try {
+//     // 检查是否是“修改模式”
+//     const route = useRoute()
+//     // console.log('11',route.params)
+//     // console.log('22',route.query.mode)
+//     // console.log('sdjakj',route.params)
+//     console.log('route.query', route.query)
+//     console.log('route.params', route.params)
+//     editId.value.paperId = route.params.paperId
+//     editId.value.courseId = route.params.courseId
+//
+//     if (route.query&&(route.query.mode === 'edit' && window.history.state && window.history.state.paperInfo)) {
+//       const paperInfo = window.history.state.paperInfo
+//       // 初始化表单
+//       paper.value.title = paperInfo.paperName
+//       paper.value.courseId = paperInfo.courseId
+//       paper.value.creator = paperInfo.creator
+//       // 题目列表
+//       paper.value.questions = (paperInfo.paperQuestions || []).map(q => ({
+//         id: q.questionId,
+//         score: q.points,
+//         questionText: q.questionText
+//       }))
+//     }
+//   } catch (error) {
+//     alert('加载题目失败，请检查网络或服务状态')
+//     console.error(error)
+//   }
+// })
+onMounted(async () => {
+  await fetchQuestions()
 
-  if (currentPreviewQuestions.length === 0 && paper.value.questions.length > 0) {
-    alert('无法生成预览数据，请检查题库和已选题目。');
-    return;
+  if (route.query.mode === 'edit' && route.params.paperId && route.params.courseId) {
+    const paperId = route.params.paperId
+    const courseId = route.params.courseId
+
+    try {
+      const res = await fetch(`http://localhost:8080/api/paper-questions/query-paper-and-questions?courseId=${courseId}&paperId=${paperId}`)
+      if (!res.ok) throw new Error('加载失败')
+
+      const data = await res.json()
+
+      // 设置表单数据
+      paper.value.title = data.paperName
+      paper.value.courseId = data.courseId
+      paper.value.creator = data.creator
+
+      // 设置题目列表
+      paper.value.questions = data.paperQuestions.map(q => ({
+        id: q.questionId,
+        score: q.points,
+        questionText: q.questionText
+      }))
+    } catch (error) {
+      alert('加载失败，请重试')
+      console.error(error)
+    }
+
+    const currentPreviewQuestions = previewQuestions.value;
+    const unresolvedCount = currentPreviewQuestions.filter(q => q.questionType === '未知 (Unresolved)').length;
+
+    if (currentPreviewQuestions.length === 0 && paper.value.questions.length > 0) {
+      alert('无法生成预览数据，请检查题库和已选题目。');
+      return;
+    }
+    if (unresolvedCount > 0 && unresolvedCount === paper.value.questions.length) {
+      alert(`所有已选题目 (${unresolvedCount}个) 均未能从题库加载完整信息，无法预览。请检查题库数据。`);
+      return;
+    } else if (unresolvedCount > 0) {
+      alert(`部分题目 (${unresolvedCount}个) 未能从题库加载完整信息，预览可能不完整，但仍将显示。`);
+    }
+    showPreviewModal.value = true;
   }
-  if (unresolvedCount > 0 && unresolvedCount === paper.value.questions.length) {
-    alert(`所有已选题目 (${unresolvedCount}个) 均未能从题库加载完整信息，无法预览。请检查题库数据。`);
-    return;
-  } else if (unresolvedCount > 0) {
-    alert(`部分题目 (${unresolvedCount}个) 未能从题库加载完整信息，预览可能不完整，但仍将显示。`);
-  }
-  showPreviewModal.value = true;
-};
+});
 
 const closePreviewModal = () => {
   showPreviewModal.value = false;
@@ -445,8 +507,8 @@ const searchQuery = ref('');
 const selectedsubject = ref('');
 
 const uniquesubjects = computed(() => {
-  return [...new Set(questionBank.value.map(q => q.subjectCategory))].filter(Boolean).sort();
-});
+  return [...new Set(questionBank.value.map(q => q.subjectCategory))].filter(Boolean)
+})
 
 const fetchQuestions = async () => {
   try {
@@ -478,46 +540,10 @@ onMounted(async () => {
   if (lastEndTime && !isEditMode.value) {
     examSettings.value.endTime = lastEndTime;
   }
+});
   // --- End of MODIFICATION ---
 
-
-  if (route.query.mode === 'edit') {
-    isEditMode.value = true;
-    const passedPaperInfo = window.history.state?.paperInfo;
-    if (passedPaperInfo) {
-      paper.value.title = passedPaperInfo.paperName || '';
-      paper.value.courseId = passedPaperInfo.courseId || null;
-      paper.value.creator = passedPaperInfo.creator || '';
-      paper.value.questions = (passedPaperInfo.paperQuestions || []).map(pq => {
-        const bankQuestion = questionBank.value.find(bq => bq.questionId === pq.questionId);
-        return {
-          id: pq.questionId,
-          score: pq.points,
-          questionText: bankQuestion?.questionText || pq.questionText || `题目ID: ${pq.questionId}`
-        };
-      });
-      // --- MODIFICATION: In edit mode, load this paper's specific times if available ---
-      if (passedPaperInfo.openTime) {
-        const openDate = new Date(passedPaperInfo.openTime);
-        // Ensure conversion to 'YYYY-MM-DDTHH:mm' format for datetime-local
-        examSettings.value.startTime = !isNaN(openDate) ? openDate.toISOString().slice(0,16) : '';
-      }
-      if (passedPaperInfo.closeTime) {
-        const closeDate = new Date(passedPaperInfo.closeTime);
-        examSettings.value.endTime = !isNaN(closeDate) ? closeDate.toISOString().slice(0,16) : '';
-      }
-      examSettings.value.fullScore = passedPaperInfo.totalScores !== undefined ? passedPaperInfo.totalScores : totalScore.value; // Use computed totalScore as fallback
-      // --- End of MODIFICATION ---
-    } else if (route.params.paperId) {
-      alert('编辑模式：未能从导航状态加载试卷信息，或需实现API获取详情。');
-    } else {
-      alert('编辑模式：未提供试卷信息。');
-    }
-  }
-
-  initialPaperSnapshot = JSON.stringify(paper.value);
-  isFormDirty.value = false;
-});
+// onMounted(fetchQuestions)
 
 const filteredQuestions = computed(() => {
   return questionBank.value.filter(question => {
@@ -586,7 +612,7 @@ const cancelPaperCreation = () => {
     isEditMode.value = false;
     router.push('/teacher/dashboard');
   }
-};
+}
 </script>
 
 <style scoped>
