@@ -197,7 +197,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter,useRoute } from 'vue-router';
 
 const router = useRouter();
 
@@ -424,35 +424,40 @@ async function confirmPublish() {
   }
 
   if (window.confirm('确认要发布这份试卷吗？')) {
-    const payload = {
-      courseId: getCourseIdFromName(paper.value.course),
-      creator: paper.value.creator,
-      openTime: new Date(examSettings.value.startTime).toISOString().slice(0, 19),
-      closeTime: new Date(examSettings.value.endTime).toISOString().slice(0, 19),
-      paperName: paper.value.title,
-      totalScores: examSettings.value.fullScore,
-      questionTypeConfigs: buildQuestionTypeConfigs(),
-      questions: confirmedQuestions.value.map(q => ({
-        questionId: q.questionId,
-        points: getQuestionScore(q)
-      }))
-    };
-
     try {
+      // 构建请求体
+      const payload = {
+        courseId: getCourseIdFromName(paper.value.course),
+        creator: paper.value.creator,
+        openTime: new Date(examSettings.value.startTime).toISOString().slice(0, 19),
+        closeTime: new Date(examSettings.value.endTime).toISOString().slice(0, 19),
+        paperName: paper.value.title,
+        totalScores: examSettings.value.fullScore,
+        questionTypeConfigs: buildQuestionTypeConfigs(),
+        questions: confirmedQuestions.value.map(q => ({
+          questionId: q.questionId,
+          points: getQuestionScore(q)
+        }))
+      };
+
+      // 发布新试卷
       const res = await fetch('http://localhost:8080/api/paper-questions/auto-create-paper', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
+
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({ message: '网络响应错误' }));
         throw new Error(errorData.message || `HTTP error ${res.status}`);
       }
+
       alert('试卷发布成功！');
       showPublishModal.value = false;
-      // Save last used exam times
-      if (examSettings.value.startTime) localStorage.setItem('autoCreatePaper_lastStartTime', examSettings.value.startTime);
-      if (examSettings.value.endTime) localStorage.setItem('autoCreatePaper_lastEndTime', examSettings.value.endTime);
+
+      // 清除缓存并跳转
+      localStorage.setItem('autoCreatePaper_lastStartTime', examSettings.value.startTime);
+      localStorage.setItem('autoCreatePaper_lastEndTime', examSettings.value.endTime);
 
       // Reset form for next creation
       //paper.value = getInitialPaperData();

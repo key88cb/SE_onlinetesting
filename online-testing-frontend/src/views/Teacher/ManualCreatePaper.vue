@@ -204,6 +204,8 @@ import { ref, watch, computed, onMounted, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 const router = useRouter();
 const route = useRoute();
+const originalPaperId = ref(parseInt(route.query.paperId) || null);
+const originalCourseId = ref(parseInt(route.query.courseId) || null);
 
 const QUESTION_TYPE_MAP_TO_CHINESE = {
   'Single Choice': '单选',
@@ -465,28 +467,68 @@ const cancelPublish = () => {
   showPublishModal.value = false;
 };
 
-const confirmPublish = () => {
+async function deleteExistingPaper(paperId, courseId) {
+  if (!paperId || !courseId) {
+    console.error('无法删除试卷：缺少 paperId 或 courseId');
+    return;
+  }
+  console.log('正在删除旧试卷...');
+  console.log('paperId:', paperId);
+  console.log('courseId:', courseId);
+  try {
+    const res = await fetch('http://localhost:8080/api/paper-questions/delete-paper', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        paperId: paperId,
+        courseId: courseId
+      })
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ message: '网络响应错误' }));
+      throw new Error(errorData.message || `HTTP error ${res.status}`);
+    }
+
+    console.log('旧试卷删除成功');
+  } catch (error) {
+    console.error('删除旧试卷失败:', error);
+    throw error;
+  }
+}
+
+const confirmPublish = async () => {
   if (!paper.value.title.trim()) {
-    alert('请输入试卷名称。'); return;
+    alert('请输入试卷名称。');
+    return;
   }
   if (paper.value.questions.length === 0) {
-    alert('试卷中没有题目，无法发布。'); return;
+    alert('试卷中没有题目，无法发布。');
+    return;
   }
   if (!examSettings.value.startTime || !examSettings.value.endTime) {
-    alert('请填写完整的考试时间。'); return;
+    alert('请填写完整的考试时间。');
+    return;
   }
   if (new Date(examSettings.value.startTime) >= new Date(examSettings.value.endTime)) {
-    alert('结束时间必须大于开始时间。'); return;
+    alert('结束时间必须大于开始时间。');
+    return;
   }
   examSettings.value.fullScore = totalScore.value;
   if (examSettings.value.fullScore <= 0 && paper.value.questions.length > 0) {
-    if(!window.confirm('试卷总分目前为0或所有题目分数未设置，确定要发布吗？')) {
+    if (!window.confirm('试卷总分目前为0或所有题目分数未设置，确定要发布吗？')) {
       return;
     }
   }
 
   const confirmActionText = isEditMode.value ? '修改并重新发布' : '发布';
   if (window.confirm(`确认要${confirmActionText}这份试卷吗？`)) {
+    // 如果是编辑模式，先删除原来的试卷
+    if (route.query.mode === 'edit' && route.params.paperId && route.params.courseId) {
+      await deleteExistingPaper(route.params.paperId, route.params.courseId);
+    }
     const manualPaperRequest = {
       courseId: paper.value.courseId,
       creator: paper.value.creator,
