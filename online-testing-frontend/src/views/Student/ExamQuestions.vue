@@ -25,7 +25,7 @@
                 type="checkbox"
                 :value="String.fromCharCode(65 + optionIndex)"
                 v-model="studentAnswers[question.questionId]"
-                @change="selectOption(question, String.fromCharCode(65 + optionIndex))"
+                @change="selectOption(question, String.fromCharCode(65 + optionIndex))"online_test_db
             />
           </template>
 
@@ -123,8 +123,16 @@ const startCountdown = () => {
   }
 
   const now = Date.now()
+
   const totalTime = Math.floor((closeTimeDate - now) / 1000)
 
+  // 新增：判断考试是否已结束
+  if (totalTime <= 0) {
+    alert("考试已结束")
+    // 可以选择跳转到仪表盘或其他页面
+    router.push('/student/dashboard')
+    return
+  }
   console.log('totalTime:', totalTime)
   console.log('typeof totalTime:', typeof totalTime)
 
@@ -252,7 +260,7 @@ const submitExam = async () => {
   }
   console.log(dto)
   try {
-    const res = await fetch('http://localhost:8080/api/exam/submit', {
+    const res = await fetch('http://localhost:8080/api/exam/submit-exam', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

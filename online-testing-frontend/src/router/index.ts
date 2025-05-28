@@ -59,7 +59,7 @@ const routes = [
     component: StudentExamDetail
   },
   {
-    path: '/student/exam/:id/questions',
+    path: '/student/exam/:courseId/:paperId',
     name: 'StudentExamQuestions',
     component: StudentExamQuestions
   },
@@ -101,7 +101,7 @@ const routes = [
     component: ManualCreatePaper
   },
   {
-    path: '/teacher/create-paper/manual-edit/:courseid/:paperId',
+    path: '/teacher/create-paper/manual-edit/:courseId/:paperId',
     name: 'ManualCreatePaperedit',
     component: ManualCreatePaper
   },

@@ -47,6 +47,7 @@
 
         <div class="card-actions">
           <button class="btn edit-btn" @click.stop="gotoedit(paperInfo)">修改考试设置</button>
+          <button class="btn time-btn" @click.stop="openTimeEditModal(paperInfo)">修改考试时间</button>
           <button class="btn delete-btn" @click.stop="deletepaperInfo(paperInfo)">删除考试</button>
         </div>
       </div>
@@ -81,6 +82,32 @@
       没有找到相关考试
     </div>
     <!-- 编辑考试设置模态框 -->
+    <div v-if="showTimeModal" class="modal-overlay">
+      <div class="modal-content">
+        <h3>修改考试时间</h3>
+        <div class="datetime-pickers">
+          <input type="datetime-local" v-model="selectedPaperForTime.openTime" />
+          <span>至</span>
+          <input type="datetime-local" v-model="selectedPaperForTime.closeTime" />
+        </div>
+
+
+        <div class="modal-buttons">
+          <button @click="showTimeModal = false">取消</button>
+          <button @click="submitUpdateTime">确认</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 提示模态框 -->
+    <div v-if="showAlertModal" class="modal-overlay">
+      <div class="modal-content alert-modal">
+        <p>{{ alertMessage }}</p>
+        <button @click="showAlertModal = false">确定</button>
+      </div>
+    </div>
+
 
   </div>
 </template>
@@ -93,67 +120,98 @@ onMounted(() => {
   fetchPaperInfos();
 })
 
-const constId = ref(1)
 const creator = ref("")
 const showSettingsModal = ref(false)
 const filterCourseId = ref('')
 const filterCreator = ref('')
+const showTimeModal = ref(false)
+const showAlertModal = ref(false)
+const alertMessage = ref('')
+const selectedPaperForTime = ref(null)
+const paperInfos = ref([]) // 存储全量数据
 
-const fetchPaperInfos = async() => {
+// watch([filterCourseId, filterCreator], async () => {
+//   await fetchPaperInfos(); // 当筛选条件变化时重新拉取数据
+// });
+watch([filterCourseId, filterCreator], () => {
+  // 不需要重新请求，只需重新计算 computed 即可
+})
+
+const uniqueCourseIds = computed(() => {
+  return [...new Set(paperInfos.value.map(i => i.courseId).filter(Boolean))]
+})
+
+const uniqueCreators = computed(() => {
+  return [...new Set(paperInfos.value.map(i => i.creator).filter(Boolean))]
+})
+
+const openTimeEditModal = (paperInfo) => {
+  selectedPaperForTime.value = { ...paperInfo }
+  showTimeModal.value = true
+}
+
+const submitUpdateTime = async () => {
+  const paper = selectedPaperForTime.value
+
+  // 校验时间顺序
+  const openTime = new Date(paper.openTime)
+  const closeTime = new Date(paper.closeTime)
+
+  if (openTime >= closeTime) {
+    alertMessage.value = '开始时间不能晚于结束时间'
+    showAlertModal.value = true
+    return
+  }
+
   try {
-    var params = new URLSearchParams({
-      courseId: constId.value,
-      creator: creator.value
-    });
-    if(creator.value===""){
-      params=new URLSearchParams({
-      courseId: constId.value,
-    });
-    }
-
-    console.log('请求参数:', params.toString())
-    const url = `http://localhost:8080/api/paper-questions/query-papers-for-all?${params}`;
-    const res=await fetch(url,{
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+    const res = await fetch('http://localhost:8080/api/paper-questions/update-paper-time', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        paperId: paper.paperId,
+        courseId: paper.courseId,
+        openTime: paper.openTime,
+        closeTime: paper.closeTime,
+        paperName: paper.paperName
+      })
     })
+
     if (!res.ok) {
-      console.error('网络错误:', res.status, res.statusText)
       throw new Error('网络错误')
     }
-    var data =await res.json()
-    paperInfos.value = data
-    console.log(paperInfos.value)
+
+    alertMessage.value = '试卷时间修改成功'
+    showAlertModal.value = true
+    showTimeModal.value = false
+    await fetchPaperInfos() // 刷新数据
   } catch (error) {
-    alert('加载考试状态失败，请检查网络或服务状态')
+    alertMessage.value = '更新失败，请重试'
+    showAlertModal.value = true
     console.error(error)
   }
 }
 
-const paperInfos = ref([])
+const fetchPaperInfos = async () => {
+  try {
+    const url = 'http://localhost:8080/api/paper-questions/query-all-papers'
+    const res = await fetch(url, { method: 'GET' })
+
+    if (!res.ok) throw new Error('网络错误')
+
+    const data = await res.json()
+    paperInfos.value = data // 保存全量数据
+    console.log('成功拉取全部考试数据:', data)
+  } catch (error) {
+    alert('加载考试失败，请检查网络或服务状态')
+    console.error(error)
+  }
+}
+
+
 const currentPaperInfo = ref(null)
 const selectedpaperInfo = ref(null)
 const currentTab = ref('notStarted')
 
-// 获取唯一的班级ID和创建者列表
-const uniqueCourseIds = computed(() => {
-  return [...new Set(paperInfos.value.map(item => item.courseId))]
-})
-
-const uniqueCreators = computed(() => {
-  return [...new Set(paperInfos.value.map(item => item.creator))]
-})
-
-// 考试数据过滤函数
-const filterPaperInfos = (paperInfosList) => {
-  return paperInfosList.filter(paperInfo => {
-    const courseMatch = !filterCourseId.value || paperInfo.courseId == filterCourseId.value
-    const creatorMatch = !filterCreator.value || paperInfo.creator === filterCreator.value
-    return courseMatch && creatorMatch
-  })
-}
 
 // 计算不同状态的考试（已过滤）
 const notStartedpaperInfos = computed(() => {
@@ -175,17 +233,23 @@ const endedpaperInfos = computed(() => {
   const now = new Date()
   return paperInfos.value.filter(e =>
       new Date(e.closeTime) <= now
-  ).map(paperInfo => {
-    return {
-      ...paperInfo
-    }
-  })
+  )
 })
 
-// 应用过滤后的考试列表
+// 考试数据过滤函数
+const filterPaperInfos = (list) => {
+  return list.filter(paperInfo => {
+    const courseMatch = !filterCourseId.value || paperInfo.courseId == filterCourseId.value
+    const creatorMatch = !filterCreator.value || paperInfo.creator === filterCreator.value
+    return courseMatch && creatorMatch
+  })
+}
+
+// 各状态+筛选后的列表
 const filteredNotStartedpaperInfos = computed(() => filterPaperInfos(notStartedpaperInfos.value))
 const filteredOngoingpaperInfos = computed(() => filterPaperInfos(ongoingpaperInfos.value))
 const filteredEndedpaperInfos = computed(() => filterPaperInfos(endedpaperInfos.value))
+
 
 const nopaperInfos = computed(() => {
   return (
@@ -341,4 +405,81 @@ h1 {
   padding: 20px;
   color: #666;
 }
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  position: relative;
+}
+
+.datetime-pickers {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.datetime-pickers input {
+  padding: 8px;
+  font-size: 1em;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.modal-buttons button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.modal-buttons button:first-child {
+  background-color: #ccc;
+  color: #333;
+}
+
+.modal-buttons button:last-child {
+  background-color: #2e7d32;
+  color: white;
+}
+
+.alert-modal {
+  text-align: center;
+}
+
+.alert-modal p {
+  margin-bottom: 20px;
+  font-size: 16px;
+}
+
+.alert-modal button {
+  padding: 8px 20px;
+  background-color: #2e7d32;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
 </style>

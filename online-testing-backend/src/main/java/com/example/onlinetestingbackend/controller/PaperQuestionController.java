@@ -43,8 +43,27 @@ public class PaperQuestionController {
         return ResponseEntity.ok("Paper time updated successfully");
     }
 
+    @GetMapping("/query-all-papers")
+    public ResponseEntity<List<PaperInfoDto>> queryAllPapers() {
+        List<PaperInfo> papers = paperQuestionService.findAll();
+        List<PaperInfoDto> dtos = new ArrayList<>();
+
+        for (PaperInfo paperInfo : papers) {
+            PaperInfoDto dto = new PaperInfoDto();
+            dto.setPaperId(paperInfo.getPaperId());
+            dto.setCourseId(paperInfo.getCourseId());
+            dto.setCreator(paperInfo.getCreator());
+            dto.setOpenTime(paperInfo.getOpenTime());
+            dto.setCloseTime(paperInfo.getCloseTime());
+            dto.setTotalScores(paperInfo.getTotalScores());
+            dto.setPaperName(paperInfo.getPaperName());
+            dtos.add(dto);
+        }
+
+        return ResponseEntity.ok(dtos);
+    }
     @GetMapping("/query-papers")
-    public ResponseEntity<List<PaperInfoDto>> queryPapers(@RequestParam Integer courseId,@RequestParam String creator) {
+    public ResponseEntity<List<PaperInfoDto>> queryPapers(@RequestParam Integer courseId, @RequestParam String creator) {
         List<PaperInfo> papers = paperQuestionService.findByCourseIdAndCreator(courseId, creator);
         List<PaperInfoDto> dtos = new ArrayList<>();
 
