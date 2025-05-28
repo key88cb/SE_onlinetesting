@@ -101,6 +101,11 @@ const routes = [
     component: ManualCreatePaper
   },
   {
+    path: '/teacher/create-paper/manual-edit/:courseid/:paperId',
+    name: 'ManualCreatePaperedit',
+    component: ManualCreatePaper
+  },
+  {
     path: '/teacher/create-paper/auto',
     name: 'AutoCreatePaper',
     component: AutoCreatePaper

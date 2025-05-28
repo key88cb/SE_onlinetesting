@@ -1,56 +1,63 @@
 <template>
-  <div class="student-dashboard">
-    <h1>考试信息</h1>
+  <div class="page-wrapper">
+    <h1 class="page-title">考试信息</h1>
 
-    <div class="search-bar">
-      <input
-          v-model="searchQuery"
-          placeholder="输入课程名称进行搜索"
-          class="search-input"
-      />
-      <button @click="clearSearch" class="clear-btn">清除</button>
-    </div>
+    <div class="page-card">
+      <div class="search-bar">
+        <input
+            v-model="searchQuery"
+            placeholder="输入课程名称进行搜索"
+            class="form-input"
+        />
+        <button @click="clearSearch" class="btn btn-primary">清除</button>
+      </div>
 
-    <div class="tabs">
-      <button
-          :class="['tab-btn', { active: activeTab === 'ongoing' }]"
-          @click="setActiveTab('ongoing')"
-      >
-        进行中考试
-      </button>
-      <button
-          :class="['tab-btn', { active: activeTab === 'upcoming' }]"
-          @click="setActiveTab('upcoming')"
-      >
-        未开始考试
-      </button>
-    </div>
-
-    <div class="exam-list">
-      <div
-          v-for="exam in filteredExams"
-          :key="exam.id"
-          class="exam-card"
-          @click="viewExamDetails(exam)"
-      >
-        <h3>{{ exam.course }}</h3>
-        <p>科目：{{ exam.subject }}</p>
-        <p v-if="activeTab === 'ongoing'">剩余时间：{{ formatTime(exam.remainingTime) }}</p>
-        <p v-if="activeTab === 'upcoming'">开始时间：{{ formatDate(exam.startTime) }}</p>
-        <p>出卷人：{{ exam.teacher }}</p>
-
-        <!-- 根据考试状态显示不同按钮 -->
+      <div class="tabs">
         <button
-            class="start-btn"
-            :disabled="!isExamOngoing(exam)"
-            @click.stop="viewExamDetails(exam)"
+            :class="['btn', { 'btn-primary': activeTab === 'ongoing' }]"
+            @click="setActiveTab('ongoing')"
         >
-          {{ isExamOngoing(exam) ? '去考试' : '考试未开始' }}
+          进行中考试
+        </button>
+        <button
+            :class="['btn', { 'btn-primary': activeTab === 'upcoming' }]"
+            @click="setActiveTab('upcoming')"
+        >
+          未开始考试
         </button>
       </div>
 
-      <div v-if="filteredExams.length === 0" class="no-results">
-        没有找到相关考试
+      <div class="exam-list">
+        <div
+            v-for="exam in filteredExams"
+            :key="exam.id"
+            class="exam-card"
+            @click="viewExamDetails(exam)"
+        >
+          <h3 class="section-title">{{ exam.course }}</h3>
+          <div class="exam-info">
+            <p><span class="tag tag-primary">科目</span> {{ exam.subject }}</p>
+            <p v-if="activeTab === 'ongoing'">
+              <span class="tag tag-warning">剩余时间</span> {{ formatTime(exam.remainingTime) }}
+            </p>
+            <p v-if="activeTab === 'upcoming'">
+              <span class="tag tag-info">开始时间</span> {{ formatDate(exam.startTime) }}
+            </p>
+            <p><span class="tag tag-secondary">出卷人</span> {{ exam.teacher }}</p>
+          </div>
+
+          <button
+              class="btn btn-primary"
+              :disabled="!isExamOngoing(exam)"
+              @click.stop="viewExamDetails(exam)"
+          >
+            {{ isExamOngoing(exam) ? '去考试' : '考试未开始' }}
+          </button>
+        </div>
+
+        <div v-if="filteredExams.length === 0" class="empty-state">
+          没有找到相关考试
+        </div>
       </div>
     </div>
   </div>
@@ -153,119 +160,88 @@ const clearSearch = () => {
 </script>
 
 <style scoped>
-h1{
-  color: black;
-}
-.student-dashboard {
-  padding: 20px;
-}
-
 .search-bar {
   display: flex;
-  margin-bottom: 20px;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
 }
 
-.search-input {
+.search-bar .form-input {
   flex: 1;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px 0 0 6px;
-  font-size: 1em;
+  border-radius: var(--border-radius-md) 0 0 var(--border-radius-md);
 }
 
-.clear-btn {
-  padding: 10px 20px;
-  background-color: #0d47a1;
-  color: white;
-  border: none;
-  border-radius: 0 6px 6px 0;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.clear-btn:hover {
-  background-color: #1565c0;
+.search-bar .btn {
+  border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0;
 }
 
 .tabs {
   display: flex;
-  margin-bottom: 20px;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
 }
 
-.tab-btn {
+.tabs .btn {
   flex: 1;
-  padding: 12px;
-  background-color: #e0e0e0;
-  color: #333;
-  font-weight: bold;
-  border: none;
-  border-radius: 6px;
-  margin-right: 10px;
-  cursor: pointer;
-  transition: background-color 0.3s;
+  background-color: var(--background-light);
+  color: var(--text-color);
 }
 
-.tab-btn.active {
-  background-color: #0d47a1;
+.tabs .btn.btn-primary {
   color: white;
-}
-
-.tab-btn:last-child {
-  margin-right: 0;
 }
 
 .exam-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
+  gap: var(--spacing-lg);
 }
 
 .exam-card {
   background: white;
-  color:black;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  padding: var(--spacing-lg);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: var(--transition-base);
+  border: 1px solid var(--border-color);
 }
 
 .exam-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
-.exam-card h3 {
-  margin-top: 0;
-  color: #0d47a1;
+.exam-info {
+  margin: var(--spacing-md) 0;
 }
 
-.start-btn {
-  margin-top: 15px;
-  padding: 10px;
-  background-color: #0d47a1;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.3s;
+.exam-info p {
+  margin: var(--spacing-sm) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
 }
 
-.start-btn:hover:not([disabled]) {
-  background-color: #1565c0;
+.exam-card .btn {
+  width: 100%;
+  margin-top: var(--spacing-md);
 }
 
-.start-btn[disabled] {
-  background-color: #ccc;
-  color: #666;
+.exam-card .btn:disabled {
+  background-color: var(--text-light);
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
-.no-results {
-  text-align: center;
-  color: #666;
-  padding: 40px;
-  background: #f9f9f9;
-  border-radius: 10px;
+@media (max-width: 768px) {
+  .exam-list {
+    grid-template-columns: 1fr;
+  }
+  
+  .tabs {
+    flex-direction: column;
+  }
 }
 </style>

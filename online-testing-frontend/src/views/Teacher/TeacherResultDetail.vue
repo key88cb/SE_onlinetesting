@@ -290,6 +290,7 @@ const saveNewScore=async(newScore,courseId,paperId,questionId)=>{
     console.error(error)
   }
   fetchrecords(paperId, courseId, studentId);
+  fetchExamResult(paperId, courseId, studentId)
 }
 // 日期格式化
 const formatDate = (dateString) => {

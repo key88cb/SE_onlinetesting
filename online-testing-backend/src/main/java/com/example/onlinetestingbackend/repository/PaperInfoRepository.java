@@ -1,6 +1,5 @@
 package com.example.onlinetestingbackend.repository;
 
-import aj.org.objectweb.asm.commons.Remapper;
 import com.example.onlinetestingbackend.entity.PaperInfo;
 import com.example.onlinetestingbackend.entity.id.PaperInfoId;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -27,4 +26,13 @@ public interface PaperInfoRepository extends JpaRepository<PaperInfo, PaperInfoI
     PaperInfo findByCourseIdAndPaperId(Integer courseId, Integer paperId);
 
     void deleteById(PaperInfoId id);
+
+    // 查询未开始的考试（openTime 在当前时间之后）
+    List<PaperInfo> findByOpenTimeAfter(java.time.LocalDateTime now);
+
+    // 查询正在进行的考试（openTime 早于当前时间，closeTime 晚于当前时间）
+    List<PaperInfo> findByOpenTimeBeforeAndCloseTimeAfter(java.time.LocalDateTime now1, java.time.LocalDateTime now2);
+
+    // 查询已结束的考试（closeTime 早于当前时间）
+    List<PaperInfo> findByCloseTimeBefore(java.time.LocalDateTime now);
 }

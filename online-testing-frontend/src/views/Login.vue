@@ -74,9 +74,6 @@ const login = () => {
 </script>
 
 <style scoped>
-h1{
-  color: black;
-}
 .login {
   padding: 20px;
   min-height: 100vh;
@@ -84,42 +81,61 @@ h1{
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  background: linear-gradient(135deg, var(--background-light), #e3f2fd);
+}
+
+h1 {
+  color: var(--text-color);
+  font-size: 2.5em;
+  margin-bottom: 2rem;
+  text-align: center;
+  font-weight: 600;
+  letter-spacing: 1px;
 }
 
 .login-container {
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
   background: white;
-  padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 2.5rem;
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  transition: var(--transition-base);
+}
+
+.login-container:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
 }
 
 .user-type {
   display: flex;
-  margin-bottom: 25px;
+  margin-bottom: 2rem;
+  gap: 1rem;
 }
 
 .type-btn {
   flex: 1;
-  padding: 12px;
-  background-color: #e0e0e0;
-  color: #333;
-  font-weight: bold;
-  border: none;
-  border-radius: 6px;
-  margin-right: 10px;
+  padding: 0.8rem;
+  background-color: var(--background-light);
+  color: var(--text-color);
+  font-weight: 500;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: var(--transition-base);
+}
+
+.type-btn:hover {
+  background-color: var(--background-light);
+  transform: translateY(-1px);
 }
 
 .type-btn.active {
-  background-color: #0d47a1;
+  background-color: var(--primary-color);
   color: white;
-}
-
-.type-btn:last-child {
-  margin-right: 0;
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow-sm);
 }
 
 .login-form {
@@ -127,37 +143,76 @@ h1{
 }
 
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 1.5rem;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 8px;
-  font-weight: bold;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #333333;
+  font-size: 0.95rem;
 }
 
 .form-group input {
   width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 1em;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: var(--transition-base);
+  background-color: white;
+  color: var(--text-color);
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+  background-color: white;
+}
+
+.form-group input::placeholder {
+  color: #9e9e9e;
+  font-weight: 400;
 }
 
 .submit-btn {
   width: 100%;
-  padding: 12px;
-  background-color: #0d47a1;
+  padding: 0.8rem;
+  background-color: var(--primary-color);
   color: white;
   border: none;
-  border-radius: 6px;
-  font-size: 1em;
-  font-weight: bold;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: var(--transition-base);
+  margin-top: 1rem;
 }
 
 .submit-btn:hover {
-  background-color: #1565c0;
+  background-color: #357abd;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.submit-btn:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+@media (max-width: 480px) {
+  .login-container {
+    padding: 1.5rem;
+  }
+  
+  h1 {
+    font-size: 2em;
+  }
+  
+  .type-btn {
+    padding: 0.6rem;
+  }
 }
 </style>
