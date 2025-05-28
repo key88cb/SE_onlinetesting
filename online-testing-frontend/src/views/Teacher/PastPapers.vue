@@ -26,11 +26,11 @@
     <div class="papers-grid">
       <div
           v-for="paper in filteredPapers"
-          :key="paper.id"
+          :key="paper.paperId"
           class="paper-card"
           @click="viewPaperDetails(paper)"
       >
-        <h3>{{ paper.title }}</h3>
+        <h3>试卷名称：{{ paper.title }}</h3>
         <div class="paper-info">
           <p>科目：{{ paper.subject }}</p>
           <p>年份：{{ paper.year }}</p>
@@ -52,92 +52,49 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-// 模拟历年真题数据，实际应从API获取
-const pastPapers = ref([
-  {
-    id: 1,
-    paper_id: 1,
-    title: '2023年操作系统原理期末考试',
-    subject: '操作系统原理',
-    year: 2023,
-    totalQuestions: 20,
-    fullScore: 100
-  },
-  {
-    id: 2,
-    paper_id: 2,
-    title: '2023年需求分析与设计期中考试',
-    subject: '需求分析与设计',
-    year: 2023,
-    totalQuestions: 15,
-    fullScore: 75
-  },
-  {
-    id: 3,
-    paper_id: 3,
-    title: '2022年数据库基础期末考试',
-    subject: '数据库基础',
-    year: 2022,
-    totalQuestions: 25,
-    fullScore: 100
-  },
-  {
-    id: 4,
-    paper_id: 4,
-    title: '2022年操作系统原理期中考试',
-    subject: '操作系统原理',
-    year: 2022,
-    totalQuestions: 18,
-    fullScore: 90
-  }
-])
+const pastPapers = ref([])
 
 onMounted(async () => {
   try {
-    // const res= await Search_for_all_past_papers()
-    // if (res) {
-    //   pastPapers.value = res
-    // } else {
-    //   alert('没有获取到试卷数据')
-    // }
+    // 拉取所有已结束考试
+    const res = await fetch('http://localhost:8080/api/paper-questions/exams?status=ended', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    })
+    if (!res.ok) throw new Error('网络错误')
+    const data = await res.json()
+    // 适配后端数据结构
+    pastPapers.value = data.map(paper => ({
+      paperId: paper.paperId,
+      courseId: paper.courseId,
+      title: paper.paperName || '',
+      subject: paper.courseId ? String(paper.courseId) : '', // 可根据实际后端返回的科目字段调整
+      year: paper.openTime ? new Date(paper.openTime).getFullYear() : '',
+      totalQuestions: paper.paperQuestions ? paper.paperQuestions.length : undefined,
+      fullScore: paper.totalScores,
+      paperName: paper.paperName,
+      openTime: paper.openTime,
+      closeTime: paper.closeTime,
+      creator: paper.creator
+    }))
   } catch (error) {
-    alert('加载题目失败，请检查网络或服务状态')
+    alert('加载试卷失败，请检查网络或服务状态')
     console.error(error)
   }
 })
-const Search_for_all_past_papers = async () => {
-  try {
-    const response = await fetch('http://localhost:8080/exam_paper',{
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-    },
-      body: JSON.stringify({
-        method: 'GET'
-      })
-    }
-  )
-    if (!response.ok) {
-      throw new Error('网络响应不正常')
-    }
-    const data = await response.json()
-    return data
-  } catch (error) {
-    console.error('获取试卷数据失败:', error)
-  }
-}
+
 const searchQuery = ref('')
 const selectedSubject = ref('')
 const selectedYear = ref('')
 
-// 获取所有唯一科目
+// 获取所有唯一科目（这里用 courseId 代替，实际可根据后端返回的科目字段调整）
 const uniqueSubjects = computed(() => {
-  return [...new Set(pastPapers.value.map(paper => paper.subject))]
+  return [...new Set(pastPapers.value.map(paper => paper.subject).filter(Boolean))]
 })
 
 // 获取年份选项
 const yearOptions = computed(() => {
-  const years = new Set(pastPapers.value.map(paper => paper.year))
+  const years = new Set(pastPapers.value.map(paper => paper.year).filter(Boolean))
   const sortedYears = Array.from(years).sort((a, b) => b - a)
   return sortedYears
 })
@@ -150,8 +107,8 @@ const filteredPapers = computed(() => {
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     results = results.filter(paper =>
-        paper.title.toLowerCase().includes(query) ||
-        paper.subject.toLowerCase().includes(query)
+      (paper.title && paper.title.toLowerCase().includes(query)) ||
+      (paper.subject && paper.subject.toLowerCase().includes(query))
     )
   }
 
@@ -162,7 +119,7 @@ const filteredPapers = computed(() => {
 
   // 应用年份过滤
   if (selectedYear.value) {
-    results = results.filter(paper => paper.year.toString() === selectedYear.value.toString())
+    results = results.filter(paper => String(paper.year) === String(selectedYear.value))
   }
 
   return results
@@ -175,7 +132,7 @@ const clearSearch = () => {
 }
 
 const viewPaperDetails = (paper) => {
-  router.push(`/teacher/past-paper/${paper.paper_id}/details`)
+  router.push(`/teacher/past-paper/${paper.paperId}/details?courseId=${paper.courseId}`)
 }
 </script>
 
