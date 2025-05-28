@@ -1,94 +1,172 @@
 <template>
-  <div class="create-paper-container">
-    <h2>请选择出卷方式</h2>
+  <div class="page-wrapper">
+    <h1 class="page-title">创建试卷</h1>
+    <p class="welcome-text">请选择您想要的出卷方式</p>
+
     <div class="option-blocks">
-      <!-- 左侧：手动出卷 -->
       <div class="option-block" @click="goToManualPaper">
-        <h3>手动出卷</h3>
-        <p>自主选择题目，灵活组卷</p>
+        <div class="card-icon">✍️</div>
+        <h3 class="section-title">手动出卷</h3>
+        <p class="card-description">自主选择题目，灵活组卷，完全掌控试卷内容</p>
+        <div class="feature-list">
+          <span class="feature-tag">自由选题</span>
+          <span class="feature-tag">灵活调整</span>
+          <span class="feature-tag">实时预览</span>
+        </div>
       </div>
 
-      <!-- 右侧：自动出卷 -->
       <div class="option-block" @click="goToAutoPaper">
-        <h3>自动出卷</h3>
-        <p>系统智能推荐题目，快速生成试卷</p>
+        <div class="card-icon">🤖</div>
+        <h3 class="section-title">自动出卷</h3>
+        <p class="card-description">系统智能推荐题目，快速生成试卷，提高效率</p>
+        <div class="feature-list">
+          <span class="feature-tag">智能推荐</span>
+          <span class="feature-tag">快速生成</span>
+          <span class="feature-tag">难度均衡</span>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
-<script>
-export default {
-  methods: {
-    goToManualPaper() {
-      this.$router.push('/teacher/create-paper/manual');
-    },
-    goToAutoPaper() {
-      this.$router.push('/teacher/create-paper/auto');
-    }
-  }
-};
+<script setup>
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+const goToManualPaper = () => {
+  router.push('/teacher/create-paper/manual')
+}
+
+const goToAutoPaper = () => {
+  router.push('/teacher/create-paper/auto')
+}
 </script>
 
 <style scoped>
-h1 {
-  color: #000000;
-}
-.create-paper-container {
-  background-color: #f5f9ff;
-  min-height: 100vh;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center; /* 内容垂直居中 */
+.page-wrapper {
+  padding: var(--spacing-lg);
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-h2 {
-  color: #0d47a1;
-  margin-bottom: 30px;
+.page-title {
+  color: var(--text-color);
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin: 0;
+  text-align: center;
+}
+
+.welcome-text {
+  color: var(--text-light);
+  font-size: 1.1rem;
+  margin: var(--spacing-md) 0 var(--spacing-xl);
   text-align: center;
 }
 
 .option-blocks {
-  display: flex;
-  flex-direction: row;
-  gap: 20px;
-  justify-content: center; /* 水平居中 */
-  width: 100%;
-  max-width: 800px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--spacing-xl);
+  margin-top: var(--spacing-lg);
+  padding: 0 var(--spacing-md);
 }
 
 .option-block {
-  background-color: white;
-  border-left: 6px solid #0d47a1;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  padding: 25px 20px;
+  background: white;
+  padding: var(--spacing-xl);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
   cursor: pointer;
-  transition: all 0.3s ease;
+  border: 1px solid var(--border-color);
+  transition: var(--transition-base);
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  height: 250px; /* 固定高度，更小巧 */
-  width: 350px; /* 固定宽度，适中大小 */
-  border-radius: 10px;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.option-block::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--primary-color);
+  opacity: 0;
+  transition: var(--transition-base);
 }
 
 .option-block:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  background-color: #f9f9f9;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-color);
 }
 
-.option-block h3 {
-  margin: 0 0 10px;
-  font-size: 1.4em;
-  color: #0d47a1;
+.option-block:hover::before {
+  opacity: 1;
 }
 
-.option-block p {
-  margin: 0;
-  font-size: 1em;
-  color: #555;
+.card-icon {
+  font-size: 3rem;
+  margin-bottom: var(--spacing-md);
+}
+
+.section-title {
+  color: var(--text-color);
+  font-size: 1.4rem;
+  margin: var(--spacing-sm) 0;
+  font-weight: 600;
+}
+
+.card-description {
+  color: var(--text-light);
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: var(--spacing-lg);
+}
+
+.feature-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  justify-content: center;
+  margin-top: auto;
+}
+
+.feature-tag {
+  background-color: var(--primary-color-light);
+  color: var(--primary-color-dark);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .option-blocks {
+    grid-template-columns: 1fr;
+    padding: 0;
+  }
+  
+  .option-block {
+    padding: var(--spacing-lg);
+  }
+  
+  .card-icon {
+    font-size: 2.5rem;
+  }
+  
+  .section-title {
+    font-size: 1.3rem;
+  }
+  
+  .card-description {
+    font-size: 0.95rem;
+  }
 }
 </style>
