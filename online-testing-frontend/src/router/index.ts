@@ -59,7 +59,7 @@ const routes = [
     component: StudentExamDetail
   },
   {
-    path: '/student/exam/:id/questions',
+    path: '/student/exam/:courseId/:paperId',
     name: 'StudentExamQuestions',
     component: StudentExamQuestions
   },
