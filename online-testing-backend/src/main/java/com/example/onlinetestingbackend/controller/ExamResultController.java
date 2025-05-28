@@ -10,6 +10,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/exam")
+@CrossOrigin(origins = "http://localhost:5173")
 public class ExamResultController {
     @Autowired
     private ExamQuestionService examQuestionService;

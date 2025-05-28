@@ -173,9 +173,9 @@
 
 <script setup>
 import { ref, watch, computed,onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter,useRoute } from 'vue-router'
 const router = useRouter()
-
+const route=useRoute()
 // 当前试卷数据
 const paper = ref({
   title: '',
@@ -190,7 +190,10 @@ const examSettings = ref({
   endTime: '',
   fullScore: 0,
 })
-
+const editId=ref({
+  paperId: null,
+  courseId: null
+})
 // 模拟题库数据
 const questionBank = ref([])
 
@@ -231,8 +234,29 @@ const previewPaper = () => {
 }
 onMounted(async () => {
   try {
-     // const res =Search_for_all_questions()
-     // questions.value = res.data
+    // 检查是否是“修改模式”
+    const route = useRoute()
+    // console.log('11',route.params)
+    // console.log('22',route.query.mode)
+    // console.log('sdjakj',route.params)
+    console.log('route.query', route.query)
+    console.log('route.params', route.params)
+    editId.value.paperId = route.params.paperId
+    editId.value.courseId = route.params.courseId
+    
+    if (route.query&&(route.query.mode === 'edit' && window.history.state && window.history.state.paperInfo)) {
+      const paperInfo = window.history.state.paperInfo
+      // 初始化表单
+      paper.value.title = paperInfo.paperName
+      paper.value.courseId = paperInfo.courseId
+      paper.value.creator = paperInfo.creator
+      // 题目列表
+      paper.value.questions = (paperInfo.paperQuestions || []).map(q => ({
+        id: q.questionId,
+        score: q.points,
+        questionText: q.questionText
+      }))
+    }
   } catch (error) {
     alert('加载题目失败，请检查网络或服务状态')
     console.error(error)
@@ -299,7 +323,7 @@ const cancelPublish = () => {
 }
 
 // 确认发布
-const confirmPublish = () => {
+const confirmPublish = async () => {
   if (!examSettings.value.startTime || !examSettings.value.endTime) {
     alert('请填写完整的考试时间')
     return
@@ -330,8 +354,24 @@ const confirmPublish = () => {
     paperName: paper.value.title
   }
 
+  // 如果是编辑模式，先删除原试卷
+  if (route.query.mode === 'edit' && window.history.state && window.history.state.paperInfo) {
+    const old = window.history.state.paperInfo
+    try {
+      await fetch('http://localhost:8080/api/paper-questions/delete-paper', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paperId: old.paperId, courseId: old.courseId })
+      })
+    } catch (e) {
+      alert('删除原试卷失败')
+      return
+    }
+  }
+
   Create_Exam_Paper(manualPaperRequest)
 }
+
 // 查看题库
 // 模拟从后端获取题目数据  @search
 const searchQuery = ref('')

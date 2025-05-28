@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.time.LocalDateTime;
+import java.util.stream.Collectors;
 
 @Service
 public class PaperQuestionService {
@@ -285,5 +286,34 @@ public class PaperQuestionService {
         return paperId;
     }
 
+    public List<PaperInfoDto> findExamsByStatus(String status) {
+        LocalDateTime now = LocalDateTime.now();
+        List<PaperInfo> exams;
+        switch (status) {
+            case "notStarted":
+//                System.out.println("=== 未开始考试 ===");
+                exams = paperInfoRepository.findByOpenTimeAfter(now);
+                break;
+            case "ongoing":
+                exams = paperInfoRepository.findByOpenTimeBeforeAndCloseTimeAfter(now, now);
+                break;
+            case "ended":
+                exams = paperInfoRepository.findByCloseTimeBefore(now);
+                break;
+            default:
+                exams = new ArrayList<>();
+        }
+        // 转换为DTO
+        return exams.stream()
+                .map(paperInfo -> {
+                    List<PaperQuestion> paperQuestions = paperQuestionRepository
+                            .findByPaperIdAndCourseId(paperInfo.getPaperId(), paperInfo.getCourseId());
+                    return convertToDto(paperInfo, paperQuestions);
+                })
+                .collect(Collectors.toList());
+    }
 
+    public List<PaperInfo> findByCourseId(Integer courseId) {
+        return paperInfoRepository.findByCourseId(courseId);
+    }
 }
