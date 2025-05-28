@@ -32,7 +32,7 @@
 
           <div class="form-actions main-form-actions">
             <button class="btn cancel-creation-btn" @click="cancelPaperCreation">
-              {{ (route.query.mode === 'edit') ? '取消修改并返回' : '取消组卷并返回' }}
+              {{ (isEditMode) ? '取消修改并返回' : '取消组卷并返回' }}
             </button>
             <button
                 class="view-library-btn btn"
@@ -91,7 +91,9 @@
               </span>
             </div>
             <div class="question-text">{{ questionInBank.questionText }}</div>
-            <div class="question-tag" v-if="questionInBank.tags">科目/标签：{{ questionInBank.subjectCategory }} / {{ questionInBank.tags }}</div>
+            <div class="question-tag" v-if="questionInBank.subjectCategory || questionInBank.tags">
+              科目：{{ questionInBank.subjectCategory || '无' }} / 标签：{{ questionInBank.tags || '无' }}
+            </div>
             <div class="options">
               <div
                   v-for="(option, optIndex) in questionInBank.options"
@@ -144,8 +146,8 @@
           <div class="total-score" style="margin-right: auto; align-self: center;">
             总分：{{ totalScore }}分
           </div>
-          <button class="btn secondary-btn" @click="closePreviewModal">关闭</button> {/* Changed class for consistency */}
-          <button class="btn primary-btn" @click="goToPublish">去发布</button> {/* Changed class */}
+          <button class="btn secondary-btn" @click="closePreviewModal">关闭</button>
+          <button class="btn primary-btn" @click="goToPublish">去发布</button>
         </div>
       </div>
     </div>
@@ -171,8 +173,8 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn secondary-btn" @click="cancelPublish">取消</button> {/* Changed class */}
-          <button class="btn primary-btn" @click="confirmPublish">确认发布</button> {/* Changed class */}
+          <button class="btn secondary-btn" @click="cancelPublish">取消</button>
+          <button class="btn primary-btn" @click="confirmPublish">确认发布</button>
         </div>
       </div>
     </div>
@@ -189,8 +191,8 @@
           <input id="question-score-input" class="form-control" type="number" v-model.number="addScoreValue" min="1" placeholder="请输入分数" />
         </div>
         <div class="modal-footer">
-          <button class="btn secondary-btn" @click="showAddScoreModal = false">取消</button> {/* Changed class */}
-          <button class="btn primary-btn" @click="confirmAddQuestion">确定添加</button> {/* Changed class */}
+          <button class="btn secondary-btn" @click="showAddScoreModal = false">取消</button>
+          <button class="btn primary-btn" @click="confirmAddQuestion">确定添加</button>
         </div>
       </div>
     </div>
@@ -199,11 +201,10 @@
 
 <script setup>
 import { ref, watch, computed, onMounted, nextTick } from 'vue';
-import { useRouter, useRoute } from 'vue-router'; // Added useRoute
+import { useRouter, useRoute } from 'vue-router';
 const router = useRouter();
-const route = useRoute(); // Initialize route
+const route = useRoute();
 
-// --- 题目类型中英文映射 ---
 const QUESTION_TYPE_MAP_TO_CHINESE = {
   'Single Choice': '单选',
   'Multiple Choice': '多选',
@@ -211,7 +212,7 @@ const QUESTION_TYPE_MAP_TO_CHINESE = {
   'SINGLE_CHOICE': '单选',
   'MULTIPLE_CHOICE': '多选',
   'TRUE_FALSE': '判断',
-  '单选': '单选', // Fallback for already Chinese types
+  '单选': '单选',
   '多选': '多选',
   '判断': '判断',
   'unknown': '未知',
@@ -223,8 +224,6 @@ const getDisplayQuestionType = (backendType) => {
   return QUESTION_TYPE_MAP_TO_CHINESE[backendType] || backendType;
 };
 
-// --- End of Type Mapping ---
-
 const getInitialPaperData = () => ({
   title: '',
   courseId: null,
@@ -233,7 +232,7 @@ const getInitialPaperData = () => ({
 });
 
 const paper = ref(JSON.parse(JSON.stringify(getInitialPaperData())));
-const isEditMode = ref(false); // To track if it's edit mode
+const isEditMode = ref(false);
 
 const examSettings = ref({
   startTime: '',
@@ -242,17 +241,17 @@ const examSettings = ref({
 });
 
 const questionBank = ref([]);
-
 const showPreviewModal = ref(false);
 const showPublishModal = ref(false);
 const showLibrary = ref(false);
 const showAddScoreModal = ref(false);
-
 const isFormDirty = ref(false);
 let initialPaperSnapshot = '';
 
 const resetPaperForm = () => {
   paper.value = JSON.parse(JSON.stringify(getInitialPaperData()));
+  // examSettings are intentionally NOT reset here for the main form reset,
+  // but they will be repopulated from localStorage or edit data in onMounted.
   nextTick(() => {
     initialPaperSnapshot = JSON.stringify(paper.value);
     isFormDirty.value = false;
@@ -278,7 +277,7 @@ const previewQuestions = computed(() => {
             score: paperQuestion.score,
             correctAnswer: typeof fullQuestion.correctAnswer === 'string' ? fullQuestion.correctAnswer : (fullQuestion.correctAnswer ? String(fullQuestion.correctAnswer) : ''),
             options: Array.isArray(fullQuestion.options) ? fullQuestion.options.map(opt => ({ ...opt })) : [],
-            questionTypeOriginal: fullQuestion.questionType // Store original type for CSS class
+            questionTypeOriginal: fullQuestion.questionType
           };
         }
         return {
@@ -287,7 +286,7 @@ const previewQuestions = computed(() => {
           score: paperQuestion.score,
           options: [],
           questionType: '未知 (Unresolved)',
-          questionTypeOriginal: 'unknown', // For CSS class consistency
+          questionTypeOriginal: 'unknown',
           correctAnswer: ''
         };
       });
@@ -298,7 +297,7 @@ const totalScore = computed(() => {
 });
 
 const removeQuestion = (index) => {
-  if (paper.value.questions.length > 0) { // Allow removing the last question
+  if (paper.value.questions.length > 0) {
     if (window.confirm('您确定要从试卷中移除这个题目吗？')) {
       paper.value.questions.splice(index, 1);
     }
@@ -349,37 +348,28 @@ const goToPublish = () => {
 
 const Create_Exam_Paper = async (requestData) => {
   const endpoint = isEditMode.value && route.params.paperId
-      ? `http://localhost:8080/api/paper-questions/edit-paper/${route.params.paperId}` // Assuming an edit endpoint
+      ? `http://localhost:8080/api/paper-questions/edit-paper/${route.params.paperId}`
       : 'http://localhost:8080/api/paper-questions/manual-create-paper';
   const method = isEditMode.value && route.params.paperId ? 'PUT' : 'POST';
 
-  // If editing, you might need to send the paperId in the requestData or ensure the endpoint handles it.
-  // For PUT, often the ID is in the URL, and the body is the updated data.
-  // Let's assume requestData is fine as is for both, or adjust if your edit API differs.
   if (isEditMode.value && route.params.paperId) {
-    requestData.paperId = route.params.paperId; // Add paperId if editing and API expects it in body
+    requestData.paperId = route.params.paperId;
   }
 
-
   try {
-    // If in edit mode, and original logic was to delete then create:
-    // This specific delete-then-create logic for edit might need re-evaluation.
-    // A single PUT request to an edit endpoint is usually preferred.
-    // For now, sticking to user's provided delete logic if it's critical path.
-    if (isEditMode.value && window.history.state && window.history.state.paperInfo && !requestData.paperId) { // Original delete logic
-      console.warn("Original delete-then-create logic for edit mode is being used. Consider a PUT endpoint.");
+    if (isEditMode.value && window.history.state?.paperInfo?.deleteThenCreateMode && method === 'POST') {
+      console.warn(" legacy delete-then-create logic for edit mode is being used via POST.");
       const oldPaperInfo = window.history.state.paperInfo;
       const deleteRes = await fetch('http://localhost:8080/api/paper-questions/delete-paper', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ paperId: oldPaperInfo.paperId, courseId: oldPaperInfo.courseId })
       });
-      if (!deleteRes.ok && deleteRes.status !== 204) { // 204 No Content is also a success for DELETE
+      if (!deleteRes.ok && deleteRes.status !== 204) {
         const errorText = await deleteRes.text();
         throw new Error(`删除原试卷失败: ${errorText || deleteRes.status}`);
       }
     }
-
 
     const res = await fetch(endpoint, {
       method: method,
@@ -392,8 +382,16 @@ const Create_Exam_Paper = async (requestData) => {
       throw new Error(errorData.message || `HTTP error ${res.status}`);
     }
     alert(`试卷${isEditMode.value ? '修改' : '发布'}成功！`);
+
+    if (examSettings.value.startTime) {
+      localStorage.setItem('manualCreatePaper_lastStartTime', examSettings.value.startTime);
+    }
+    if (examSettings.value.endTime) {
+      localStorage.setItem('manualCreatePaper_lastEndTime', examSettings.value.endTime);
+    }
+
     resetPaperForm();
-    isEditMode.value = false; // Reset edit mode
+    isEditMode.value = false;
     router.push('/teacher/exam-management');
   } catch (error) {
     console.error(`创建/修改试卷失败:`, error);
@@ -405,7 +403,7 @@ const cancelPublish = () => {
   showPublishModal.value = false;
 };
 
-const confirmPublish = () => { // Renamed from user's confirmPublish, as it's called by the button
+const confirmPublish = () => {
   if (!paper.value.title.trim()) {
     alert('请输入试卷名称。'); return;
   }
@@ -468,21 +466,29 @@ const fetchQuestions = async () => {
 };
 
 onMounted(async () => {
-  await fetchQuestions(); // Load question bank first
+  await fetchQuestions();
 
-  // Check for edit mode and populate form
+  // --- MODIFICATION: Load last used exam times from localStorage for new papers ---
+  // This will be overridden by edit mode logic if applicable
+  const lastStartTime = localStorage.getItem('manualCreatePaper_lastStartTime');
+  const lastEndTime = localStorage.getItem('manualCreatePaper_lastEndTime');
+  if (lastStartTime && !isEditMode.value) { // Only apply if not in edit mode at this stage
+    examSettings.value.startTime = lastStartTime;
+  }
+  if (lastEndTime && !isEditMode.value) {
+    examSettings.value.endTime = lastEndTime;
+  }
+  // --- End of MODIFICATION ---
+
+
   if (route.query.mode === 'edit') {
     isEditMode.value = true;
-    // Try to get paperInfo from history.state (passed via router.push state)
     const passedPaperInfo = window.history.state?.paperInfo;
     if (passedPaperInfo) {
-      console.log('Edit mode: Loading paper from history.state', passedPaperInfo);
       paper.value.title = passedPaperInfo.paperName || '';
       paper.value.courseId = passedPaperInfo.courseId || null;
       paper.value.creator = passedPaperInfo.creator || '';
-      // Map questions carefully, ensuring all necessary fields are present
       paper.value.questions = (passedPaperInfo.paperQuestions || []).map(pq => {
-        // Find full question text from bank if possible, otherwise use what's passed
         const bankQuestion = questionBank.value.find(bq => bq.questionId === pq.questionId);
         return {
           id: pq.questionId,
@@ -490,16 +496,20 @@ onMounted(async () => {
           questionText: bankQuestion?.questionText || pq.questionText || `题目ID: ${pq.questionId}`
         };
       });
-      // If exam times were part of paperInfo, you could load them too
-      // examSettings.value.startTime = passedPaperInfo.openTime ? new Date(passedPaperInfo.openTime).toISOString().slice(0, 16) : '';
-      // examSettings.value.endTime = passedPaperInfo.closeTime ? new Date(passedPaperInfo.closeTime).toISOString().slice(0, 16) : '';
-
+      // --- MODIFICATION: In edit mode, load this paper's specific times if available ---
+      if (passedPaperInfo.openTime) {
+        const openDate = new Date(passedPaperInfo.openTime);
+        // Ensure conversion to 'YYYY-MM-DDTHH:mm' format for datetime-local
+        examSettings.value.startTime = !isNaN(openDate) ? openDate.toISOString().slice(0,16) : '';
+      }
+      if (passedPaperInfo.closeTime) {
+        const closeDate = new Date(passedPaperInfo.closeTime);
+        examSettings.value.endTime = !isNaN(closeDate) ? closeDate.toISOString().slice(0,16) : '';
+      }
+      examSettings.value.fullScore = passedPaperInfo.totalScores !== undefined ? passedPaperInfo.totalScores : totalScore.value; // Use computed totalScore as fallback
+      // --- End of MODIFICATION ---
     } else if (route.params.paperId) {
-      // Fallback: If not in history.state, but paperId is in params, fetch it.
-      // This requires an API endpoint like GET /api/papers/:paperId
-      console.log(`Edit mode: Attempting to fetch paper with ID ${route.params.paperId}`);
-      // await fetchPaperForEdit(route.params.paperId); // You'd need to implement this
-      alert('编辑模式：未能从导航状态加载试卷信息，请确保正确导航或实现API获取。');
+      alert('编辑模式：未能从导航状态加载试卷信息，或需实现API获取详情。');
     } else {
       alert('编辑模式：未提供试卷信息。');
     }
@@ -563,24 +573,20 @@ const cancelPaperCreation = () => {
   if (isFormDirty.value) {
     if (window.confirm(`您有未保存的更改。确定要${actionText}并返回吗？所有更改都将丢失。`)) {
       resetPaperForm();
-      isEditMode.value = false; // Reset edit mode
+      // If not in edit mode, also clear potentially persisted exam times from the form for a "fresh" start next time
+      if (!isEditMode.value) {
+        examSettings.value.startTime = '';
+        examSettings.value.endTime = '';
+        examSettings.value.fullScore = 0;
+      }
+      isEditMode.value = false;
       router.push('/teacher/dashboard');
     }
   } else {
-    isEditMode.value = false; // Reset edit mode
+    isEditMode.value = false;
     router.push('/teacher/dashboard');
   }
 };
-
-// The user's script had these, but currentQuestion is not defined in this component.
-// If they are for items within the question bank iteration, the logic should be there.
-// For now, commenting out to prevent errors.
-// const isMultipleChoice = computed(() => {
-//   return currentQuestion.value.type === '多选'
-// })
-// const isJudgmentQuestion = computed(() => {
-//   return currentQuestion.value.type === '判断'
-// })
 </script>
 
 <style scoped>
@@ -721,6 +727,24 @@ select:focus {
   /* Styles are already covered by general input[type="number"] */
 }
 
+input[type="datetime-local"] {
+  color: #495057; /* 确保输入框内的文本（日期时间）是深色的 */
+  background-color: #fff; /* 输入框背景是白色 */
+  border: 1px solid #ced4da; /* 确保边框可见 */
+}
+
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  opacity: 0.75; /* 确保图标不是完全透明的，可以调整此值 */
+  filter: invert(0.3) brightness(0.7); /* 尝试让图标变暗一些 */
+  cursor: pointer; /* 表明它是可点击的 */
+}
+
+/* 当输入框获得焦点时，确保样式依然清晰 */
+input[type="datetime-local"]:focus {
+  border-color: #007bff; /* 蓝色边框 */
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  outline: none;
+}
 
 /* --- 已选题目列表 (左侧) --- */
 .selected-questions-list {
@@ -797,8 +821,8 @@ select:focus {
 }
 /* Primary (Blue) */
 .primary-btn,
-.btn.publish-btn, /* Applied in preview modal */
-.btn.confirm-btn { /* Applied in publish and add score modals */
+.btn.publish-btn,
+.btn.confirm-btn {
   background-color: #007bff; color: white;
 }
 .primary-btn:hover,
@@ -807,24 +831,31 @@ select:focus {
 
 /* Secondary (Gray/Green) - Preview is Green, Close is Gray */
 .secondary-btn,
-.btn.close-btn { /* Applied in preview modal for "Close" */
+.btn.close-btn {
   background-color: #6c757d; color: white;
 }
 .secondary-btn:hover,
 .btn.close-btn:hover { background-color: #5a6268; }
 
-.btn.preview-btn { background-color: #28a745; color: white; } /* Main preview button */
+.btn.preview-btn { background-color: #28a745; color: white; }
 .btn.preview-btn:hover { background-color: #218838; }
 
-/* Danger (Red) - Remove, Cancel Creation */
+/* Danger (Red) - Remove, Cancel Creation (now .cancel-creation-btn) */
 .danger-btn,
-.btn.remove-btn,
-.btn.cancel-btn { /* Applied for cancel in publish modal and cancel creation */
+.btn.remove-btn {
   background-color: #dc3545; color: white;
 }
 .danger-btn:hover,
-.btn.remove-btn:hover,
-.btn.cancel-btn:hover { background-color: #c82333; }
+.btn.remove-btn:hover { background-color: #c82333; }
+
+/* Specific Cancel Creation Button (can be styled differently if needed, e.g. more subtle) */
+.cancel-creation-btn {
+  background-color: #6c757d; /* Defaulting to gray like secondary/close */
+  color: white;
+}
+.cancel-creation-btn:hover {
+  background-color: #5a6268;
+}
 
 
 .btn.view-library-btn {
@@ -836,12 +867,12 @@ select:focus {
 }
 .btn.view-library-btn.close-mode:hover { background-color: #e0a800; }
 
-.btn.remove-btn { /* Specific to question row remove */
-  padding: 6px 10px; /* Overriding .btn padding */
-  font-size: 0.9em;   /* Overriding .btn font-size */
-  line-height: 1;     /* Overriding .btn line-height */
-  min-width: 55px;    /* Ensure "移除" fits */
-  white-space: nowrap;/* Prevent text wrapping */
+.btn.remove-btn {
+  padding: 6px 10px;
+  font-size: 0.9em;
+  line-height: 1;
+  min-width: 55px;
+  white-space: nowrap;
 }
 
 
@@ -882,8 +913,8 @@ select:focus {
 .library-questions-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px; /* Increased gap slightly */
-  padding: 20px 2px; /* Increased top/bottom padding */
+  gap: 20px;
+  padding: 20px 2px;
   overflow-y: auto;
   flex-grow: 1;
 }
@@ -895,37 +926,37 @@ select:focus {
   border-radius: 8px;
   font-size: 1.1em;
   margin-top: 20px;
-  grid-column: 1 / -1; /* Span all columns if inside grid */
+  grid-column: 1 / -1;
 }
 
 
 .library-question-card {
   background-color: #fff;
   border-radius: 8px;
-  padding: 15px 20px; /* Adjusted padding */
+  padding: 15px 20px;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   display: flex;
   flex-direction: column;
-  border-left: 4px solid #007bff; /* Theme border */
+  border-left: 4px solid #007bff;
   position: relative;
 }
 .library-question-card:hover {
-  transform: translateY(-4px); /* Slightly more lift */
+  transform: translateY(-4px);
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.09);
 }
 
 .library-question-card .add-question-btn {
   position: absolute;
-  top: 12px; /* Adjusted position */
+  top: 12px;
   right: 12px;
   background: #28a745;
   color: white;
   border: none;
   border-radius: 50%;
-  width: 30px; /* Adjusted size */
+  width: 30px;
   height: 30px;
-  font-size: 1.5em; /* Adjusted icon size */
+  font-size: 1.5em;
   cursor: pointer;
   z-index: 2;
   display: flex;
@@ -948,43 +979,43 @@ select:focus {
   align-items: center;
   margin-bottom: 10px;
 }
-.library-question-card .type-badge { /* Uses common .type-badge */
+.library-question-card .type-badge {
   margin-right: 10px;
 }
 .library-question-card .question-text {
-  font-size: 1.05em; /* Slightly larger */
+  font-size: 1.05em;
   font-weight: 500;
   color: #343a40;
-  margin-bottom: 10px; /* Increased margin */
-  line-height: 1.45; /* Improved line height */
+  margin-bottom: 10px;
+  line-height: 1.45;
   word-break: break-word;
   flex-grow: 1;
 }
 .library-question-card .question-tag {
-  font-size: 0.85em; /* Slightly larger */
-  color: #5a6268; /* Darker gray */
+  font-size: 0.85em;
+  color: #5a6268;
   margin-bottom: 10px;
-  background-color: #eef2f7; /* Lighter, less prominent background */
+  background-color: #eef2f7;
   padding: 3px 8px;
   border-radius: 4px;
   align-self: flex-start;
-  display: inline-block; /* Ensure it doesn't stretch full width */
+  display: inline-block;
 }
 .library-question-card .options {
   font-size: 0.9em;
-  padding-left: 5px; /* Indent options slightly */
+  padding-left: 5px;
   margin-top: auto;
   color: #495057;
 }
 .library-question-card .option {
-  padding: 5px 0; /* Increased padding */
+  padding: 5px 0;
   word-break: break-word;
   border-radius: 3px;
 }
 .library-question-card .option.correct {
   color: #0f5132;
   background-color: #d1e7dd;
-  padding: 4px 8px; /* Padding for correct answer highlight */
+  padding: 4px 8px;
   font-weight: 500;
   border-radius: 4px;
 }
@@ -1007,7 +1038,7 @@ select:focus {
   display: flex; justify-content: space-between; align-items: center;
   flex-shrink: 0;
 }
-.modal-title {
+.modal-title { /* Applied to h2/h3 inside .modal-header */
   margin: 0; font-size: 1.5em; font-weight: 600; color: #343a40;
 }
 .modal-dialog h3.modal-title { font-size: 1.3em; }
@@ -1021,9 +1052,13 @@ select:focus {
 .modal-body {
   padding: 25px; overflow-y: auto; flex-grow: 1;
 }
-.modal-dialog[style*="max-width: 400px;"] .modal-body > div:first-of-type {
+.modal-dialog[style*="max-width: 400px;"] .modal-body > div:first-of-type { /* For "题目：" text */
   margin-bottom: 15px;
 }
+.modal-dialog[style*="max-width: 400px;"] .modal-body > label { /* For "分数：" label */
+  margin-top: 10px;
+}
+
 
 .modal-footer {
   padding: 18px 25px; border-top: 1px solid #dee2e6;
@@ -1074,7 +1109,7 @@ select:focus {
   font-size: 1.2em; font-weight: bold;
   color: #2c3e50;
 }
-.no-questions { /* Used in preview modal */
+.no-questions {
   text-align: center; padding: 40px 20px; color: #6c757d;
   background-color: #e9ecef; border-radius: 8px;
   font-size: 1.1em; margin-top: 20px;

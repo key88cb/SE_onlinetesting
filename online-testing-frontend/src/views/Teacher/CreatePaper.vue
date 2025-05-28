@@ -7,23 +7,13 @@
       <div class="option-block" @click="goToManualPaper">
         <div class="card-icon">✍️</div>
         <h3 class="section-title">手动出卷</h3>
-        <p class="card-description">自主选择题目，灵活组卷，完全掌控试卷内容</p>
-        <div class="feature-list">
-          <span class="feature-tag">自由选题</span>
-          <span class="feature-tag">灵活调整</span>
-          <span class="feature-tag">实时预览</span>
-        </div>
+        <p class="card-description">自主选择题目组成试卷</p>
       </div>
 
       <div class="option-block" @click="goToAutoPaper">
         <div class="card-icon">🤖</div>
         <h3 class="section-title">自动出卷</h3>
-        <p class="card-description">系统智能推荐题目，快速生成试卷，提高效率</p>
-        <div class="feature-list">
-          <span class="feature-tag">智能推荐</span>
-          <span class="feature-tag">快速生成</span>
-          <span class="feature-tag">难度均衡</span>
-        </div>
+        <p class="card-description">系统自动选择题目生成试卷</p>
       </div>
     </div>
   </div>
@@ -139,8 +129,8 @@ const goToAutoPaper = () => {
 }
 
 .feature-tag {
-  background-color: var(--primary-color-light);
-  color: var(--primary-color-dark);
+  background-color: var(--primary-color);
+  color: var(--primary-color);
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--border-radius-sm);
   font-size: 0.9rem;
