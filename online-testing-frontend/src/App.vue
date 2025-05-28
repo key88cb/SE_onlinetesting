@@ -15,6 +15,7 @@
         <router-link to="/teacher/create-paper" v-if="isTeacher">编辑发布试卷</router-link>
         <router-link to="/teacher/past-papers" v-if="isTeacher">查看历年卷</router-link>
         <router-link to="/teacher/exam-management" v-if="isTeacher">考试情况管理</router-link>
+        <router-link to="/teacher/endedexam-detail" v-if="isTeacher">考试成绩管理</router-link>
       </nav>
     </aside>
 

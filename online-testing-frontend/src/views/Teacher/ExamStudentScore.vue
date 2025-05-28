@@ -1,6 +1,7 @@
 <template>
     <div class="actions">
       <button class="btn back-btn" @click="goBack">返回列表</button>
+      <button class="btn print-btn" v-if="isedit">上传成绩</button>
     </div>
   <!-- <div class="exam-details">
     <h2>分数详情 - {{ paperInfo.paperName }}</h2>
@@ -52,6 +53,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
 const router = useRouter()
+const isedit=ref(false)
 const allexamresults=ref([{
   studentId:1,
   totalScore: 65,},
@@ -61,60 +63,12 @@ const allexamresults=ref([{
   }
 ]
 )
-// const paperInfo = ref({
-//   paperId: 101,
-//   courseId: 201,
-//   creator: '张老师',
-//   singleChoiceNum: 5,
-//   multipleChoiceNum: 3,
-//   trueFalseNum: 2,
-//   openTime: new Date().toISOString(), // 当前时间
-//   closeTime: new Date(Date.now() + 86400000).toISOString(), // 当前时间 + 1 天
-//   highestScoresForSingleChoice: 25,
-//   highestScoresForMultipleChoice: 30,
-//   highestScoresForTrueFalse: 10,
-//   totalScores: 65,
-//   paperName: '操作系统原理期中考试',
-//   paperQuestions:[
-//     {
-//       paperId: 101,
-//       courseId: 201,
-//       questionId: 1,
-//       points: 5,
-//       knowledgePoints: 'Java基础语法',
-//       questionText: '下列哪个是合法的标识符？',
-//       questionType: '单选题',
-//       correctAnswer: 'B',
-//       options: ['2variable', '_variable', '@variable', 'variable#'],
-//     },
-//     {
-//       paperId: 101,
-//       courseId: 201,
-//       questionId: 2,
-//       points: 5,
-//       knowledgePoints: '面向对象编程',
-//       questionText: '下列哪些是面向对象的特性？',
-//       questionType: '多选题',
-//       correctAnswer: 'A,B,C',
-//       options: ['封装', '继承', '多态', '函数式'],
-//     },
-//     {
-//       paperId: 101,
-//       courseId: 201,
-//       questionId: 3,
-//       points: 5,
-//       knowledgePoints: 'Java异常处理',
-//       questionText: 'finally块一定会被执行。',
-//       questionType: '判断题',
-//       correctAnswer: 'B',
-//       options: ['正确', '错误'],
-//     }
-//   ]
-//   })
 onMounted(() => {
   console.log(route.params)
   const paperId = parseInt(route.params.paperId)
   const courseId = parseInt(route.params.courseId)
+  if(route.query.mode&&route.query.mode=='edit')
+  isedit.value=true
   // fetchPaperQuestions(paperId, courseId);
   fetchexamresults(paperId, courseId);
 })
@@ -192,7 +146,10 @@ const formatDate = (dateString) => {
 
 // 返回考试列表
 const goBack = () => {
-  router.push('/teacher/exams_detail'+ route.params.courseId+ '/'+ route.params.paperId)
+  if (isedit.value==true)
+    router.push('/teacher/endedexam-detail')
+  else
+    router.push('/teacher/exams_detail/'+ route.params.courseId+ '/'+ route.params.paperId)
 }
 const gotoedit = (studentId) => {
   router.push('/teacher/exam-detail/student-exam-detail/' + route.params.courseId + '/' + route.params.paperId + '/' + studentId)
@@ -263,5 +220,9 @@ h1 {
   padding: 2px 5px;
   border-radius: 4px;
   margin-right: 5px;
+}
+.actions{
+  display: flex;
+  justify-content: space-between;
 }
 </style>

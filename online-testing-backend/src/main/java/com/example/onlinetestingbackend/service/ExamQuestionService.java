@@ -107,7 +107,6 @@ public class ExamQuestionService {
         int score = scoreEditDto.getScore();
         int totalscore = 0;
         DetailedResult detailedResult =detailedResultRepository.findByPaperIdAndCourseIdAndStudentIdAndQuestionId(paperId,courseId,studentId,questionId);
-        int score2=detailedResult.getPoints();
         DetailedResult detailedResult1 = new DetailedResult();
         detailedResult1.setPaperId(paperId);
         detailedResult1.setCourseId(courseId);
@@ -123,6 +122,7 @@ public class ExamQuestionService {
             return;
         }
         int totalscoretemp=examResult.get().getTotalScore();
+        int score2=scoreEditDto.getScore();
         int scoretemp=score-score2;
         totalscore=totalscoretemp+scoretemp;
         ExamResult examResult1=new ExamResult();
