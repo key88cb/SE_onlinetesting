@@ -316,4 +316,8 @@ public class PaperQuestionService {
     public List<PaperInfo> findByCourseId(Integer courseId) {
         return paperInfoRepository.findByCourseId(courseId);
     }
+
+    public List<PaperInfo> findAll() {
+        return paperInfoRepository.findAll();
+    }
 }
