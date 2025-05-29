@@ -31,7 +31,7 @@
           v-for="exam in filteredExams"
           :key="exam.paperId"
           class="exam-card"
-          @click="viewExamDetails(exam)"
+          @click="viewExamInfo(exam)"
       >
         <h3>考试名称：{{ exam.paperName }}</h3>
         <p>课程ID：{{ exam.courseId }}</p>
@@ -54,6 +54,22 @@
         没有找到相关考试
       </div>
     </div>
+
+    <!-- 弹窗展示考试详情 -->
+    <div v-if="showDialog" class="exam-dialog-overlay" @click.self="closeDialog">
+      <div class="exam-dialog">
+        <h2>{{ selectedExam.paperName }}</h2>
+        <p>课程ID：{{ selectedExam.courseId }}</p>
+        <p>出卷人：{{ selectedExam.creator }}</p>
+        <p>开始时间：{{ formatDate(selectedExam.openTime) }}</p>
+        <p>结束时间：{{ formatDate(selectedExam.closeTime) }}</p>
+        <p>单选题数：{{ selectedExam.singleChoiceNum ?? '未知' }}</p>
+        <p>多选题数：{{ selectedExam.multipleChoiceNum ?? '未知' }}</p>
+        <p>判断题数：{{ selectedExam.trueFalseNum ?? '未知' }}</p>
+        <p>总分：{{ selectedExam.totalScores ?? '未知' }}</p>
+        <button @click="closeDialog" class="dialog-close-btn">关闭</button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -69,9 +85,13 @@ const notStartedExams = ref([])
 const ongoingExams = ref([])
 const searchQuery = ref('')
 
+const showDialog = ref(false)
+const selectedExam = ref(null)
+
 // 拉取考试数据
 const fetchExams = async () => {
   try {
+    // console.log("fetchExams")
     const [notStartedRes, ongoingRes] = await Promise.all([
       axios.get('http://localhost:8080/api/paper-questions/exams', { params: { status: 'notStarted' } }),
       axios.get('http://localhost:8080/api/paper-questions/exams', { params: { status: 'ongoing' } })
@@ -100,7 +120,21 @@ const isExamOngoing = (exam) => {
 
 // 跳转至考试详情页
 const viewExamDetails = (exam) => {
-  router.push(`/student/exam/${exam.paperId}/detail`)
+  if(isExamOngoing(exam)){
+    return router.push(`/student/exam/${exam.courseId}/${exam.paperId}`)
+  }
+}
+
+// 弹窗展示考试详情
+const viewExamInfo = (exam) => {
+  console.log(exam)
+  selectedExam.value = exam
+  showDialog.value = true
+}
+
+// 关闭弹窗
+const closeDialog = () => {
+  showDialog.value = false
 }
 
 // 格式化日期
@@ -245,5 +279,35 @@ h1{
   padding: 40px;
   background: #f9f9f9;
   border-radius: 10px;
+}
+
+.exam-dialog-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.exam-dialog {
+  background: #fff;
+  padding: 32px 28px;
+  border-radius: 10px;
+  min-width: 320px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  text-align: left;
+}
+.dialog-close-btn {
+  margin-top: 18px;
+  padding: 8px 24px;
+  background: #0d47a1;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.dialog-close-btn:hover {
+  background: #1565c0;
 }
 </style>
