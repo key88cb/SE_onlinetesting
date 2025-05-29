@@ -1,8 +1,8 @@
 <template>
-  <div class="past-papers-page"> {/* Changed class name for clarity */}
+  <div class="past-papers-page">
     <h1>历年真题试卷</h1>
 
-    <div class="controls-container"> {/* New wrapper for search and filters */}
+    <div class="controls-container">
       <div class="search-bar">
         <input
             v-model="searchQuery"
@@ -10,12 +10,12 @@
             class="form-control search-input"
         />
         <button @click="clearSearch" class="btn secondary-btn clear-btn">
-          <i class="icon-clear"></i> 清除 {/* Added icon placeholder */}
+          <i class="icon-clear"></i> 清除
         </button>
       </div>
 
       <div class="filter-options">
-        <select v-model="selectedSubject" class="form-control subject-filter"> {/* Added .form-control */}
+        <select v-model="selectedSubject" class="form-control subject-filter">
           <option value="">全部科目</option>
           <option v-for="subject in uniqueSubjects" :key="subject" :value="subject">{{ subject }}</option>
         </select>
@@ -28,7 +28,7 @@
     </div>
 
     <div class="papers-grid">
-      <div v-if="isLoading" class="loading-indicator"> {/* Optional: Add loading state */}
+      <div v-if="isLoading" class="loading-indicator">
         <p>正在加载试卷...</p>
       </div>
       <div
