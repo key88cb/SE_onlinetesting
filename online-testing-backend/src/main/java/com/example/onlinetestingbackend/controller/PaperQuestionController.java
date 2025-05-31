@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -57,6 +59,31 @@ public class PaperQuestionController {
             dto.setCloseTime(paperInfo.getCloseTime());
             dto.setTotalScores(paperInfo.getTotalScores());
             dto.setPaperName(paperInfo.getPaperName());
+            dtos.add(dto);
+        }
+
+        return ResponseEntity.ok(dtos);
+    }
+        @GetMapping("/query-all-past-papers")
+    public ResponseEntity<List<PaperInfoDto>> queryAllPastPapers() {
+        List<PaperInfo> papers = paperQuestionService.findAll();
+        List<PaperInfoDto> dtos = new ArrayList<>();
+
+        for (PaperInfo paperInfo : papers) {
+            if(paperInfo.getCloseTime().isAfter((LocalDateTime.now()).minus(Period.ofYears(1)))) {
+                continue;
+            }
+            PaperInfoDto dto = new PaperInfoDto();
+            dto.setPaperId(paperInfo.getPaperId());
+            dto.setCourseId(paperInfo.getCourseId());
+            dto.setCreator(paperInfo.getCreator());
+            dto.setOpenTime(paperInfo.getOpenTime());
+            dto.setCloseTime(paperInfo.getCloseTime());
+            dto.setTotalScores(paperInfo.getTotalScores());
+            dto.setPaperName(paperInfo.getPaperName());
+            dto.setMultipleChoiceNum(paperInfo.getMultipleChoiceNum());
+            dto.setSingleChoiceNum(paperInfo.getSingleChoiceNum());
+            dto.setTrueFalseNum(paperInfo.getTrueFalseNum());
             dtos.add(dto);
         }
 

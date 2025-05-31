@@ -218,7 +218,7 @@ onMounted(async () => {
 
   if (isNaN(paperIdParam) || isNaN(courseIdParam)) {
     alert('无效的考试ID或课程ID');
-    router.push('/student/past-papers');
+    router.push('/teacher/past-papers');
     isLoading.value = false;
     return;
   }
@@ -331,7 +331,7 @@ const formatDate = (dateString) => {
 };
 
 const goBack = () => {
-  router.push('/student/past-papers');
+  router.push('/teacher/past-papers');
 };
 </script>
 

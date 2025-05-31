@@ -34,7 +34,7 @@
       <div
           v-else-if="filteredPapers.length > 0"
           v-for="paper in filteredPapers"
-          :key="paper.id"
+          :key="paper.paperId"
           class="paper-card"
           @click="viewPaperDetails(paper)"
           tabindex="0"
@@ -46,9 +46,9 @@
           <span class="paper-year-badge">{{ paper.year }}</span>
         </div>
         <div class="paper-info">
-          <p><span class="info-label">科目：</span>{{ paper.subject }}</p>
-          <p><span class="info-label">总题数：</span>{{ paper.totalQuestions }} 题</p>
-          <p><span class="info-label">总分：</span>{{ paper.fullScore }} 分</p>
+          <p><span class="info-label">科目：</span>hbgg抱歉没有这一项呢</p>
+          <p><span class="info-label">总题数：</span>{{ paper.multipleChoiceNum+paper.singleChoiceNum+paper.trueFalseNum }} 题</p>
+          <p><span class="info-label">总分：</span>{{ paper.totalScores }} 分</p>
         </div>
         <div class="card-footer">
           <span class="view-details-link">查看详情 &rarr;</span>
@@ -119,22 +119,61 @@ const clearSearch = () => {
 const viewPaperDetails = (paper) => {
   // 实际应用中，你可能需要传递paperId或其他唯一标识符
   // router.push({ name: 'PastPaperDetails', params: { id: paper.id }, state: { paperData: paper } });
-  router.push(`/student/past-paper/${paper.id}/details`); // Assuming this route exists
-  console.log('Viewing paper:', paper.title);
+  // console.log('paper',paper)
+  router.push(`/student/past-paper/${paper.courseId}/${paper.paperId}/details`); // Assuming this route exists
+  // console.log('Viewing paper:', paper.title);
 };
 
 // Optional: Simulate API call for initial data
 onMounted(() => {
-  // isLoading.value = true;
-  // fetchPastPapersAPI().then(data => {
-  //   pastPapers.value = data;
-  //   isLoading.value = false;
-  // }).catch(error => {
-  //   console.error("Failed to load past papers:", error);
-  //   isLoading.value = false;
-  //   alert("加载历年试卷失败！")
-  // });
+  fetchPaperInfos();
 });
+
+const fetchPaperInfos = async () => {
+  isLoading.value = true;
+  try {
+    // Construct params carefully. If constId or creator are for initial fetch filtering:
+    const params = new URLSearchParams();
+    // Example: if you want to always filter by a default course or creator from backend
+    // if (constId.value) params.append('courseId', constId.value);
+    // if (creator.value) params.append('creator', creator.value);
+    // If no initial backend filtering is needed, params can be empty for query-all
+    // For now, assuming it fetches all relevant papers based on the URL
+
+    // The URL implies fetching all papers, then client-side filtering is applied.
+    // If your backend supports filtering for query-all-papers, you could pass filterCourseId and filterCreator here.
+    // For now, sticking to client-side filtering after fetching all.
+    const url = `http://localhost:8080/api/paper-questions/query-all-past-papers`; // Removed params for now if they are for client filtering
+
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => null);
+      throw new Error(errorData?.message || `网络错误 ${res.status}`);
+    }
+    const data = await res.json();
+    console.log('fetchPaperInfos:', data);
+    pastPapers.value = data.map(p => ({
+      ...p,
+      paperName: p.paperName || "未命名试卷", // Provide default if paperName is null
+      openTime: p.openTime,
+      closeTime: p.closeTime,
+      year:(new Date(p.closeTime)).getFullYear()
+    }));
+    console.log('已拉取试卷数据:', pastPapers.value.length);
+    console.log( '已拉取试卷数据:', pastPapers.value)
+  } catch (error) {
+    alert('加载考试列表失败: ' + error.message);
+    console.error("fetchpastPapers error:", error);
+    pastPapers.value = [];
+  } finally {
+    isLoading.value = false;
+  }
+};
+
 
 </script>
 
