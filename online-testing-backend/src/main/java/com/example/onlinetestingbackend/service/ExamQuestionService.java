@@ -87,6 +87,8 @@ public class ExamQuestionService {
             examResult1.setCourseId(courseId);
             examResult1.setStudentId(studentId);
             examResult1.setTotalScore(totalscore);
+            examResult1.setFinishTime(examResult.getFinishTime());
+            examResult1.setStartTime(examResult.getStartTime());
             examResultRepository.save(examResult1);
             Optional<ExamResult> temp = examResultRepository.findByPaperIdAndCourseIdAndStudentId(paperId,courseId,studentId)
                     .stream().findFirst();
@@ -130,6 +132,8 @@ public class ExamQuestionService {
         examResult1.setCourseId(courseId);
         examResult1.setStudentId(studentId);
         examResult1.setTotalScore(totalscore);
+        examResult1.setFinishTime(examResult.get().getFinishTime());
+        examResult1.setStartTime(examResult.get().getStartTime());
         examResultRepository.save(examResult1);
     }
     @Transactional
@@ -156,6 +160,8 @@ public class ExamQuestionService {
         examResult1.setCourseId(courseId);
         examResult1.setStudentId(studentId);
         examResult1.setTotalScore(totalscore);
+        examResult1.setFinishTime(examResult.get().getFinishTime());
+            examResult1.setStartTime(examResult.get().getStartTime());
         ExamResult temp=examResultRepository.save(examResult1);
         System.out.println("<UNK>");
         }
@@ -286,8 +292,8 @@ public class ExamQuestionService {
             temporarySubmission.setSubmissionTime(now);
             temporarySubmission.setAnswersJson(answerJson);
             temporarySubmissionRepository.save(temporarySubmission);
-//            ExamPlainRecordDto examPlainRecordDto =deserializeAnswers(temporarySubmission.getAnswersJson());
-//            judgeResult(examPlainRecordDto);
+//          ExamPlainRecordDto examPlainRecordDto =deserializeAnswers(temporarySubmission.getAnswersJson());
+//          judgeResult(examPlainRecordDto);
 
         }
         catch (Exception e) {
@@ -303,6 +309,8 @@ public class ExamQuestionService {
             ExamresultDto examresultDto=new ExamresultDto();
             examresultDto.setStudentId(examResult.getStudentId());
             examresultDto.setTotalScore(examResult.getTotalScore());
+            examresultDto.setFinishTime(examResult.getFinishTime());
+            examresultDto.setStartTime(examResult.getStartTime());
             examresultDtos.add(examresultDto);
         }
         return examresultDtos;

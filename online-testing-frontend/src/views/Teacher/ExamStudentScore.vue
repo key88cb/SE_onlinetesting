@@ -36,7 +36,7 @@
             </div>
             <div class="data-cell score-col">{{ student.score }}</div>
             <div class="data-cell time-col">{{ student.startTime || 'N/A' }}</div>
-            <div class="data-cell time-col">{{ student.endTime || 'N/A' }}</div>
+            <div class="data-cell time-col">{{ student.finishTime || 'N/A' }}</div>
             <div class="data-cell actions-col">
               <button class="btn edit-action-btn" @click="gotoedit(student.studentId)" title="修改/查看学生成绩详情">
                 <i class="icon-edit"></i> 修改/查看
@@ -109,7 +109,7 @@ const computedstudents = computed(() => {
     studentId: result.studentId !== undefined ? result.studentId : 'N/A',
     // Assuming startTime and endTime might come with result, otherwise they'll be N/A from template
     startTime: result.startTime ? formatDate(result.startTime) : null,
-    endTime: result.endTime ? formatDate(result.endTime) : null,
+    finishTime: result.finishTime ? formatDate(result.finishTime) : null,
   }));
 });
 

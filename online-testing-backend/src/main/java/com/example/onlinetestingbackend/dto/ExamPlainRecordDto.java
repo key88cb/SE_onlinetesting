@@ -1,5 +1,7 @@
 package com.example.onlinetestingbackend.dto;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -7,6 +9,8 @@ public class ExamPlainRecordDto {
     private Integer paperId;
     private Integer courseId;
     private Integer studentId;
+    private LocalDateTime startTime;
+    private LocalDateTime finishTime;
     private List<PlainAnswerDto> answers=new ArrayList<PlainAnswerDto>();
     public ExamPlainRecordDto() {}
     public ExamPlainRecordDto(Integer paperId, Integer courseId, List<PlainAnswerDto> answers) {
@@ -45,5 +49,21 @@ public class ExamPlainRecordDto {
 
     public void setAnswers(List<PlainAnswerDto> answers) {
         this.answers = answers;
+    }
+
+    public LocalDateTime getFinishTime() {
+        return finishTime;
+    }
+
+    public void setFinishTime(LocalDateTime finishTime) {
+        this.finishTime = finishTime;
+    }
+
+    public LocalDateTime getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(LocalDateTime startTime) {
+        this.startTime = startTime;
     }
 }

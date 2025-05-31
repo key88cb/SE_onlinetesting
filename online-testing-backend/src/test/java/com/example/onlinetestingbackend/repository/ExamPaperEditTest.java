@@ -15,7 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.Commit;
 import org.springframework.transaction.annotation.Transactional;
-
+import java.util.Random;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -78,6 +78,9 @@ public class ExamPaperEditTest {
                     plainAnswerDto.setQuestionId(paperQuestion.getQuestionId());
                     plainAnswerDtoList.add(plainAnswerDto);
                 }
+                Random random = new Random();
+                examPlainRecordDto.setStartTime(paperInfo.getOpenTime().plusMinutes(random.nextInt(6)));
+                examPlainRecordDto.setFinishTime(paperInfo.getCloseTime().minusMinutes(random.nextInt(6)));
                 examPlainRecordDto.setStudentId(studentId);
                 examPlainRecordDto.setAnswers(plainAnswerDtoList);
                 try {

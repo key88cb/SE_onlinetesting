@@ -2,6 +2,8 @@ package com.example.onlinetestingbackend.entity;
 
 import com.example.onlinetestingbackend.entity.id.ExamResultId;
 import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
@@ -15,6 +17,26 @@ public class ExamResult {
 
     @Column(name = "total_score", nullable = false)
     private Integer totalScore;
+    @Column(name="start_time")
+    private LocalDateTime startTime;
+    @Column(name="finish_time")
+    private LocalDateTime finishTime;
+
+    public LocalDateTime getFinishTime() {
+        return finishTime;
+    }
+
+    public void setFinishTime(LocalDateTime finishTime) {
+        this.finishTime = finishTime;
+    }
+
+    public LocalDateTime getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(LocalDateTime startTime) {
+        this.startTime = startTime;
+    }
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumns(value = {
