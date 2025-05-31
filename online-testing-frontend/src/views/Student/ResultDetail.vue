@@ -1,14 +1,9 @@
 <template>
-  <div class="student-exam-result-page"> {/* Renamed class */}
+  <div class="student-exam-result-page"> 
     <div class="page-actions-bar">
       <button class="btn secondary-outline-btn back-btn" @click="goBack">
         <i class="icon-back-arrow"></i> 返回列表
       </button>
-      {/* 上传成绩按钮，如果 isedit 逻辑被恢复，可以放在这里
-      <button class="btn primary-btn upload-scores-btn" v-if="isedit" @click="handleUploadScores">
-        <i class="icon-upload"></i> 上传成绩
-      </button>
-      */}
     </div>
 
     <div class="exam-header-info">
@@ -19,7 +14,7 @@
       </div>
     </div>
 
-    <div class="question-list-section"> {/* Wrapper for questions list */}
+    <div class="question-list-section"> 
       <h2 class="section-title">题目及作答详情</h2>
       <div v-if="isLoading" class="loading-indicator"><p>加载中...</p></div>
       <div v-else-if="processedRecords.length > 0" class="questions-container">
@@ -122,7 +117,7 @@ onMounted(async () => {
 
   if (isNaN(paperId) || isNaN(courseId) || isNaN(studentId)) {
     alert('页面参数无效！');
-    router.push('/teacher/exam-management'); // Or student dashboard
+    router.push('/student/results'); // Or student dashboard
     isLoading.value = false;
     return;
   }
@@ -276,11 +271,7 @@ const goBack = () => {
   // Determine the correct "back" destination.
   // If coming from teacher's exam list, go there. If from student exam result list, go there.
   // For now, assuming a teacher view context based on previous pages.
-  if (route.query.source === 'studentExamList') { // Example query param
-    router.push('/student/results'); // Or similar student exam list page
-  } else {
-    router.push('/teacher/exam-management'); // Default back for teacher
-  }
+    router.push('/student/results'); // Default back for teacher
 };
 
 // Placeholder, as this page is for viewing, not editing scores directly without a modal

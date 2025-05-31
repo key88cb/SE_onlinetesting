@@ -38,6 +38,11 @@ public class ExamResultController {
             return ResponseEntity.status(500).body("修改失败：" + e.getMessage());
         }
     }
+    @GetMapping("search-examResult-for-one-student")
+    public  ResponseEntity<List<ExamwithNameDto>> getExamResultForOne(@RequestParam Integer studentId) {
+        List<ExamwithNameDto> body=examQuestionService.searchexamresultbystudentId(studentId);
+        return ResponseEntity.ok(body);
+    }
     @GetMapping("search-examResult-for-all")
     public  ResponseEntity<List<ExamresultDto>> getAbstractExamResult(@RequestParam Integer paperId, @RequestParam Integer courseId){
         List<ExamresultDto> body=examQuestionService.searchexamresultbybycourseIdandpaperId(courseId,paperId);

@@ -67,7 +67,7 @@ const routes = [
   },
   // 新增路由
   {
-    path: '/student/result/:courseId/:paperId/:studentId',
+    path: '/student/result/:courseId/:paperId/:studentId/details',
     name: 'StudentResultDetails',
     component: StudentResultDetail
   },

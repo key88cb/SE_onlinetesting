@@ -43,15 +43,14 @@
         >
           <div class="card-content-wrapper">
             <div class="card-info-main">
-              <h3 class="result-title">{{ result.subject }}</h3>
+              <h3 class="result-title">{{result.paperName  }}</h3>
               <div class="result-meta">
                 <span><i class="icon-book"></i> {{ result.course }}</span>
-                <span><i class="icon-calendar-alt"></i> {{ formatDate(result.date) }}</span>
-                <span><i class="icon-timer"></i> {{ formatDuration(result.duration) }}</span>
+                <span><i class="icon-calendar-alt"></i> {{ formatDate(result.openTime) }}</span>
               </div>
             </div>
             <div class="card-score-section">
-              <div class="score-value" :class="getScoreBadgeClass(result.score)">{{ result.score }}</div>
+              <div class="score-value" :class="getScoreBadgeClass(result.score)">{{ result.totalScore }}</div>
               <div class="score-unit">分</div>
             </div>
           </div>
@@ -75,18 +74,38 @@ import { useRouter } from 'vue-router';
 
 const router = useRouter();
 const isLoading = ref(false); // Initialize isLoading, set true before fetch, false after
-
+const studentId=ref(1)
 // 模拟考试结果数据，实际应从API获取
-const examResults = ref([]); // Initialize as empty
+const examResults = ref([{
+  paperId:1,
+  courseId:1,
+  studentId:1,
+  paperName:"",
+  totalScore:100,
+  closeTime: new Date(),
+   openTime: new Date(),
+   date:new Date(),//此处是我写的，用openTime来初始化的，你得稍微改改可能
+}]); // Initialize as empty
 
-const populateMockData = () => { // Function to populate mock data
-  examResults.value = [
-    { id: 1, subject: '操作系统原理', course: '计算机基础', score: 85, date: new Date(Date.now() - 86400000).toISOString(), duration: 3200, fullScore: 100 },
-    { id: 2, subject: '需求分析与设计', course: '软件工程', score: 67, date: new Date(Date.now() - 86400000 * 3).toISOString(), duration: 3400, fullScore: 75 },
-    { id: 3, subject: '数据库基础', course: '计算机基础', score: 92, date: new Date(Date.now() - 86400000 * 7).toISOString(), duration: 3300, fullScore: 100 },
-    { id: 4, subject: '计算机网络', course: '计算机科学', score: 55, date: new Date(Date.now() - 86400000 * 10).toISOString(), duration: 3000, fullScore: 100 },
-    { id: 5, subject: '数据结构', course: '计算机科学', score: 78, date: new Date().toISOString(), duration: 3500, fullScore: 100 }, // Today
-  ].sort((a, b) => new Date(b.date) - new Date(a.date));
+const fetchexamsdata = async() => { // Function to populate mock data
+  try {
+    const params = new URLSearchParams({ studentId:studentId.value });
+    const url = `http://localhost:8080/api/exam/search-examResult-for-one-student?${params}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`获取考试结果失败 (${res.status})`);
+    const temp = await res.json() || [];
+    examResults.value=temp.map((result) => {
+      return {
+        ...result,
+        paperName:result.paperName? result.paperName:"未命名",
+        date:result.openTime,
+      }
+})
+  console.log(examResults.value)
+  } catch (error) {
+    console.error('fetchExamResultsForChart error:', error);
+    examResults.value = [];
+  }
 };
 
 onMounted(() => {
@@ -100,7 +119,7 @@ onMounted(() => {
   //   isLoading.value = false;
   //   alert("加载考试记录失败");
   // });
-  populateMockData(); // Using mock data for now
+  fetchexamsdata(); // Using mock data for now
 });
 
 
@@ -186,7 +205,7 @@ const clearSearch = () => {
 };
 
 const viewDetails = (result) => {
-  router.push(`/student/result/${result.id}/details`);
+  router.push(`/student/result/${result.courseId}/${result.paperId}/${result.studentId}/details`);
 };
 </script>
 

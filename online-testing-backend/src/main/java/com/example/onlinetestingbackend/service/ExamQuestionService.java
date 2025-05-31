@@ -360,4 +360,21 @@ public class ExamQuestionService {
         examresultDto.setTotalScore(examResult.get().getTotalScore());
         return examresultDto;
     }
+
+    public List<ExamwithNameDto> searchexamresultbystudentId(Integer studentId) {
+        List<ExamwithNameDto> examwithNameDtos = new ArrayList<>();
+        List<ExamResult> examResults = examResultRepository.findByStudentId(studentId);
+        for (ExamResult examResult : examResults) {
+            PaperInfo paperInfo = paperInfoRepository.findByCourseIdAndPaperId(examResult.getCourseId(), examResult.getPaperId());
+            ExamwithNameDto examwithNameDto = new ExamwithNameDto();
+            examwithNameDto.setStudentId(studentId);
+            examwithNameDto.setPaperId(paperInfo.getPaperId());
+            examwithNameDto.setCourseId(examResult.getCourseId());
+            examwithNameDto.setTotalScore(examResult.getTotalScore());
+            examwithNameDto.setOpenTime(paperInfo.getOpenTime());
+            examwithNameDto.setCloseTime(paperInfo.getCloseTime());
+            examwithNameDtos.add(examwithNameDto);
+        }
+        return examwithNameDtos;
+    }
 }
