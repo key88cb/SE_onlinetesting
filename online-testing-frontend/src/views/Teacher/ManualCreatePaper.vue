@@ -532,8 +532,8 @@ const confirmPublish = async () => {
     const manualPaperRequest = {
       courseId: paper.value.courseId,
       creator: paper.value.creator,
-      openTime: new Date(examSettings.value.startTime).toISOString().slice(0, 19),
-      closeTime: new Date(examSettings.value.endTime).toISOString().slice(0, 19),
+      openTime:examSettings.value.startTime,
+      closeTime: examSettings.value.endTime,
       totalScores: examSettings.value.fullScore,
       questions: paper.value.questions.map(q => ({
         questionId: q.id,
