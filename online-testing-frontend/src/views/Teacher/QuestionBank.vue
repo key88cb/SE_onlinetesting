@@ -7,7 +7,7 @@
       <div class="search-filter-group">
         <input
             v-model="searchQuery"
-            placeholder="按题目内容、科目或标签搜索..."
+            placeholder="按题目内容、科目或标签搜索.......加空格实现并集搜索，加AND实现交集搜索"
             class="control-input search-input"/>
         <select v-model="selectedSubjectFilter" class="control-input subject-select">
           <option value="">全部分类</option>
@@ -134,8 +134,11 @@
                         v-if="isSingleChoice"
                         type="radio"
                         :id="'correct-opt-' + option.value"
-                        name="single-choice-group" :value="option.value"
-                        :checked="option.isCorrect" @click="setSingleCorrectOption(option.value)" class="visually-hidden-input"
+                        name="single-choice-group"
+                        :value="option.value"
+                        :checked="option.isCorrect"
+                        @click="setSingleCorrectOption(option.value)"
+                        class="visually-hidden-input"
                     />
                     <input
                         v-if="isMultipleChoice"
@@ -143,7 +146,8 @@
                         :id="'correct-opt-' + option.value"
                         :name="'multi-choice-correct-answer-' + option.value"
                         :value="option.value"
-                        v-model="option.isCorrect" class="visually-hidden-input"
+                        v-model="option.isCorrect"
+                        class="visually-hidden-input"
                     />
                     <label :for="'correct-opt-' + option.value" class="switch-label">
                        <span class="switch-track">
@@ -235,8 +239,6 @@ const currentQuestion = ref({
   tag: '',
   creator: '出题老师',
   options: defaultSingleMultiOptions(),
-  // subjectCategory, tags, questionText, questionType 字段在转换到后端DTO时使用
-  // correctAnswer 字段存储的是后端格式的答案字符串（如 "A", "AC"）
   correctAnswer: ''
 });
 // --- 工具函数 ---
@@ -278,7 +280,7 @@ const convertFrontendToBackendDto = (frontendQuestion) => {
     backendDto.correctAnswer = correctAnswersLetters.length > 0 ? correctAnswersLetters[0] : '';
   } else if (frontendQuestion.type === QUESTION_TYPES_MAP.MULTIPLE_CHOICE.frontend) {
     backendDto.correctAnswer = correctAnswersLetters.sort().join('');
-  } else { // SINGLE_CHOICE
+  } else {
     backendDto.correctAnswer = correctAnswersLetters.length > 0 ? correctAnswersLetters[0] : '';
   }
   return backendDto;
@@ -295,23 +297,18 @@ const convertBackendToFrontendItem = (backendDto) => {
     text: backendDto.questionText,
     tag: backendDto.tags,
     creator: backendDto.creator,
-    correctAnswer: backendDto.correctAnswer, // 保存后端原始的 correctAnswer 字符串
+    correctAnswer: backendDto.correctAnswer,
     options: [],
-    // 保留这些原始字段可能对于某些逻辑有用，但当前主要依赖上面转换的字段
-    // subjectCategory: backendDto.subjectCategory,
-    // tags: backendDto.tags,
-    // questionText: backendDto.questionText,
-    // questionTypeOriginal: backendDto.questionType,
   };
   if (frontendItem.type === QUESTION_TYPES_MAP.TRUE_FALSE.frontend) {
     const defaultOpts = defaultJudgmentOptionsFE().map(opt => ({...opt}));
-    defaultOpts[0].isCorrect = (frontendItem.correctAnswer === 'A'); // 'A' for True
-    defaultOpts[1].isCorrect = (frontendItem.correctAnswer === 'B'); // 'B' for False
+    defaultOpts[0].isCorrect = (frontendItem.correctAnswer === 'A');
+    defaultOpts[1].isCorrect = (frontendItem.correctAnswer === 'B');
     frontendItem.options = defaultOpts;
   } else if (backendDto.options && backendDto.options.length > 0) {
     const correctChars = backendDto.questionType === QUESTION_TYPES_MAP.MULTIPLE_CHOICE.backend && backendDto.correctAnswer
-        ? backendDto.correctAnswer.split('') // "AC" -> ["A", "C"]
-        : (backendDto.correctAnswer ? [backendDto.correctAnswer] : []); // "A" -> ["A"], "" -> []
+        ? backendDto.correctAnswer.split('')
+        : (backendDto.correctAnswer ? [backendDto.correctAnswer] : []);
     frontendItem.options = backendDto.options.map(optDto => {
       const optionValLetter = optionIdValueToLetter(optDto.optionIdValue);
       return {
@@ -332,7 +329,7 @@ const fetchQuestionsFromAPI = async (params = {}) => {
     const url = new URL(API_BASE_URL);
     if (params.subject) url.searchParams.append('subjectCategory', params.subject);
     if (params.type) url.searchParams.append('questionType', getBackendType(params.type));
-    if (params.tags) url.searchParams.append('tags', params.tags); // Assuming tags is a string for query
+    if (params.tags) url.searchParams.append('tags', params.tags);
     const res = await fetch(url.toString());
     if (!res.ok) {
       const errorText = await res.text();
@@ -419,31 +416,22 @@ onMounted(() => {
 
 const handleQuestionTypeChange = () => {
   const type = currentQuestion.value.type;
-  // 当题目类型改变时，重置选项为该类型的默认状态
   if (type === QUESTION_TYPES_MAP.TRUE_FALSE.frontend) {
     currentQuestion.value.options = defaultJudgmentOptionsFE().map(opt => ({...opt}));
-  } else { // SINGLE_CHOICE or MULTIPLE_CHOICE
+  } else {
     currentQuestion.value.options = defaultSingleMultiOptions().map(opt => ({...opt}));
   }
-  // 清除非判断题的判断题答案模型
   if (type !== QUESTION_TYPES_MAP.TRUE_FALSE.frontend) {
     judgmentCorrectAnswerValue.value = null;
-  } else {
-    // 如果切换到判断题，也清空单选/多选的 correctAnswer 字符串（如果之前有的话）
-    // (虽然currentQuestion.correctAnswer主要在editQuestion中从qCopy设置，这里是类型切换逻辑)
   }
 };
 
 watch(() => currentQuestion.value.type, (newType, oldType) => {
   if (newType !== oldType) {
     handleQuestionTypeChange();
-    // 注意：如果是在编辑状态下切换题目类型，用户可能需要重新选择正确答案，
-    // 因为 handleQuestionTypeChange 会将选项重置为新类型的默认isCorrect=false状态。
   }
 });
 
-// 这个 watcher 主要用于同步判断题的 judgmentCorrectAnswerValue 和 currentQuestion.correctAnswer
-// 但 currentQuestion.correctAnswer 主要由 editQuestion 初始化，并在 saveQuestion 前同步。
 watch([() => currentQuestion.value.correctAnswer, () => currentQuestion.value.type],
     ([newCorrectAnswer, newType]) => {
       if (newType === QUESTION_TYPES_MAP.TRUE_FALSE.frontend) {
@@ -459,13 +447,12 @@ const saveQuestion = async () => {
   if (!currentQuestion.value.subject.trim()) { alert('所属科目不能为空'); return; }
   if (!currentQuestion.value.creator.trim()) { alert('创建者不能为空'); return; }
 
-  // 在保存前，确保判断题的 isCorrect 状态与 judgmentCorrectAnswerValue 同步
   if (currentQuestion.value.type === QUESTION_TYPES_MAP.TRUE_FALSE.frontend) {
     if (judgmentCorrectAnswerValue.value === null) { alert('判断题请选择一个答案'); return; }
     currentQuestion.value.options.forEach(option => {
       option.isCorrect = (option.value === judgmentCorrectAnswerValue.value);
     });
-  } else { // 单选/多选的 isCorrect 应该已经通过交互（setSingleCorrectOption 或 v-model for checkbox）更新了
+  } else {
     if (!currentQuestion.value.options.some(o => o.isCorrect && o.label.trim() !== '')) {
       alert('单选题或多选题至少选择一个有效答案'); return;
     }
@@ -474,26 +461,23 @@ const saveQuestion = async () => {
     }
   }
 
-  let resultDto;
+  let success = false;
   if (isEditing.value) {
-    resultDto = await updateQuestionAPI(currentQuestion.value.questionId, currentQuestion.value);
+    const resultDto = await updateQuestionAPI(currentQuestion.value.questionId, currentQuestion.value);
     if (resultDto) {
-      const index = questions.value.findIndex(q => q.questionId === resultDto.questionId);
-      if (index > -1) {
-        questions.value[index] = convertBackendToFrontendItem(resultDto);
-      }
       alert('题目修改成功！');
+      success = true;
     }
   } else {
-    resultDto = await createQuestionAPI(currentQuestion.value);
+    const resultDto = await createQuestionAPI(currentQuestion.value);
     if (resultDto) {
-      questions.value.push(convertBackendToFrontendItem(resultDto));
       alert('题目添加成功！');
+      success = true;
     }
   }
-  if (resultDto) {
-    closeModal(); // 关闭模态框
-    await fetchQuestionsFromAPI(); // 重新从服务器获取所有题目
+  if (success) {
+    closeModal();
+    await fetchQuestionsFromAPI();
   }
 };
 
@@ -506,9 +490,11 @@ const showAddQuestionDialog = () => {
     subject: '', text: '', tag: '', creator: '默认出题老师',
     options: defaultSingleMultiOptions().map(opt => ({...opt})),
     correctAnswer: ''
-    // questionType (backend string) will be derived by getBackendType in convertFrontendToBackendDto
   };
   judgmentCorrectAnswerValue.value = null;
+  if (currentQuestion.value.type !== QUESTION_TYPES_MAP.TRUE_FALSE.frontend && currentQuestion.value.options.length !== 4) {
+    currentQuestion.value.options = defaultSingleMultiOptions().map(opt => ({...opt}));
+  }
   showModal.value = true;
 };
 
@@ -519,19 +505,16 @@ const editQuestion = (questionToEdit) => {
   currentQuestion.value = {
     id: qCopy.id,
     questionId: qCopy.questionId,
-    type: qCopy.type, // 前端类型 ("单选", "多选", "判断")
+    type: qCopy.type,
     subject: qCopy.subject,
     text: qCopy.text,
     tag: qCopy.tag,
     creator: qCopy.creator,
-    options: [], // 将在下方根据类型和qCopy填充
-    correctAnswer: qCopy.correctAnswer // 后端格式的答案字符串 ("A", "AC")
-    // questionType (backend string) will be derived by getBackendType in convertFrontendToBackendDto
+    options: [],
+    correctAnswer: qCopy.correctAnswer
   };
 
-  // === USER'S PROPOSED FIX for editQuestion option initialization ===
   let parsedCorrectAnswers = [];
-  // currentQuestion.value.type 是前端中文类型, qCopy.correctAnswer 是后端答案字符串
   if (currentQuestion.value.type === QUESTION_TYPES_MAP.MULTIPLE_CHOICE.frontend) {
     parsedCorrectAnswers = (qCopy.correctAnswer || '').split('');
   } else if (currentQuestion.value.type === QUESTION_TYPES_MAP.SINGLE_CHOICE.frontend) {
@@ -539,37 +522,30 @@ const editQuestion = (questionToEdit) => {
   }
 
   if (currentQuestion.value.type === QUESTION_TYPES_MAP.TRUE_FALSE.frontend) {
-    // 判断题特殊处理：选项固定为"正确"和"错误"
     currentQuestion.value.options = defaultJudgmentOptionsFE().map(opt => ({...opt}));
-    judgmentCorrectAnswerValue.value = qCopy.correctAnswer; // "A" or "B"
-    // 同步 isCorrect 状态到 currentQuestion.options (虽然判断题的 isCorrect 更多是内部使用)
+    judgmentCorrectAnswerValue.value = qCopy.correctAnswer;
     currentQuestion.value.options.forEach(opt => {
       opt.isCorrect = (opt.value === judgmentCorrectAnswerValue.value);
     });
-  } else { // 单选题 或 多选题
-    // 直接使用 qCopy.options 中的原始选项数据 (value, label)
-    // 并根据解析后的 parsedCorrectAnswers 来设置 isCorrect
+  } else {
     if (qCopy.options && qCopy.options.length > 0) {
       currentQuestion.value.options = qCopy.options.map(originalOption => ({
-        ...originalOption, // 复制原始选项的所有属性 (如 value, label)
-        isCorrect: parsedCorrectAnswers.includes(originalOption.value) // 根据解析结果重设 isCorrect
+        ...originalOption,
+        isCorrect: parsedCorrectAnswers.includes(originalOption.value)
       }));
     } else {
-      // 如果 qCopy.options 为空 (异常情况), 则生成默认选项结构并尝试设置isCorrect
       currentQuestion.value.options = defaultSingleMultiOptions().map(defaultOpt => ({
         ...defaultOpt,
         isCorrect: parsedCorrectAnswers.includes(defaultOpt.value)
       }));
     }
-    judgmentCorrectAnswerValue.value = null; // 清空判断题的答案模型
+    judgmentCorrectAnswerValue.value = null;
   }
-  // === END OF USER'S PROPOSED FIX INTEGRATION AREA ===
   showModal.value = true;
 };
 
 const setSingleCorrectOption = (optionValue) => {
   if (currentQuestion.value.type === QUESTION_TYPES_MAP.SINGLE_CHOICE.frontend) {
-    // 创建一个全新的选项数组以强制 Vue 更新视图
     const newOptions = currentQuestion.value.options.map(opt => ({
       ...opt,
       isCorrect: (opt.value === optionValue)
@@ -590,7 +566,6 @@ const deleteQuestion = async (question) => {
 
 const viewQuestionDetails = (question) => {
   console.log("viewQuestionDetails: Viewing details for", JSON.parse(JSON.stringify(question)));
-  // 实际的详情显示逻辑可以扩展
 };
 
 const closeModal = () => { showModal.value = false; };
@@ -616,29 +591,44 @@ const removeLastOption = () => {
 const uniqueSubjects = computed(() => {
   return [...new Set(questions.value.map(q => q.subject).filter(s => s))].sort();
 });
+
 const filteredQuestions = computed(() => {
   let result = questions.value;
-  const query = searchQuery.value.toLowerCase().trim();
+  const rawQuery = searchQuery.value.trim();
   const subject = selectedSubjectFilter.value;
 
-  if (query) {
-    result = result.filter(q =>
-        (q.text && q.text.toLowerCase().includes(query)) ||
-        (q.subject && q.subject.toLowerCase().includes(query)) ||
-        (q.tag && q.tag.toLowerCase().includes(query)) // 标签搜索
-    );
+  if (rawQuery) {
+    const lowerCaseQuery = rawQuery.toLowerCase();
+    const andGroups = lowerCaseQuery.split(/\s+and\s+/i);
+
+    result = result.filter(q => {
+      return andGroups.every(groupQuery => {
+        if (!groupQuery.trim()) return true;
+        const orTerms = groupQuery.split(/\s+/).filter(term => term.length > 0);
+        if (orTerms.length === 0) return true;
+
+        return orTerms.some(term => {
+          const textMatch = q.text && q.text.toLowerCase().includes(term);
+          const subjectMatch = q.subject && q.subject.toLowerCase().includes(term);
+          const tagMatch = q.tag && q.tag.toLowerCase().includes(term);
+          return textMatch || subjectMatch || tagMatch;
+        });
+      });
+    });
   }
+
   if (subject) {
     result = result.filter(q => q.subject === subject);
   }
   return result;
 });
+
 const isSingleChoice = computed(() => currentQuestion.value.type === QUESTION_TYPES_MAP.SINGLE_CHOICE.frontend);
 const isMultipleChoice = computed(() => currentQuestion.value.type === QUESTION_TYPES_MAP.MULTIPLE_CHOICE.frontend);
 const isJudgmentQuestion = computed(() => currentQuestion.value.type === QUESTION_TYPES_MAP.TRUE_FALSE.frontend);
 
-watch(questions, (newVal) => { /* console.log('questions changed'); */ }, { deep: true });
-watch(currentQuestion, (newVal) => { /* console.log('currentQuestion changed'); */ }, { deep: true });
+watch(questions, (newVal) => { /* Debug log can be added here */ }, { deep: true });
+watch(currentQuestion, (newVal) => { /* Debug log can be added here */ }, { deep: true });
 
 </script>
 <style scoped>
