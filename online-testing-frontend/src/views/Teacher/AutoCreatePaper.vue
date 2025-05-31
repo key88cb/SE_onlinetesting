@@ -426,11 +426,12 @@ async function confirmPublish() {
   if (window.confirm('确认要发布这份试卷吗？')) {
     try {
       // 构建请求体
+      console.log(examSettings.value.startTime)
       const payload = {
         courseId: getCourseIdFromName(paper.value.course),
         creator: paper.value.creator,
-        openTime: new Date(examSettings.value.startTime).toISOString().slice(0, 19),
-        closeTime: new Date(examSettings.value.endTime).toISOString().slice(0, 19),
+        openTime: examSettings.value.startTime,
+        closeTime: examSettings.value.endTime,
         paperName: paper.value.title,
         totalScores: examSettings.value.fullScore,
         questionTypeConfigs: buildQuestionTypeConfigs(),
