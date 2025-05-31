@@ -504,6 +504,14 @@ const confirmPublish = async () => {
     alert('请输入试卷名称。');
     return;
   }
+  if (!paper.value.courseId) {
+    alert('请输入课程ID。');
+    return;
+  }
+  if (!paper.value.creator.trim()) {
+    alert('请输入创建者。');
+    return;
+  }
   if (paper.value.questions.length === 0) {
     alert('试卷中没有题目，无法发布。');
     return;
