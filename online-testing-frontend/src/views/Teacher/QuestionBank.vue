@@ -1,29 +1,23 @@
-<!--已基本实现完成的题库管理 三件套 HTML-->
-<!--网页的骨架就不说了把-->
 <template>
   <div class="question-bank-page">
     <header class="page-header">
       <h1>题库管理</h1>
     </header>
-<!--控制部分 页面上方的控制条-->
     <section class="controls-section">
-<!--搜索条-->
       <div class="search-filter-group">
         <input
             v-model="searchQuery"
             placeholder="按题目内容、科目或标签搜索..."
             class="control-input search-input"/>
-<!--选择条-->
         <select v-model="selectedSubjectFilter" class="control-input subject-select">
           <option value="">全部分类</option>
-          <option v-for="subject in uniqueSubjects" :key="subject" :value="subject">{{ subject }}</option>
+          <option v-for="subject_option in uniqueSubjects" :key="subject_option" :value="subject_option">{{ subject_option }}</option>
         </select>
       </div>
       <button class="btn primary-btn add-question-btn" @click="showAddQuestionDialog">
         <i class="icon-add"></i> 添加新题目
       </button>
     </section>
-<!--题目内容-->
     <section class="content-section">
       <div v-if="isLoading" class="loading-indicator">
         <p>题目加载中...</p>
@@ -31,7 +25,6 @@
       <div v-else-if="!filteredQuestions.length" class="no-results-indicator">
         <p>未找到符合条件的题目，或题库当前为空。</p>
       </div>
-<!--      题目卡-->
       <div v-else class="questions-grid">
         <div
             v-for="question in filteredQuestions"
@@ -52,11 +45,11 @@
           <h3 class="card-title">{{ question.text }}</h3>
           <div class="card-options">
             <div
-                v-for="(option) in question.options"
-                :key="option.value"
-                :class="['option-item', { 'correct-answer': option.isCorrect }]"
+                v-for="(option_item) in question.options"
+                :key="option_item.value"
+                :class="['option-item', { 'correct-answer': option_item.isCorrect }]"
             >
-              <span class="option-letter">{{ option.value }}.</span> {{ option.label }}
+              <span class="option-letter">{{ option_item.value }}.</span> {{ option_item.label }}
             </div>
           </div>
           <div class="card-actions">
@@ -120,28 +113,43 @@
                       :value="option.value"
                       v-model="judgmentCorrectAnswerValue"
                       name="judgmentCorrectAnswerGroup"
-                      class="form-radio"
+                      class="visually-hidden-input"
                   />
-                  <label :for="'option-judge-' + option.value" class="option-input-label">{{ option.label }}</label>
+                  <label :for="'option-judge-' + option.value" class="switch-label">
+                    <span class="switch-track">
+                        <span class="switch-thumb"></span>
+                    </span>
+                    <span class="option-label-text judgment-switch-label-text">{{ option.label }}</span>
+                  </label>
                 </div>
                 <p class="form-hint">判断题：请选择一个作为正确答案。</p>
               </div>
 
               <div v-else class="standard-options-group">
-                <div v-for="(option, index) in currentQuestion.options" :key="index" class="option-input-group">
+                <div v-for="(option) in currentQuestion.options" :key="option.value" class="option-input-group">
                   <span class="option-prefix">{{ option.value }}.</span>
                   <input type="text" v-model="option.label" :placeholder="`选项 ${option.value} 内容`" class="form-control option-text-input" required />
                   <div class="correct-marker">
                     <input
-                        :type="isSingleChoice ? 'radio' : 'checkbox'"
+                        v-if="isSingleChoice"
+                        type="radio"
                         :id="'correct-opt-' + option.value"
-                        :name="isSingleChoice ? 'single-choice-correct-answer' : 'multi-choice-correct-answer-' + option.value"
-                        :value="option.value"
-                        v-model="option.isCorrect"
-                        @change="isSingleChoice && setSingleCorrectOption(option.value)"
-                        class="form-check-input"
+                        name="single-choice-group" :value="option.value"
+                        :checked="option.isCorrect" @click="setSingleCorrectOption(option.value)" class="visually-hidden-input"
                     />
-                    <label :for="'correct-opt-' + option.value">正确</label>
+                    <input
+                        v-if="isMultipleChoice"
+                        type="checkbox"
+                        :id="'correct-opt-' + option.value"
+                        :name="'multi-choice-correct-answer-' + option.value"
+                        :value="option.value"
+                        v-model="option.isCorrect" class="visually-hidden-input"
+                    />
+                    <label :for="'correct-opt-' + option.value" class="switch-label">
+                       <span class="switch-track">
+                           <span class="switch-thumb"></span>
+                       </span>
+                    </label>
                   </div>
                 </div>
                 <div class="option-management-buttons">
@@ -169,16 +177,15 @@
     </div>
   </div>
 </template>
-<!--行为-->
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
-// --- 类型映射 --- 因为不太想要数据库的英文 就把中英文名字绑定在这里
+// --- 类型映射 ---
 const QUESTION_TYPES_MAP = {
   SINGLE_CHOICE: { backend: 'Single Choice', frontend: '单选' },
   MULTIPLE_CHOICE: { backend: 'Multiple Choice', frontend: '多选' },
   TRUE_FALSE: { backend: 'True/False', frontend: '判断' }
 };
-// 下面两个函数是从前后端识别内容
+// --- 类型转换函数 ---
 const getFrontendType = (backendType) => {
   for (const key in QUESTION_TYPES_MAP) {
     if (QUESTION_TYPES_MAP[key].backend === backendType) {
@@ -204,8 +211,6 @@ const isEditing = ref(false);
 const judgmentCorrectAnswerValue = ref(null);
 const searchQuery = ref('');
 const selectedSubjectFilter = ref('');
-// 下面这句是打印的调试语句 如果加了可以进入前端页面的开发者模式 （F12） 切换到控制台 刷新后可以看到输出
-// console.log("Vue Component: Initializing state refs.");
 
 // --- 默认选项生成函数 ---
 const defaultSingleMultiOptions = (count = 4) => {
@@ -215,13 +220,12 @@ const defaultSingleMultiOptions = (count = 4) => {
   }
   return opts;
 };
-
 const defaultJudgmentOptionsFE = () => [
-  { value: 'A', label: '正确', isCorrect: false }, // 在模板中可以显示 "正确 (True)"
-  { value: 'B', label: '错误', isCorrect: false }  // 在模板中可以显示 "错误 (False)"
+  { value: 'A', label: '正确', isCorrect: false },
+  { value: 'B', label: '错误', isCorrect: false }
 ];
 
-// --- 当前题目对象 (前端内部状态) --- 对于这些关键的数据 需要和dto稍微匹配一下
+// --- 当前题目对象 ---
 const currentQuestion = ref({
   id: null,
   questionId: null,
@@ -231,98 +235,83 @@ const currentQuestion = ref({
   tag: '',
   creator: '出题老师',
   options: defaultSingleMultiOptions(),
-  subjectCategory: '',
-  tags: '',
-  questionText: '',
-  questionType: QUESTION_TYPES_MAP.SINGLE_CHOICE.backend,
+  // subjectCategory, tags, questionText, questionType 字段在转换到后端DTO时使用
+  // correctAnswer 字段存储的是后端格式的答案字符串（如 "A", "AC"）
   correctAnswer: ''
 });
-// --- 工具函数：选项字母与后端 OptionDto.optionIdValue (数字) 转换 --- ABCD 的解析 1234数字的解析
+// --- 工具函数 ---
 const optionLetterToIdValue = (letter) => {
   if (!letter || typeof letter !== 'string' || letter.length !== 1) return null;
-  const val = letter.charCodeAt(0) - 64;
+  const val = letter.charCodeAt(0) - 64; // A=1, B=2
   return val > 0 ? val : null;
 };
 const optionIdValueToLetter = (idValue) => {
   if (idValue === null || typeof idValue !== 'number' || idValue < 1) return '';
-  return String.fromCharCode(64 + idValue);
+  return String.fromCharCode(64 + idValue); // 1=A, 2=B
 };
 
-// --- 数据转换函数 --- 前端的内容转成后端可用
+// --- 数据转换函数 ---
 const convertFrontendToBackendDto = (frontendQuestion) => {
-  console.log("convertFrontendToBackendDto: Input (frontendQuestion)", JSON.parse(JSON.stringify(frontendQuestion)));
   const backendDto = {
     questionId: frontendQuestion.questionId,
     subjectCategory: frontendQuestion.subject,
     tags: frontendQuestion.tag,
     questionText: frontendQuestion.text,
-    questionType: getBackendType(frontendQuestion.type), // 中文转英文
+    questionType: getBackendType(frontendQuestion.type),
     creator: frontendQuestion.creator,
     correctAnswer: '',
     options: []
   };
-
   let correctAnswersLetters = [];
   if (frontendQuestion.options && frontendQuestion.options.length > 0) {
     frontendQuestion.options.forEach((opt) => {
       const optionIdVal = optionLetterToIdValue(opt.value);
       if (optionIdVal !== null) {
-        backendDto.options.push({
-          optionIdValue: optionIdVal,
-          optionText: opt.label
-        });
+        backendDto.options.push({ optionIdValue: optionIdVal, optionText: opt.label });
         if (opt.isCorrect) {
           correctAnswersLetters.push(opt.value);
         }
       }
     });
   }
-
-  // 根据题目类型格式化 correctAnswer 字符串
-  if (frontendQuestion.type === QUESTION_TYPES_MAP.TRUE_FALSE.frontend) { // 判断 (中文)
-    backendDto.correctAnswer = correctAnswersLetters.length > 0 ? correctAnswersLetters[0] : ''; // "A" 或 "B"
-  } else if (frontendQuestion.type === QUESTION_TYPES_MAP.MULTIPLE_CHOICE.frontend) { // 多选 (中文)
-    // 多选题答案格式为 "ABC"，需要排序后连接
-    backendDto.correctAnswer = correctAnswersLetters.sort().join(''); // 例如 "ABC"
-  } else { // 单选
-    backendDto.correctAnswer = correctAnswersLetters.length > 0 ? correctAnswersLetters[0] : ''; // 例如 "B"
+  if (frontendQuestion.type === QUESTION_TYPES_MAP.TRUE_FALSE.frontend) {
+    backendDto.correctAnswer = correctAnswersLetters.length > 0 ? correctAnswersLetters[0] : '';
+  } else if (frontendQuestion.type === QUESTION_TYPES_MAP.MULTIPLE_CHOICE.frontend) {
+    backendDto.correctAnswer = correctAnswersLetters.sort().join('');
+  } else { // SINGLE_CHOICE
+    backendDto.correctAnswer = correctAnswersLetters.length > 0 ? correctAnswersLetters[0] : '';
   }
-  console.log("convertFrontendToBackendDto: Output (backendDto)", JSON.parse(JSON.stringify(backendDto)));
   return backendDto;
 };
 
 const convertBackendToFrontendItem = (backendDto) => {
-  console.log("convertBackendToFrontendItem: Input (backendDto)", JSON.parse(JSON.stringify(backendDto)));
   const frontendKey = backendDto.questionId || `temp-${Date.now()}-${Math.random()}`;
-  const frontendTypeDisplay = getFrontendType(backendDto.questionType); // 英文转中文
-
+  const frontendTypeDisplay = getFrontendType(backendDto.questionType);
   const frontendItem = {
     id: frontendKey,
     questionId: backendDto.questionId,
-    type: frontendTypeDisplay, // 前端使用的中文类型
+    type: frontendTypeDisplay,
     subject: backendDto.subjectCategory,
     text: backendDto.questionText,
     tag: backendDto.tags,
     creator: backendDto.creator,
-    correctAnswer: backendDto.correctAnswer, // 保存后端原始的 correctAnswer
+    correctAnswer: backendDto.correctAnswer, // 保存后端原始的 correctAnswer 字符串
     options: [],
-    subjectCategory: backendDto.subjectCategory,
-    tags: backendDto.tags,
-    questionText: backendDto.questionText,
-    questionTypeOriginal: backendDto.questionType, // 保存原始后端英文类型
+    // 保留这些原始字段可能对于某些逻辑有用，但当前主要依赖上面转换的字段
+    // subjectCategory: backendDto.subjectCategory,
+    // tags: backendDto.tags,
+    // questionText: backendDto.questionText,
+    // questionTypeOriginal: backendDto.questionType,
   };
-
-  if (frontendItem.type === QUESTION_TYPES_MAP.TRUE_FALSE.frontend) { // 判断 (中文)
+  if (frontendItem.type === QUESTION_TYPES_MAP.TRUE_FALSE.frontend) {
     const defaultOpts = defaultJudgmentOptionsFE().map(opt => ({...opt}));
-    defaultOpts[0].isCorrect = (frontendItem.correctAnswer === 'A');
-    defaultOpts[1].isCorrect = (frontendItem.correctAnswer === 'B');
+    defaultOpts[0].isCorrect = (frontendItem.correctAnswer === 'A'); // 'A' for True
+    defaultOpts[1].isCorrect = (frontendItem.correctAnswer === 'B'); // 'B' for False
     frontendItem.options = defaultOpts;
   } else if (backendDto.options && backendDto.options.length > 0) {
-    // **修改点：多选题 correctAnswer 解析**
     const correctChars = backendDto.questionType === QUESTION_TYPES_MAP.MULTIPLE_CHOICE.backend && backendDto.correctAnswer
-        ? backendDto.correctAnswer.split('') // "ABC" -> ["A", "B", "C"]
-        : [backendDto.correctAnswer]; // 单选或无效多选按单个处理
-
+        ? backendDto.correctAnswer.split('') // "AC" -> ["A", "C"]
+        : (backendDto.correctAnswer ? [backendDto.correctAnswer] : []); // "A" -> ["A"], "" -> []
     frontendItem.options = backendDto.options.map(optDto => {
       const optionValLetter = optionIdValueToLetter(optDto.optionIdValue);
       return {
@@ -332,125 +321,89 @@ const convertBackendToFrontendItem = (backendDto) => {
       };
     }).sort((a,b) => (a.value || '').localeCompare(b.value || ''));
   }
-  console.log("convertBackendToFrontendItem: Output (frontendItem)", JSON.parse(JSON.stringify(frontendItem)));
   return frontendItem;
 };
 
-
 // --- API 调用函数 ---
-// (fetchQuestionsFromAPI, createQuestionAPI, updateQuestionAPI, deleteQuestionAPI 保持不变，因为它们依赖于上面已修改的转换函数)
-// 同样提前给出URL
 const API_BASE_URL = 'http://localhost:8080/api/questions';
 const fetchQuestionsFromAPI = async (params = {}) => {
   isLoading.value = true;
-  // console.log("fetchQuestionsFromAPI: Fetching with params", params);
   try {
     const url = new URL(API_BASE_URL);
     if (params.subject) url.searchParams.append('subjectCategory', params.subject);
-    // 当从UI的筛选器获取类型时，它已经是中文了，需要转换为后端期望的英文
     if (params.type) url.searchParams.append('questionType', getBackendType(params.type));
-    if (params.tags) url.searchParams.append('tags', params.tags);
-
-    // console.log("fetchQuestionsFromAPI: Requesting URL", url.toString());
+    if (params.tags) url.searchParams.append('tags', params.tags); // Assuming tags is a string for query
     const res = await fetch(url.toString());
-    // console.log("fetchQuestionsFromAPI: Response status", res.status);
     if (!res.ok) {
       const errorText = await res.text();
-      // console.error("fetchQuestionsFromAPI: HTTP error response text:", errorText);
       throw new Error(`HTTP error ${res.status}: ${errorText}`);
     }
     const data = await res.json();
-    // console.log('fetchQuestionsFromAPI: Raw data from API:', JSON.parse(JSON.stringify(data)));
     if (Array.isArray(data)) {
       questions.value = data.map(dto => convertBackendToFrontendItem(dto));
     } else {
-      // console.error('fetchQuestionsFromAPI: Data from API is not an array!', data);
       questions.value = [];
     }
-    // console.log('fetchQuestionsFromAPI: Updated questions.value:', JSON.parse(JSON.stringify(questions.value)));
   } catch (error) {
     alert('加载题目数据失败: ' + error.message);
-    // console.error('加载题目数据失败:', error);
     questions.value = [];
   } finally {
     isLoading.value = false;
-    // console.log("fetchQuestionsFromAPI: Fetch complete, isLoading set to false.");
   }
 };
-
 const createQuestionAPI = async (frontendQuestionData) => {
   const payload = convertFrontendToBackendDto(frontendQuestionData);
-  // console.log("createQuestionAPI: Sending payload", JSON.parse(JSON.stringify(payload)));
   try {
     const res = await fetch(API_BASE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-    // console.log("createQuestionAPI: Response status", res.status);
     if (!res.ok) {
       const errorText = await res.text();
-      // console.error("createQuestionAPI: HTTP error response text:", errorText);
       throw new Error(`HTTP error ${res.status}: ${errorText}`);
     }
-    const responseData = await res.json();
-    // console.log("createQuestionAPI: Response data", JSON.parse(JSON.stringify(responseData)));
-    return responseData;
+    return await res.json();
   } catch (error) {
     alert('添加题目失败: ' + error.message);
-    // console.error('添加题目失败:', error);
     return null;
   }
 };
-
 const updateQuestionAPI = async (questionId, frontendQuestionData) => {
   if (!questionId) {
     alert('错误：题目ID缺失，无法更新。');
-    // console.error("updateQuestionAPI: questionId is missing.");
     return null;
   }
   const payload = convertFrontendToBackendDto(frontendQuestionData);
-  // console.log(`updateQuestionAPI: Updating question ID ${questionId} with payload`, JSON.parse(JSON.stringify(payload)));
   try {
     const res = await fetch(`${API_BASE_URL}/${questionId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-    // console.log("updateQuestionAPI: Response status", res.status);
     if (!res.ok) {
       const errorText = await res.text();
-      // console.error("updateQuestionAPI: HTTP error response text:", errorText);
       throw new Error(`HTTP error ${res.status}: ${errorText}`);
     }
-    const responseData = await res.json();
-    // console.log("updateQuestionAPI: Response data", JSON.parse(JSON.stringify(responseData)));
-    return responseData;
+    return await res.json();
   } catch (error) {
     alert('修改题目失败: ' + error.message);
-    // console.error('修改题目失败:', error);
     return null;
   }
 };
-
 const deleteQuestionAPI = async (questionId) => {
   if (!questionId) {
     alert('错误：题目ID缺失，无法删除。');
-    // console.error("deleteQuestionAPI: questionId is missing.");
     return false;
   }
-  // console.log(`deleteQuestionAPI: Deleting question ID ${questionId}`);
   try {
     const res = await fetch(`${API_BASE_URL}/${questionId}`, {
       method: 'DELETE'
     });
-    // console.log("deleteQuestionAPI: Response status", res.status);
     if (!res.ok && res.status !== 204) {
       const errorText = await res.text();
-      // console.error("deleteQuestionAPI: HTTP error response text:", errorText);
       throw new Error(`HTTP error ${res.status}: ${errorText}`);
     }
-    // console.log("deleteQuestionAPI: Deletion successful for ID", questionId);
     return true;
   } catch (error) {
     alert('删除题目失败: ' + error.message);
@@ -461,56 +414,58 @@ const deleteQuestionAPI = async (questionId) => {
 
 // --- 组件生命周期与UI交互逻辑 ---
 onMounted(() => {
-  // console.log("Vue Component: Mounted. Calling fetchQuestionsFromAPI.");
   fetchQuestionsFromAPI();
 });
 
 const handleQuestionTypeChange = () => {
-  const type = currentQuestion.value.type; // 前端选择的中文类型
-  // console.log("handleQuestionTypeChange: Frontend type changed to", type);
+  const type = currentQuestion.value.type;
+  // 当题目类型改变时，重置选项为该类型的默认状态
   if (type === QUESTION_TYPES_MAP.TRUE_FALSE.frontend) {
     currentQuestion.value.options = defaultJudgmentOptionsFE().map(opt => ({...opt}));
+  } else { // SINGLE_CHOICE or MULTIPLE_CHOICE
+    currentQuestion.value.options = defaultSingleMultiOptions().map(opt => ({...opt}));
+  }
+  // 清除非判断题的判断题答案模型
+  if (type !== QUESTION_TYPES_MAP.TRUE_FALSE.frontend) {
     judgmentCorrectAnswerValue.value = null;
   } else {
-    const currentOptionsAreJudgmentFormat = currentQuestion.value.options.length === 2 &&
-        currentQuestion.value.options[0].label.includes('正确'); // 更宽松的检查
-    if (currentOptionsAreJudgmentFormat || currentQuestion.value.options.length !== 4) {
-      currentQuestion.value.options = defaultSingleMultiOptions().map(opt => ({...opt}));
-    }
+    // 如果切换到判断题，也清空单选/多选的 correctAnswer 字符串（如果之前有的话）
+    // (虽然currentQuestion.correctAnswer主要在editQuestion中从qCopy设置，这里是类型切换逻辑)
   }
 };
 
 watch(() => currentQuestion.value.type, (newType, oldType) => {
   if (newType !== oldType) {
-    // console.log(`watch currentQuestion.type: Changed from ${oldType} to ${newType}`);
     handleQuestionTypeChange();
+    // 注意：如果是在编辑状态下切换题目类型，用户可能需要重新选择正确答案，
+    // 因为 handleQuestionTypeChange 会将选项重置为新类型的默认isCorrect=false状态。
   }
 });
 
+// 这个 watcher 主要用于同步判断题的 judgmentCorrectAnswerValue 和 currentQuestion.correctAnswer
+// 但 currentQuestion.correctAnswer 主要由 editQuestion 初始化，并在 saveQuestion 前同步。
 watch([() => currentQuestion.value.correctAnswer, () => currentQuestion.value.type],
     ([newCorrectAnswer, newType]) => {
       if (newType === QUESTION_TYPES_MAP.TRUE_FALSE.frontend) {
-        // newCorrectAnswer 对判断题是 'A' 或 'B'
         if (judgmentCorrectAnswerValue.value !== newCorrectAnswer) {
-          // console.log(`watch complex (Judgment): correctAnswer changed to ${newCorrectAnswer}, updating judgmentCorrectAnswerValue.`);
           judgmentCorrectAnswerValue.value = newCorrectAnswer;
         }
       }
-    }, { deep: true } // options 变化也会触发，但我们主要关心 correctAnswer 对判断题的影响
+    }, { deep: true }
 );
 
-
 const saveQuestion = async () => {
-  // console.log("saveQuestion: Initiated. isEditing:", isEditing.value);
   if (!currentQuestion.value.text.trim()) { alert('题目内容不能为空'); return; }
   if (!currentQuestion.value.subject.trim()) { alert('所属科目不能为空'); return; }
   if (!currentQuestion.value.creator.trim()) { alert('创建者不能为空'); return; }
+
+  // 在保存前，确保判断题的 isCorrect 状态与 judgmentCorrectAnswerValue 同步
   if (currentQuestion.value.type === QUESTION_TYPES_MAP.TRUE_FALSE.frontend) {
     if (judgmentCorrectAnswerValue.value === null) { alert('判断题请选择一个答案'); return; }
     currentQuestion.value.options.forEach(option => {
       option.isCorrect = (option.value === judgmentCorrectAnswerValue.value);
     });
-  } else {
+  } else { // 单选/多选的 isCorrect 应该已经通过交互（setSingleCorrectOption 或 v-model for checkbox）更新了
     if (!currentQuestion.value.options.some(o => o.isCorrect && o.label.trim() !== '')) {
       alert('单选题或多选题至少选择一个有效答案'); return;
     }
@@ -536,81 +491,94 @@ const saveQuestion = async () => {
       alert('题目添加成功！');
     }
   }
-  if (resultDto) closeModal();
+  if (resultDto) {
+    closeModal(); // 关闭模态框
+    await fetchQuestionsFromAPI(); // 重新从服务器获取所有题目
+  }
 };
 
 const showAddQuestionDialog = () => {
   isEditing.value = false;
+  const defaultType = QUESTION_TYPES_MAP.SINGLE_CHOICE.frontend;
   currentQuestion.value = {
     id: null, questionId: null,
-    type: QUESTION_TYPES_MAP.SINGLE_CHOICE.frontend, // 默认中文单选
+    type: defaultType,
     subject: '', text: '', tag: '', creator: '默认出题老师',
     options: defaultSingleMultiOptions().map(opt => ({...opt})),
-    subjectCategory: '', tags: '', questionText: '',
-    questionType: QUESTION_TYPES_MAP.SINGLE_CHOICE.backend, // 对应的后端英文类型
     correctAnswer: ''
+    // questionType (backend string) will be derived by getBackendType in convertFrontendToBackendDto
   };
   judgmentCorrectAnswerValue.value = null;
-  handleQuestionTypeChange();
   showModal.value = true;
 };
 
 const editQuestion = (questionToEdit) => {
   isEditing.value = true;
-  const qCopy = JSON.parse(JSON.stringify(questionToEdit)); // qCopy 是前端格式
+  const qCopy = JSON.parse(JSON.stringify(questionToEdit));
 
   currentQuestion.value = {
     id: qCopy.id,
     questionId: qCopy.questionId,
-    type: qCopy.type, // 这是前端的中文类型，例如 "单选"
+    type: qCopy.type, // 前端类型 ("单选", "多选", "判断")
     subject: qCopy.subject,
     text: qCopy.text,
     tag: qCopy.tag,
     creator: qCopy.creator,
-    options: qCopy.options.map(opt => ({ ...opt })),
-    // 下面这些字段在 convertFrontendToBackendDto 中会用到
-    // subjectCategory: qCopy.subject, // 将在 convertFrontendToBackendDto 中从 qCopy.subject 设置
-    // tags: qCopy.tag,                // 将在 convertFrontendToBackendDto 中从 qCopy.tag 设置
-    // questionText: qCopy.text,
-    questionType: getBackendType(qCopy.type), // 存储对应的后端英文类型
-    correctAnswer: qCopy.correctAnswer // 保留从后端（或上次保存）来的 correctAnswer 字符串
+    options: [], // 将在下方根据类型和qCopy填充
+    correctAnswer: qCopy.correctAnswer // 后端格式的答案字符串 ("A", "AC")
+    // questionType (backend string) will be derived by getBackendType in convertFrontendToBackendDto
   };
 
-  handleQuestionTypeChange(); // 根据 currentQuestion.type (中文) 重置选项结构
+  // === USER'S PROPOSED FIX for editQuestion option initialization ===
+  let parsedCorrectAnswers = [];
+  // currentQuestion.value.type 是前端中文类型, qCopy.correctAnswer 是后端答案字符串
+  if (currentQuestion.value.type === QUESTION_TYPES_MAP.MULTIPLE_CHOICE.frontend) {
+    parsedCorrectAnswers = (qCopy.correctAnswer || '').split('');
+  } else if (currentQuestion.value.type === QUESTION_TYPES_MAP.SINGLE_CHOICE.frontend) {
+    parsedCorrectAnswers = qCopy.correctAnswer ? [qCopy.correctAnswer] : [];
+  }
 
   if (currentQuestion.value.type === QUESTION_TYPES_MAP.TRUE_FALSE.frontend) {
-    // qCopy.correctAnswer 对于判断题应该是 'A' 或 'B'
-    judgmentCorrectAnswerValue.value = qCopy.correctAnswer; // 直接使用
+    // 判断题特殊处理：选项固定为"正确"和"错误"
+    currentQuestion.value.options = defaultJudgmentOptionsFE().map(opt => ({...opt}));
+    judgmentCorrectAnswerValue.value = qCopy.correctAnswer; // "A" or "B"
+    // 同步 isCorrect 状态到 currentQuestion.options (虽然判断题的 isCorrect 更多是内部使用)
     currentQuestion.value.options.forEach(opt => {
       opt.isCorrect = (opt.value === judgmentCorrectAnswerValue.value);
     });
-  } else { // 单选或多选
-    const correctVals = (qCopy.correctAnswer || '').split(currentQuestion.value.type === QUESTION_TYPES_MAP.MULTIPLE_CHOICE.frontend ? '' : ',');
-    if(currentQuestion.value.type === QUESTION_TYPES_MAP.MULTIPLE_CHOICE.frontend && qCopy.correctAnswer.length > 1 && !qCopy.correctAnswer.includes(',')){
-      // 处理后端返回的 "ABC" 格式多选题答案
-      currentQuestion.value.options.forEach(opt => {
-        opt.isCorrect = qCopy.correctAnswer.includes(opt.value);
-      });
+  } else { // 单选题 或 多选题
+    // 直接使用 qCopy.options 中的原始选项数据 (value, label)
+    // 并根据解析后的 parsedCorrectAnswers 来设置 isCorrect
+    if (qCopy.options && qCopy.options.length > 0) {
+      currentQuestion.value.options = qCopy.options.map(originalOption => ({
+        ...originalOption, // 复制原始选项的所有属性 (如 value, label)
+        isCorrect: parsedCorrectAnswers.includes(originalOption.value) // 根据解析结果重设 isCorrect
+      }));
     } else {
-      currentQuestion.value.options.forEach(opt => {
-        opt.isCorrect = correctVals.includes(opt.value);
-      });
+      // 如果 qCopy.options 为空 (异常情况), 则生成默认选项结构并尝试设置isCorrect
+      currentQuestion.value.options = defaultSingleMultiOptions().map(defaultOpt => ({
+        ...defaultOpt,
+        isCorrect: parsedCorrectAnswers.includes(defaultOpt.value)
+      }));
     }
-    judgmentCorrectAnswerValue.value = null;
+    judgmentCorrectAnswerValue.value = null; // 清空判断题的答案模型
   }
+  // === END OF USER'S PROPOSED FIX INTEGRATION AREA ===
   showModal.value = true;
 };
 
 const setSingleCorrectOption = (optionValue) => {
   if (currentQuestion.value.type === QUESTION_TYPES_MAP.SINGLE_CHOICE.frontend) {
-    currentQuestion.value.options.forEach(opt => {
-      opt.isCorrect = (opt.value === optionValue);
-    });
+    // 创建一个全新的选项数组以强制 Vue 更新视图
+    const newOptions = currentQuestion.value.options.map(opt => ({
+      ...opt,
+      isCorrect: (opt.value === optionValue)
+    }));
+    currentQuestion.value.options = newOptions;
   }
 };
 
 const deleteQuestion = async (question) => {
-  console.log("deleteQuestion: Attempting to delete question", JSON.parse(JSON.stringify(question)));
   if (confirm(`确定要删除题目 "${question.text}" (ID: ${question.questionId}) 吗？`)) {
     const success = await deleteQuestionAPI(question.questionId);
     if (success) {
@@ -622,9 +590,7 @@ const deleteQuestion = async (question) => {
 
 const viewQuestionDetails = (question) => {
   console.log("viewQuestionDetails: Viewing details for", JSON.parse(JSON.stringify(question)));
-  const optionsString = question.options.map(opt => `${opt.value}: ${opt.label} (${opt.isCorrect ? '正确答案' : '错误/未选'})`).join('\n  ');
-  // 这里就不多写了
-  // alert( /* ... */ );
+  // 实际的详情显示逻辑可以扩展
 };
 
 const closeModal = () => { showModal.value = false; };
@@ -646,12 +612,10 @@ const removeLastOption = () => {
   }
 };
 
-
 // --- 计算属性 ---
 const uniqueSubjects = computed(() => {
   return [...new Set(questions.value.map(q => q.subject).filter(s => s))].sort();
 });
-
 const filteredQuestions = computed(() => {
   let result = questions.value;
   const query = searchQuery.value.toLowerCase().trim();
@@ -661,7 +625,7 @@ const filteredQuestions = computed(() => {
     result = result.filter(q =>
         (q.text && q.text.toLowerCase().includes(query)) ||
         (q.subject && q.subject.toLowerCase().includes(query)) ||
-        (q.tag && q.tag.toLowerCase().includes(query))
+        (q.tag && q.tag.toLowerCase().includes(query)) // 标签搜索
     );
   }
   if (subject) {
@@ -669,30 +633,26 @@ const filteredQuestions = computed(() => {
   }
   return result;
 });
-
-// 计算属性现在基于前端使用的中文类型
 const isSingleChoice = computed(() => currentQuestion.value.type === QUESTION_TYPES_MAP.SINGLE_CHOICE.frontend);
 const isMultipleChoice = computed(() => currentQuestion.value.type === QUESTION_TYPES_MAP.MULTIPLE_CHOICE.frontend);
 const isJudgmentQuestion = computed(() => currentQuestion.value.type === QUESTION_TYPES_MAP.TRUE_FALSE.frontend);
 
-// ... (调试用 Watchers 保持不变) ...
-watch(questions, (newVal) => { /* ... */ }, { deep: true });
-watch(currentQuestion, (newVal) => { /* ... */ }, { deep: true });
+watch(questions, (newVal) => { /* console.log('questions changed'); */ }, { deep: true });
+watch(currentQuestion, (newVal) => { /* console.log('currentQuestion changed'); */ }, { deep: true });
 
 </script>
-<!--样式部分 自己设计就行 注意对比度-->
 <style scoped>
 /* 全局与页面布局 */
 .question-bank-page {
   padding: 20px 30px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  background-color: #f8f9fa; /* 淡雅的背景色 */
+  background-color: #f8f9fa;
   min-height: 100vh;
-  color: #333; /* 默认文字颜色 */
+  color: #333;
 }
 
 .page-header h1 {
-  color: #2c3e50; /* 深蓝灰色 */
+  color: #2c3e50;
   text-align: center;
   margin-bottom: 30px;
   font-size: 2.2em;
@@ -708,15 +668,15 @@ watch(currentQuestion, (newVal) => { /* ... */ }, { deep: true });
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
-  flex-wrap: wrap; /* 允许换行 */
-  gap: 15px; /* 控件之间的间隙 */
+  flex-wrap: wrap;
+  gap: 15px;
 }
 
 .search-filter-group {
   display: flex;
-  gap: 15px; /* 搜索框和下拉框之间的间隙 */
-  flex-grow: 1; /* 占据可用空间 */
-  flex-wrap: wrap; /* 允许内部换行 */
+  gap: 15px;
+  flex-grow: 1;
+  flex-wrap: wrap;
 }
 
 .control-input {
@@ -725,11 +685,11 @@ watch(currentQuestion, (newVal) => { /* ... */ }, { deep: true });
   border-radius: 6px;
   font-size: 1em;
   transition: border-color 0.2s, box-shadow 0.2s;
-  height: 42px; /* 统一输入框高度 */
+  height: 42px;
   box-sizing: border-box;
 }
 .control-input:focus {
-  border-color: #007bff; /* 主题蓝色 */
+  border-color: #007bff;
   box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
   outline: none;
 }
@@ -744,7 +704,6 @@ watch(currentQuestion, (newVal) => { /* ... */ }, { deep: true });
   cursor: pointer;
 }
 
-/* 按钮通用样式 */
 .btn {
   padding: 10px 18px;
   border: none;
@@ -758,7 +717,7 @@ watch(currentQuestion, (newVal) => { /* ... */ }, { deep: true });
   justify-content: center;
   gap: 8px;
   text-decoration: none;
-  line-height: 1.5; /* 确保文字垂直居中 */
+  line-height: 1.5;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 .btn:hover {
@@ -782,12 +741,6 @@ watch(currentQuestion, (newVal) => { /* ... */ }, { deep: true });
 }
 .secondary-btn:hover { background-color: #5a6268; }
 
-.danger-btn {
-  background-color: #dc3545;
-  color: white;
-}
-.danger-btn:hover { background-color: #c82333; }
-
 .danger-outline-btn {
   background-color: transparent;
   color: #dc3545;
@@ -798,21 +751,11 @@ watch(currentQuestion, (newVal) => { /* ... */ }, { deep: true });
   color: white;
 }
 
-.warning-btn {
-  background-color: #ffc107;
-  color: #212529;
-}
-.warning-btn:hover { background-color: #e0a800; }
-
-
-.icon-btn i { /* 假设您会使用字体图标或SVG */
-  line-height: 1; /* 确保图标垂直居中 */
+.icon-btn i {
+  line-height: 1;
 }
 
-/* 题目卡片网格 */
-.content-section {
-  /* 样式留白等 */
-}
+.content-section { }
 .loading-indicator, .no-results-indicator {
   text-align: center;
   padding: 40px 20px;
@@ -837,7 +780,7 @@ watch(currentQuestion, (newVal) => { /* ... */ }, { deep: true });
   transition: transform 0.25s ease, box-shadow 0.25s ease;
   display: flex;
   flex-direction: column;
-  border-top: 4px solid #007bff; /* 主题色上边框 */
+  border-top: 4px solid #007bff;
 }
 .question-card:hover {
   transform: translateY(-5px);
@@ -868,7 +811,7 @@ watch(currentQuestion, (newVal) => { /* ... */ }, { deep: true });
   display: flex;
   flex-direction: column;
   gap: 5px;
-  align-items: flex-start; /* 左对齐 */
+  align-items: flex-start;
   font-size: 0.85em;
 }
 .card-meta span {
@@ -884,7 +827,7 @@ watch(currentQuestion, (newVal) => { /* ... */ }, { deep: true });
   margin-bottom: 12px;
   line-height: 1.4;
   flex-grow: 1;
-  word-break: break-word; /* 防止长文本溢出 */
+  word-break: break-word;
 }
 
 .card-options {
@@ -923,7 +866,6 @@ watch(currentQuestion, (newVal) => { /* ... */ }, { deep: true });
 .delete-action-btn { background-color: #dc3545; color: white; }
 .delete-action-btn:hover { background-color: #c82333; }
 
-/* 模态框样式 */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -933,7 +875,7 @@ watch(currentQuestion, (newVal) => { /* ... */ }, { deep: true });
   justify-content: center;
   z-index: 1000;
   padding: 20px;
-  overflow-y: auto; /* 确保在内容过多时整个遮罩层可滚动 */
+  overflow-y: auto;
 }
 
 .modal-dialog {
@@ -942,10 +884,10 @@ watch(currentQuestion, (newVal) => { /* ... */ }, { deep: true });
   box-shadow: 0 5px 20px rgba(0,0,0,0.2);
   width: 100%;
   max-width: 700px;
-  max-height: 90vh; /* 限制最大高度 */
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
-  margin: auto; /* 确保在 overlay 中居中 */
+  margin: auto;
 }
 
 .modal-header {
@@ -954,7 +896,7 @@ watch(currentQuestion, (newVal) => { /* ... */ }, { deep: true });
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-shrink: 0; /* 防止头部被压缩 */
+  flex-shrink: 0;
 }
 .modal-title {
   margin: 0;
@@ -976,8 +918,8 @@ watch(currentQuestion, (newVal) => { /* ... */ }, { deep: true });
 
 .modal-body {
   padding: 25px;
-  overflow-y: auto; /* 模态框主体内容滚动 */
-  flex-grow: 1; /* 占据可用空间 */
+  overflow-y: auto;
+  flex-grow: 1;
 }
 
 .form-row {
@@ -1028,25 +970,25 @@ textarea.form-control {
 
 .options-fieldset {
   border: 1px solid #dee2e6;
-  padding: 20px; /* 增加内边距 */
+  padding: 20px;
   border-radius: 6px;
-  margin-top: 10px; /* 与上方元素的间距 */
+  margin-top: 10px;
   margin-bottom: 20px;
 }
 .options-fieldset legend {
   padding: 0 10px;
-  font-weight: 600; /* 加粗 */
-  color: #343a40; /* 深色 */
+  font-weight: 600;
+  color: #343a40;
   width: auto;
   margin-left: 10px;
-  font-size: 1.1em; /* 稍大字体 */
+  font-size: 1.1em;
 }
 
 .option-input-group {
   display: flex;
   align-items: center;
   margin-bottom: 12px;
-  padding: 10px; /* 增加选项组内边距 */
+  padding: 10px;
   border-radius: 4px;
   background-color: #f8f9fa;
 }
@@ -1070,18 +1012,60 @@ textarea.form-control {
   margin-left: 15px;
   white-space: nowrap;
 }
-.form-check-input { /* checkbox 和 radio 的通用样式 */
-  margin-right: 6px;
-  width: 1.2em; /* 增大点击区域 */
-  height: 1.2em;
-  cursor: pointer;
+
+.visually-hidden-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  pointer-events: none;
 }
-.correct-label, .option-input-label {
-  margin-left: 4px;
-  color: #333;
-  font-size: 1em;
-  cursor: pointer; /* 使标签可点击以选择 radio/checkbox */
+
+.switch-label {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
   user-select: none;
+  gap: 8px;
+}
+
+.switch-track {
+  width: 40px;
+  height: 20px;
+  background-color: #ccc; /* Off state */
+  border-radius: 10px;
+  position: relative;
+  transition: background-color 0.2s ease;
+  display: inline-block;
+}
+
+.switch-thumb {
+  width: 16px;
+  height: 16px;
+  background-color: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.visually-hidden-input:checked + .switch-label .switch-track {
+  background-color: #007bff; /* On state */
+}
+
+.visually-hidden-input:checked + .switch-label .switch-thumb {
+  transform: translateX(20px);
+}
+
+.judgment-switch-label-text, .option-label-text { /* For judgment options text */
+  font-size: 1em;
+  color: #333;
+  line-height: 1.2em;
 }
 
 .option-management-buttons {
@@ -1094,7 +1078,7 @@ textarea.form-control {
   font-size: 0.9em;
 }
 .add-option-btn {
-  background-color: #28a745; /* Green */
+  background-color: #28a745;
   color: white;
 }
 .add-option-btn:hover {
@@ -1114,10 +1098,9 @@ textarea.form-control {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  flex-shrink: 0; /* 防止底部被压缩 */
+  flex-shrink: 0;
 }
 
-/* 图标占位符 (您需要替换为真实的图标) */
 .icon-add::before { content: "➕"; margin-right: 6px; font-size: 0.9em; }
 .icon-edit::before { content: "✎"; margin-right: 6px; }
 .icon-delete::before { content: "🗑"; margin-right: 6px; }
@@ -1126,61 +1109,21 @@ textarea.form-control {
 .icon-remove-circle::before { content: "⊖"; margin-right: 6px; }
 
 
-/* 响应式调整 */
 @media (max-width: 768px) {
-  .question-bank-page {
-    padding: 15px;
-  }
-  .page-header h1 {
-    font-size: 1.8em;
-  }
-  .controls-section {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .search-filter-group {
-    width: 100%;
-    margin-bottom: 15px;
-    flex-direction: column; /* 小屏幕上垂直排列 */
-  }
-  .search-input, .subject-select {
-    width: 100%; /* 占满整行 */
-    flex-basis: auto;
-  }
-  .add-question-btn {
-    width: 100%;
-  }
-  .form-row {
-    flex-direction: column;
-    gap: 0;
-  }
-  .form-row .form-group {
-    margin-bottom: 18px;
-  }
-  .modal-dialog {
-    max-width: 95%;
-    margin: 10px;
-    max-height: 95vh;
-  }
-  .modal-title {
-    font-size: 1.3em;
-  }
-  .modal-body {
-    padding: 20px;
-  }
-  .modal-footer {
-    padding: 15px 20px;
-  }
-  .card-actions {
-    flex-direction: column; /* 小屏幕上按钮垂直排列 */
-    align-items: stretch;
-  }
-  .card-actions .btn {
-    width: 100%;
-    margin-bottom: 8px;
-  }
-  .card-actions .btn:last-child {
-    margin-bottom: 0;
-  }
+  .question-bank-page { padding: 15px; }
+  .page-header h1 { font-size: 1.8em; }
+  .controls-section { flex-direction: column; align-items: stretch; }
+  .search-filter-group { width: 100%; margin-bottom: 15px; flex-direction: column; }
+  .search-input, .subject-select { width: 100%; flex-basis: auto; }
+  .add-question-btn { width: 100%; }
+  .form-row { flex-direction: column; gap: 0; }
+  .form-row .form-group { margin-bottom: 18px; }
+  .modal-dialog { max-width: 95%; margin: 10px; max-height: 95vh; }
+  .modal-title { font-size: 1.3em; }
+  .modal-body { padding: 20px; }
+  .modal-footer { padding: 15px 20px; }
+  .card-actions { flex-direction: column; align-items: stretch; }
+  .card-actions .btn { width: 100%; margin-bottom: 8px; }
+  .card-actions .btn:last-child { margin-bottom: 0; }
 }
 </style>
