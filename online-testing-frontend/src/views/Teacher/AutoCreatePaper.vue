@@ -11,15 +11,15 @@
             <input id="paper-title" type="text" v-model="paper.title" placeholder="请输入试卷名称" class="form-control" />
           </div>
           <div class="form-group">
-            <label for="paper-course">考试课程班级：</label>
+            <label for="paper-course">课程ID：</label>
             <select id="paper-course" v-model="paper.course" class="form-control">
-              <option value="">请选择考试课程班级</option>
+              <option value="">请选择课程ID</option>
               <option v-for="courseItem in courses" :key="courseItem" :value="courseItem">{{ courseItem }}</option>
             </select>
           </div>
           <div class="form-group">
-            <label for="paper-creator">出卷人：</label>
-            <input id="paper-creator" type="text" v-model="paper.creator" placeholder="请输入出卷人" class="form-control" />
+            <label for="paper-creator">创建者：</label>
+            <input id="paper-creator" type="text" v-model="paper.creator" placeholder="请输入创建者" class="form-control" />
           </div>
         </div>
 
@@ -109,7 +109,7 @@
 
         <div class="form-actions">
           <button class="btn primary-btn preview-btn" @click="previewPaper">
-            <i class="icon-eye"></i> 预览并生成试卷
+            <i class="icon-eye"></i> 生成并预览试卷
           </button>
         </div>
       </div>
@@ -358,8 +358,8 @@ async function generatePaperQuestions() {
 
 async function previewPaper() {
   if (!paper.value.title) { alert('请填写试卷名称'); return; }
-  if (!paper.value.course) { alert('请选择考试课程班级'); return; }
-  if (!paper.value.creator) { alert('请填写出卷人'); return; }
+  if (!paper.value.course) { alert('请选择课程ID'); return; }
+  if (!paper.value.creator) { alert('请填写创建者'); return; }
   if (config.value.types.length === 0) { alert('请至少选择一种题型'); return; }
   let totalRequestedCount = 0;
   if(config.value.types.includes('单选')) totalRequestedCount += config.value.singleChoiceCount;
