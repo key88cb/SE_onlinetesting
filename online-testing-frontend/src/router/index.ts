@@ -24,6 +24,7 @@ import ExamManagement from '../views/teacher/ExamManagement.vue'
 import StudentsScores from '../views/teacher/ExamStudentScore.vue'
 import TeacherResultDetail from '../views/teacher/TeacherResultDetail.vue'
 import TeacherEndExam from '../views/teacher/Examfinished.vue'
+import TeacherPastPaperDetail from '../views/teacher/PastPaperDetail.vue'
 const routes = [
   {
     path: '/',
@@ -71,7 +72,7 @@ const routes = [
     component: StudentResultDetail
   },
   {
-    path: '/student/past-paper/:id/details',
+    path: '/student/past-paper/:courseId/:paperId/details',
     name: 'StudentPastPaperDetails',
     component: StudentPastPaperDetail
   },
@@ -125,6 +126,11 @@ const routes = [
     path: '/teacher/exam-details-student-score/:courseId/:paperId',
     name: 'StudentsScores',
     component: StudentsScores
+  },
+  {
+    path: '/teacher/past-paper/:courseId/:paperId/details',
+    name: 'TeacherPastPaperDetails',
+    component: TeacherPastPaperDetail
   },
   {
     path: '/teacher/exam-detail/student-exam-detail/:courseId/:paperId/:studentId',
