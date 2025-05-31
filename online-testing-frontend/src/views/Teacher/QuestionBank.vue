@@ -7,12 +7,28 @@
       <div class="search-filter-group">
         <input
             v-model="searchQuery"
-            placeholder="按题目内容、科目或标签搜索.......加空格实现并集搜索，加AND实现交集搜索"
+            placeholder="按题目内容、科目或标签搜索..."
             class="control-input search-input"/>
         <select v-model="selectedSubjectFilter" class="control-input subject-select">
           <option value="">全部分类</option>
           <option v-for="subject_option in uniqueSubjects" :key="subject_option" :value="subject_option">{{ subject_option }}</option>
         </select>
+        <select v-model="selectedTypeFilter" class="control-input type-select">
+          <option value="">所有类型</option>
+          <option :value="QUESTION_TYPES_MAP.SINGLE_CHOICE.frontend">{{ QUESTION_TYPES_MAP.SINGLE_CHOICE.frontend }}</option>
+          <option :value="QUESTION_TYPES_MAP.MULTIPLE_CHOICE.frontend">{{ QUESTION_TYPES_MAP.MULTIPLE_CHOICE.frontend }}</option>
+          <option :value="QUESTION_TYPES_MAP.TRUE_FALSE.frontend">{{ QUESTION_TYPES_MAP.TRUE_FALSE.frontend }}</option>
+        </select>
+      </div>
+      <div class="search-mode-switch-container">
+        <span class="search-mode-label">搜索模式:</span>
+        <label class="switch-label">
+          <input type="checkbox" v-model="isIntersectionMode" class="visually-hidden-input">
+          <span class="switch-track">
+                <span class="switch-thumb"></span>
+            </span>
+        </label>
+        <span class="search-mode-text">{{ isIntersectionMode ? '交集 (AND)' : '并集 (OR)' }}</span>
       </div>
       <button class="btn primary-btn add-question-btn" @click="showAddQuestionDialog">
         <i class="icon-add"></i> 添加新题目
@@ -105,6 +121,12 @@
 
             <fieldset class="options-fieldset">
               <legend>选项与答案设置</legend>
+              <div class="options-actions-bar" v-if="isEditing && !isJudgmentQuestion">
+                <button type="button" @click="pasteOriginalOptions" class="btn secondary-btn paste-btn">
+                  <i class="icon-paste"></i> 粘贴原始选项文本
+                </button>
+              </div>
+
               <div v-if="isJudgmentQuestion" class="judgment-options-group">
                 <div v-for="option in currentQuestion.options" :key="option.value" class="option-input-group judgment">
                   <input
@@ -207,6 +229,16 @@ const isEditing = ref(false);
 const judgmentCorrectAnswerValue = ref(null);
 const searchQuery = ref('');
 const selectedSubjectFilter = ref('');
+const selectedTypeFilter = ref(''); // 新增：题目类型筛选器状态
+const searchMode = ref('union');
+const originalQuestionForEdit = ref(null); // 新增：用于存储编辑前题目数据的副本
+
+const isIntersectionMode = computed({
+  get: () => searchMode.value === 'intersection',
+  set: (val) => {
+    searchMode.value = val ? 'intersection' : 'union';
+  }
+});
 
 // --- 默认选项生成函数 ---
 const defaultSingleMultiOptions = (count = 4) => {
@@ -311,7 +343,6 @@ const convertBackendToFrontendItem = (backendDto) => {
       };
     }).sort((a,b) => (a.value || '').localeCompare(b.value || ''));
 
-    // 确保单选/多选题目始终有4个选项用于显示，不足则补充空选项
     if (frontendItem.type === QUESTION_TYPES_MAP.SINGLE_CHOICE.frontend || frontendItem.type === QUESTION_TYPES_MAP.MULTIPLE_CHOICE.frontend) {
       const filledOptions = [];
       for (let i = 0; i < 4; i++) {
@@ -325,11 +356,9 @@ const convertBackendToFrontendItem = (backendDto) => {
       }
       frontendItem.options = filledOptions;
     } else {
-      frontendItem.options = tempOptions; // 对于其他类型（虽然目前没有），直接使用
+      frontendItem.options = tempOptions;
     }
-
   } else if (frontendItem.type === QUESTION_TYPES_MAP.SINGLE_CHOICE.frontend || frontendItem.type === QUESTION_TYPES_MAP.MULTIPLE_CHOICE.frontend) {
-    // 如果后端没有返回选项，但类型是单选/多选，则生成4个空选项
     frontendItem.options = defaultSingleMultiOptions();
   }
   return frontendItem;
@@ -337,7 +366,11 @@ const convertBackendToFrontendItem = (backendDto) => {
 
 // --- API 调用函数 ---
 const API_BASE_URL = 'http://localhost:8080/api/questions';
-const fetchQuestionsFromAPI = async (params = {}) => {
+let fetchQuestionsFromAPI = async (params = {}) => { /* ... */ };
+let createQuestionAPI = async (frontendQuestionData) => { /* ... */ };
+let updateQuestionAPI = async (questionId, frontendQuestionData) => { /* ... */ };
+let deleteQuestionAPI = async (questionId) => { /* ... */ };
+fetchQuestionsFromAPI = async (params = {}) => {
   isLoading.value = true;
   try {
     const url = new URL(API_BASE_URL);
@@ -362,7 +395,7 @@ const fetchQuestionsFromAPI = async (params = {}) => {
     isLoading.value = false;
   }
 };
-const createQuestionAPI = async (frontendQuestionData) => {
+createQuestionAPI = async (frontendQuestionData) => {
   const payload = convertFrontendToBackendDto(frontendQuestionData);
   try {
     const res = await fetch(API_BASE_URL, {
@@ -380,7 +413,7 @@ const createQuestionAPI = async (frontendQuestionData) => {
     return null;
   }
 };
-const updateQuestionAPI = async (questionId, frontendQuestionData) => {
+updateQuestionAPI = async (questionId, frontendQuestionData) => {
   if (!questionId) {
     alert('错误：题目ID缺失，无法更新。');
     return null;
@@ -402,7 +435,7 @@ const updateQuestionAPI = async (questionId, frontendQuestionData) => {
     return null;
   }
 };
-const deleteQuestionAPI = async (questionId) => {
+deleteQuestionAPI = async (questionId) => {
   if (!questionId) {
     alert('错误：题目ID缺失，无法删除。');
     return false;
@@ -428,14 +461,10 @@ onMounted(() => {
   fetchQuestionsFromAPI();
 });
 
-// Store previous options before type change
 let optionsBeforeTypeChange = [];
 
 const handleQuestionTypeChangeWithOldOptions = () => {
-  // This function is called by @change on select,
-  // so currentQuestion.value.options are still the options of the *old* type.
   optionsBeforeTypeChange = JSON.parse(JSON.stringify(currentQuestion.value.options));
-  // The actual type change will trigger the watcher below.
 };
 
 watch(() => currentQuestion.value.type, (newType, oldType) => {
@@ -443,28 +472,31 @@ watch(() => currentQuestion.value.type, (newType, oldType) => {
     const newOptions = [];
     if (newType === QUESTION_TYPES_MAP.TRUE_FALSE.frontend) {
       currentQuestion.value.options = defaultJudgmentOptionsFE().map(opt => ({...opt}));
-      judgmentCorrectAnswerValue.value = null;
-    } else { // New type is Single Choice or Multiple Choice
-      const oldWasScOrMc = oldType === QUESTION_TYPES_MAP.SINGLE_CHOICE.frontend || oldType === QUESTION_TYPES_MAP.MULTIPLE_CHOICE.frontend;
-      for (let i = 0; i < 4; i++) { // Always 4 options
+    } else {
+      const oldTypeWasScOrMc = oldType === QUESTION_TYPES_MAP.SINGLE_CHOICE.frontend || oldType === QUESTION_TYPES_MAP.MULTIPLE_CHOICE.frontend;
+      for (let i = 0; i < 4; i++) {
         const optionValue = String.fromCharCode(65 + i);
         let labelToPreserve = '';
-        // If old type was SC/MC and there's an option at this position, preserve its label
-        if (oldWasScOrMc && optionsBeforeTypeChange[i]) {
+        if (oldTypeWasScOrMc && optionsBeforeTypeChange && optionsBeforeTypeChange[i]) {
           labelToPreserve = optionsBeforeTypeChange[i].label;
         }
         newOptions.push({
           value: optionValue,
           label: labelToPreserve,
-          isCorrect: false // Reset correctness when type changes
+          isCorrect: false
         });
       }
       currentQuestion.value.options = newOptions;
-      judgmentCorrectAnswerValue.value = null;
     }
   }
+  if (newType !== QUESTION_TYPES_MAP.TRUE_FALSE.frontend) {
+    judgmentCorrectAnswerValue.value = null;
+  } else {
+    // If switching to True/False, ensure judgmentCorrectAnswerValue is reset or reflects current correct answer if any
+    const correctTFOption = currentQuestion.value.options.find(opt => opt.isCorrect);
+    judgmentCorrectAnswerValue.value = correctTFOption ? correctTFOption.value : null;
+  }
 });
-
 
 watch([() => currentQuestion.value.correctAnswer, () => currentQuestion.value.type],
     ([newCorrectAnswer, newType]) => {
@@ -487,21 +519,10 @@ const saveQuestion = async () => {
       option.isCorrect = (option.value === judgmentCorrectAnswerValue.value);
     });
   } else {
-    // For SC/MC, ensure exactly 4 options are present before saving
     if (currentQuestion.value.options.length !== 4) {
-      // This case should ideally not be reached if UI enforces 4 options
-      // but as a safeguard, pad or truncate. For simplicity, alert for now or adjust.
-      alert('单选或多选题必须有4个选项。'); // Or silently adjust
-      // Pad to 4 if less
-      while(currentQuestion.value.options.length < 4) {
-        currentQuestion.value.options.push({ value: String.fromCharCode(65 + currentQuestion.value.options.length), label: '', isCorrect: false });
-      }
-      // Truncate to 4 if more
-      if(currentQuestion.value.options.length > 4) {
-        currentQuestion.value.options = currentQuestion.value.options.slice(0, 4);
-      }
+      alert('单选题或多选题必须包含4个选项。');
+      return;
     }
-
     if (!currentQuestion.value.options.some(o => o.isCorrect && o.label.trim() !== '')) {
       alert('单选题或多选题至少选择一个有效答案'); return;
     }
@@ -532,12 +553,13 @@ const saveQuestion = async () => {
 
 const showAddQuestionDialog = () => {
   isEditing.value = false;
+  originalQuestionForEdit.value = null; // 清空
   const defaultType = QUESTION_TYPES_MAP.SINGLE_CHOICE.frontend;
   currentQuestion.value = {
     id: null, questionId: null,
     type: defaultType,
     subject: '', text: '', tag: '', creator: '默认出题老师',
-    options: defaultSingleMultiOptions(), // Initializes with 4 options
+    options: defaultSingleMultiOptions(),
     correctAnswer: ''
   };
   judgmentCorrectAnswerValue.value = null;
@@ -547,6 +569,7 @@ const showAddQuestionDialog = () => {
 const editQuestion = (questionToEdit) => {
   isEditing.value = true;
   const qCopy = JSON.parse(JSON.stringify(questionToEdit));
+  originalQuestionForEdit.value = qCopy; // 保存原始副本
 
   currentQuestion.value = {
     id: qCopy.id,
@@ -573,9 +596,9 @@ const editQuestion = (questionToEdit) => {
     currentQuestion.value.options.forEach(opt => {
       opt.isCorrect = (opt.value === judgmentCorrectAnswerValue.value);
     });
-  } else { // Single Choice or Multiple Choice - ensure 4 options
+  } else {
     const newOptions = [];
-    for (let i = 0; i < 4; i++) { // Always 4 options
+    for (let i = 0; i < 4; i++) {
       const optionValue = String.fromCharCode(65 + i);
       const existingQCopyOption = qCopy.options ? qCopy.options.find(opt => opt.value === optionValue) : null;
 
@@ -601,6 +624,26 @@ const setSingleCorrectOption = (optionValue) => {
   }
 };
 
+const pasteOriginalOptions = () => {
+  if (!isEditing.value || !originalQuestionForEdit.value || isJudgmentQuestion.value) {
+    return;
+  }
+  const originalOpts = originalQuestionForEdit.value.options;
+  const targetModalOptions = currentQuestion.value.options;
+
+  for (let i = 0; i < targetModalOptions.length; i++) {
+    if (i < 4) { // 只处理前4个选项 A,B,C,D
+      const currentOptValue = targetModalOptions[i].value;
+      const originalOptToPaste = originalOpts.find(o => o.value === currentOptValue);
+      if (originalOptToPaste) {
+        targetModalOptions[i].label = originalOptToPaste.label;
+      }
+    }
+  }
+  currentQuestion.value.options = [...targetModalOptions]; // 强制刷新响应式
+};
+
+
 const deleteQuestion = async (question) => {
   if (confirm(`确定要删除题目 "${question.text}" (ID: ${question.questionId}) 吗？`)) {
     const success = await deleteQuestionAPI(question.questionId);
@@ -615,11 +658,10 @@ const viewQuestionDetails = (question) => {
   console.log("viewQuestionDetails: Viewing details for", JSON.parse(JSON.stringify(question)));
 };
 
-const closeModal = () => { showModal.value = false; };
-
-// Add/Remove Option functions are removed as SC/MC questions are fixed to 4 options.
-// const addOption = () => { ... };
-// const removeLastOption = () => { ... };
+const closeModal = () => {
+  showModal.value = false;
+  originalQuestionForEdit.value = null; // 清空
+};
 
 // --- 计算属性 ---
 const uniqueSubjects = computed(() => {
@@ -628,31 +670,41 @@ const uniqueSubjects = computed(() => {
 
 const filteredQuestions = computed(() => {
   let result = questions.value;
-  const rawQuery = searchQuery.value.trim();
+  const rawQuery = searchQuery.value.trim().toLowerCase();
+  const currentSearchMode = searchMode.value;
   const subject = selectedSubjectFilter.value;
+  const type = selectedTypeFilter.value; // 获取类型过滤器值
 
   if (rawQuery) {
-    const lowerCaseQuery = rawQuery.toLowerCase();
-    const andGroups = lowerCaseQuery.split(/\s+and\s+/i);
-
-    result = result.filter(q => {
-      return andGroups.every(groupQuery => {
-        if (!groupQuery.trim()) return true;
-        const orTerms = groupQuery.split(/\s+/).filter(term => term.length > 0);
-        if (orTerms.length === 0) return true;
-
-        return orTerms.some(term => {
-          const textMatch = q.text && q.text.toLowerCase().includes(term);
-          const subjectMatch = q.subject && q.subject.toLowerCase().includes(term);
-          const tagMatch = q.tag && q.tag.toLowerCase().includes(term);
-          return textMatch || subjectMatch || tagMatch;
-        });
+    const terms = rawQuery.split(/\s+/).filter(term => term.length > 0);
+    if (terms.length > 0) {
+      result = result.filter(q => {
+        let matchesQuery;
+        if (currentSearchMode === 'intersection') {
+          matchesQuery = terms.every(term => {
+            const textMatch = q.text && q.text.toLowerCase().includes(term);
+            const subjectMatch = q.subject && q.subject.toLowerCase().includes(term);
+            const tagMatch = q.tag && q.tag.toLowerCase().includes(term);
+            return textMatch || subjectMatch || tagMatch;
+          });
+        } else { // union
+          matchesQuery = terms.some(term => {
+            const textMatch = q.text && q.text.toLowerCase().includes(term);
+            const subjectMatch = q.subject && q.subject.toLowerCase().includes(term);
+            const tagMatch = q.tag && q.tag.toLowerCase().includes(term);
+            return textMatch || subjectMatch || tagMatch;
+          });
+        }
+        return matchesQuery;
       });
-    });
+    }
   }
 
   if (subject) {
     result = result.filter(q => q.subject === subject);
+  }
+  if (type) { // 应用类型过滤器
+    result = result.filter(q => q.type === type);
   }
   return result;
 });
@@ -661,9 +713,7 @@ const isSingleChoice = computed(() => currentQuestion.value.type === QUESTION_TY
 const isMultipleChoice = computed(() => currentQuestion.value.type === QUESTION_TYPES_MAP.MULTIPLE_CHOICE.frontend);
 const isJudgmentQuestion = computed(() => currentQuestion.value.type === QUESTION_TYPES_MAP.TRUE_FALSE.frontend);
 
-watch(questions, (newVal) => { /* Debug log can be added here */ }, { deep: true });
-// The watcher for currentQuestion.value.type is now slightly different to handle old options
-// watch(currentQuestion, (newVal) => { /* Debug log can be added here */ }, { deep: true }); // General watcher
+watch(questions, () => { /* console.log('questions changed'); */ }, { deep: true });
 
 </script>
 <style scoped>
@@ -699,9 +749,10 @@ watch(questions, (newVal) => { /* Debug log can be added here */ }, { deep: true
 
 .search-filter-group {
   display: flex;
-  gap: 15px;
+  gap: 10px; /* Reduced gap for tighter packing */
   flex-grow: 1;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .control-input {
@@ -719,15 +770,34 @@ watch(questions, (newVal) => { /* Debug log can be added here */ }, { deep: true
   outline: none;
 }
 .search-input {
-  min-width: 250px;
-  flex-basis: 300px;
+  min-width: 180px;
+  flex-basis: 220px;
   flex-grow: 1;
 }
-.subject-select {
-  min-width: 180px;
-  flex-basis: 200px;
+.subject-select, .type-select { /* Style for new type select */
+  min-width: 120px;
+  flex-basis: 150px;
   cursor: pointer;
 }
+
+.search-mode-switch-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 10px;
+  flex-shrink: 0;
+}
+.search-mode-label {
+  font-size: 0.9em;
+  color: #495057;
+  white-space: nowrap;
+}
+.search-mode-text {
+  font-size: 0.9em;
+  color: #333;
+  min-width: 70px;
+}
+
 
 .btn {
   padding: 10px 18px;
@@ -1009,6 +1079,20 @@ textarea.form-control {
   font-size: 1.1em;
 }
 
+.options-actions-bar {
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: flex-start;
+}
+.paste-btn {
+  padding: 6px 12px;
+  font-size: 0.9em;
+}
+.paste-btn i {
+  margin-right: 6px;
+}
+
+
 .option-input-group {
   display: flex;
   align-items: center;
@@ -1087,31 +1171,13 @@ textarea.form-control {
   transform: translateX(20px);
 }
 
-.judgment-switch-label-text, .option-label-text { /* For judgment options text */
+.judgment-switch-label-text, .option-label-text {
   font-size: 1em;
   color: #333;
   line-height: 1.2em;
 }
 
-.option-management-buttons {
-  margin-top: 15px;
-  display: flex;
-  gap: 10px;
-}
-/* Add/Remove buttons are now removed from template as per requirement for fixed 4 options for SC/MC */
-/*
-.add-option-btn, .remove-option-btn {
-  padding: 8px 12px;
-  font-size: 0.9em;
-}
-.add-option-btn {
-  background-color: #28a745;
-  color: white;
-}
-.add-option-btn:hover {
-  background-color: #218838;
-}
-*/
+/* Option management buttons are removed from template */
 
 .form-hint {
   font-size: 0.9em;
@@ -1133,17 +1199,39 @@ textarea.form-control {
 .icon-edit::before { content: "✎"; margin-right: 6px; }
 .icon-delete::before { content: "🗑"; margin-right: 6px; }
 .icon-save::before { content: "💾"; margin-right: 6px; }
-.icon-add-circle::before { content: "⊕"; margin-right: 6px; } /* Kept in case of future use, though buttons removed */
-.icon-remove-circle::before { content: "⊖"; margin-right: 6px; } /* Kept in case of future use, though buttons removed */
+.icon-paste::before { content: "📋"; /* Example paste icon, replace with your preferred */ }
 
 
 @media (max-width: 768px) {
   .question-bank-page { padding: 15px; }
   .page-header h1 { font-size: 1.8em; }
-  .controls-section { flex-direction: column; align-items: stretch; }
-  .search-filter-group { width: 100%; margin-bottom: 15px; flex-direction: column; }
-  .search-input, .subject-select { width: 100%; flex-basis: auto; }
-  .add-question-btn { width: 100%; }
+  .controls-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .search-filter-group {
+    width: 100%;
+    margin-bottom: 10px;
+    flex-direction: column; /* Stack search, subject, type filters vertically */
+  }
+  .search-input, .subject-select, .type-select {
+    width: 100%;
+    flex-basis: auto;
+    margin-bottom: 10px;
+  }
+  .search-filter-group .type-select { /* No bottom margin for last item in this group */
+    margin-bottom: 0;
+  }
+  .search-mode-switch-container {
+    width: 100%;
+    justify-content: flex-start; /* Align to start on small screens */
+    margin-left: 0;
+    margin-bottom: 10px;
+    padding: 5px 0; /* Add some padding */
+  }
+  .add-question-btn {
+    width: 100%;
+  }
   .form-row { flex-direction: column; gap: 0; }
   .form-row .form-group { margin-bottom: 18px; }
   .modal-dialog { max-width: 95%; margin: 10px; max-height: 95vh; }
