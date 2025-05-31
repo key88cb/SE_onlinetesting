@@ -75,7 +75,7 @@
             <div class="form-row">
               <div class="form-group half-width">
                 <label for="q-type">题目类型：</label>
-                <select v-model="currentQuestion.type" @change="handleQuestionTypeChange" id="q-type" class="form-control">
+                <select v-model="currentQuestion.type" @change="handleQuestionTypeChangeWithOldOptions" id="q-type" class="form-control">
                   <option value="单选">单选</option>
                   <option value="多选">多选</option>
                   <option value="判断">判断</option>
@@ -155,14 +155,6 @@
                        </span>
                     </label>
                   </div>
-                </div>
-                <div class="option-management-buttons">
-                  <button v-if="!isJudgmentQuestion && currentQuestion.options.length < 4" @click="addOption" type="button" class="btn secondary-btn add-option-btn">
-                    <i class="icon-add-circle"></i> 添加选项
-                  </button>
-                  <button v-if="!isJudgmentQuestion && currentQuestion.options.length > 2" @click="removeLastOption" type="button" class="btn danger-outline-btn remove-option-btn">
-                    <i class="icon-remove-circle"></i> 删除末尾选项
-                  </button>
                 </div>
                 <p v-if="isSingleChoice" class="form-hint">单选题：请选择一个正确答案。</p>
                 <p v-if="isMultipleChoice" class="form-hint">多选题：可勾选多个正确答案。</p>
@@ -244,12 +236,12 @@ const currentQuestion = ref({
 // --- 工具函数 ---
 const optionLetterToIdValue = (letter) => {
   if (!letter || typeof letter !== 'string' || letter.length !== 1) return null;
-  const val = letter.charCodeAt(0) - 64; // A=1, B=2
+  const val = letter.charCodeAt(0) - 64;
   return val > 0 ? val : null;
 };
 const optionIdValueToLetter = (idValue) => {
   if (idValue === null || typeof idValue !== 'number' || idValue < 1) return '';
-  return String.fromCharCode(64 + idValue); // 1=A, 2=B
+  return String.fromCharCode(64 + idValue);
 };
 
 // --- 数据转换函数 ---
@@ -309,7 +301,8 @@ const convertBackendToFrontendItem = (backendDto) => {
     const correctChars = backendDto.questionType === QUESTION_TYPES_MAP.MULTIPLE_CHOICE.backend && backendDto.correctAnswer
         ? backendDto.correctAnswer.split('')
         : (backendDto.correctAnswer ? [backendDto.correctAnswer] : []);
-    frontendItem.options = backendDto.options.map(optDto => {
+
+    let tempOptions = backendDto.options.map(optDto => {
       const optionValLetter = optionIdValueToLetter(optDto.optionIdValue);
       return {
         value: optionValLetter,
@@ -317,6 +310,27 @@ const convertBackendToFrontendItem = (backendDto) => {
         isCorrect: correctChars.includes(optionValLetter)
       };
     }).sort((a,b) => (a.value || '').localeCompare(b.value || ''));
+
+    // 确保单选/多选题目始终有4个选项用于显示，不足则补充空选项
+    if (frontendItem.type === QUESTION_TYPES_MAP.SINGLE_CHOICE.frontend || frontendItem.type === QUESTION_TYPES_MAP.MULTIPLE_CHOICE.frontend) {
+      const filledOptions = [];
+      for (let i = 0; i < 4; i++) {
+        const optionValue = String.fromCharCode(65 + i);
+        const existingOpt = tempOptions.find(opt => opt.value === optionValue);
+        if (existingOpt) {
+          filledOptions.push(existingOpt);
+        } else {
+          filledOptions.push({ value: optionValue, label: '', isCorrect: false });
+        }
+      }
+      frontendItem.options = filledOptions;
+    } else {
+      frontendItem.options = tempOptions; // 对于其他类型（虽然目前没有），直接使用
+    }
+
+  } else if (frontendItem.type === QUESTION_TYPES_MAP.SINGLE_CHOICE.frontend || frontendItem.type === QUESTION_TYPES_MAP.MULTIPLE_CHOICE.frontend) {
+    // 如果后端没有返回选项，但类型是单选/多选，则生成4个空选项
+    frontendItem.options = defaultSingleMultiOptions();
   }
   return frontendItem;
 };
@@ -414,23 +428,43 @@ onMounted(() => {
   fetchQuestionsFromAPI();
 });
 
-const handleQuestionTypeChange = () => {
-  const type = currentQuestion.value.type;
-  if (type === QUESTION_TYPES_MAP.TRUE_FALSE.frontend) {
-    currentQuestion.value.options = defaultJudgmentOptionsFE().map(opt => ({...opt}));
-  } else {
-    currentQuestion.value.options = defaultSingleMultiOptions().map(opt => ({...opt}));
-  }
-  if (type !== QUESTION_TYPES_MAP.TRUE_FALSE.frontend) {
-    judgmentCorrectAnswerValue.value = null;
-  }
+// Store previous options before type change
+let optionsBeforeTypeChange = [];
+
+const handleQuestionTypeChangeWithOldOptions = () => {
+  // This function is called by @change on select,
+  // so currentQuestion.value.options are still the options of the *old* type.
+  optionsBeforeTypeChange = JSON.parse(JSON.stringify(currentQuestion.value.options));
+  // The actual type change will trigger the watcher below.
 };
 
 watch(() => currentQuestion.value.type, (newType, oldType) => {
   if (newType !== oldType) {
-    handleQuestionTypeChange();
+    const newOptions = [];
+    if (newType === QUESTION_TYPES_MAP.TRUE_FALSE.frontend) {
+      currentQuestion.value.options = defaultJudgmentOptionsFE().map(opt => ({...opt}));
+      judgmentCorrectAnswerValue.value = null;
+    } else { // New type is Single Choice or Multiple Choice
+      const oldWasScOrMc = oldType === QUESTION_TYPES_MAP.SINGLE_CHOICE.frontend || oldType === QUESTION_TYPES_MAP.MULTIPLE_CHOICE.frontend;
+      for (let i = 0; i < 4; i++) { // Always 4 options
+        const optionValue = String.fromCharCode(65 + i);
+        let labelToPreserve = '';
+        // If old type was SC/MC and there's an option at this position, preserve its label
+        if (oldWasScOrMc && optionsBeforeTypeChange[i]) {
+          labelToPreserve = optionsBeforeTypeChange[i].label;
+        }
+        newOptions.push({
+          value: optionValue,
+          label: labelToPreserve,
+          isCorrect: false // Reset correctness when type changes
+        });
+      }
+      currentQuestion.value.options = newOptions;
+      judgmentCorrectAnswerValue.value = null;
+    }
   }
 });
+
 
 watch([() => currentQuestion.value.correctAnswer, () => currentQuestion.value.type],
     ([newCorrectAnswer, newType]) => {
@@ -453,6 +487,21 @@ const saveQuestion = async () => {
       option.isCorrect = (option.value === judgmentCorrectAnswerValue.value);
     });
   } else {
+    // For SC/MC, ensure exactly 4 options are present before saving
+    if (currentQuestion.value.options.length !== 4) {
+      // This case should ideally not be reached if UI enforces 4 options
+      // but as a safeguard, pad or truncate. For simplicity, alert for now or adjust.
+      alert('单选或多选题必须有4个选项。'); // Or silently adjust
+      // Pad to 4 if less
+      while(currentQuestion.value.options.length < 4) {
+        currentQuestion.value.options.push({ value: String.fromCharCode(65 + currentQuestion.value.options.length), label: '', isCorrect: false });
+      }
+      // Truncate to 4 if more
+      if(currentQuestion.value.options.length > 4) {
+        currentQuestion.value.options = currentQuestion.value.options.slice(0, 4);
+      }
+    }
+
     if (!currentQuestion.value.options.some(o => o.isCorrect && o.label.trim() !== '')) {
       alert('单选题或多选题至少选择一个有效答案'); return;
     }
@@ -488,13 +537,10 @@ const showAddQuestionDialog = () => {
     id: null, questionId: null,
     type: defaultType,
     subject: '', text: '', tag: '', creator: '默认出题老师',
-    options: defaultSingleMultiOptions().map(opt => ({...opt})),
+    options: defaultSingleMultiOptions(), // Initializes with 4 options
     correctAnswer: ''
   };
   judgmentCorrectAnswerValue.value = null;
-  if (currentQuestion.value.type !== QUESTION_TYPES_MAP.TRUE_FALSE.frontend && currentQuestion.value.options.length !== 4) {
-    currentQuestion.value.options = defaultSingleMultiOptions().map(opt => ({...opt}));
-  }
   showModal.value = true;
 };
 
@@ -527,18 +573,19 @@ const editQuestion = (questionToEdit) => {
     currentQuestion.value.options.forEach(opt => {
       opt.isCorrect = (opt.value === judgmentCorrectAnswerValue.value);
     });
-  } else {
-    if (qCopy.options && qCopy.options.length > 0) {
-      currentQuestion.value.options = qCopy.options.map(originalOption => ({
-        ...originalOption,
-        isCorrect: parsedCorrectAnswers.includes(originalOption.value)
-      }));
-    } else {
-      currentQuestion.value.options = defaultSingleMultiOptions().map(defaultOpt => ({
-        ...defaultOpt,
-        isCorrect: parsedCorrectAnswers.includes(defaultOpt.value)
-      }));
+  } else { // Single Choice or Multiple Choice - ensure 4 options
+    const newOptions = [];
+    for (let i = 0; i < 4; i++) { // Always 4 options
+      const optionValue = String.fromCharCode(65 + i);
+      const existingQCopyOption = qCopy.options ? qCopy.options.find(opt => opt.value === optionValue) : null;
+
+      newOptions.push({
+        value: optionValue,
+        label: existingQCopyOption ? existingQCopyOption.label : '',
+        isCorrect: parsedCorrectAnswers.includes(optionValue)
+      });
     }
+    currentQuestion.value.options = newOptions;
     judgmentCorrectAnswerValue.value = null;
   }
   showModal.value = true;
@@ -570,22 +617,9 @@ const viewQuestionDetails = (question) => {
 
 const closeModal = () => { showModal.value = false; };
 
-const addOption = () => {
-  if (currentQuestion.value.type !== QUESTION_TYPES_MAP.TRUE_FALSE.frontend && currentQuestion.value.options.length < 4) {
-    const nextLetter = String.fromCharCode(65 + currentQuestion.value.options.length);
-    currentQuestion.value.options.push({ value: nextLetter, label: '', isCorrect: false });
-  } else if (currentQuestion.value.type !== QUESTION_TYPES_MAP.TRUE_FALSE.frontend) {
-    alert('单选题或多选题最多添加4个选项');
-  }
-};
-
-const removeLastOption = () => {
-  if (currentQuestion.value.type !== QUESTION_TYPES_MAP.TRUE_FALSE.frontend && currentQuestion.value.options.length > 2) {
-    currentQuestion.value.options.pop();
-  } else if (currentQuestion.value.type !== QUESTION_TYPES_MAP.TRUE_FALSE.frontend) {
-    alert('题目至少需要2个选项');
-  }
-};
+// Add/Remove Option functions are removed as SC/MC questions are fixed to 4 options.
+// const addOption = () => { ... };
+// const removeLastOption = () => { ... };
 
 // --- 计算属性 ---
 const uniqueSubjects = computed(() => {
@@ -628,7 +662,8 @@ const isMultipleChoice = computed(() => currentQuestion.value.type === QUESTION_
 const isJudgmentQuestion = computed(() => currentQuestion.value.type === QUESTION_TYPES_MAP.TRUE_FALSE.frontend);
 
 watch(questions, (newVal) => { /* Debug log can be added here */ }, { deep: true });
-watch(currentQuestion, (newVal) => { /* Debug log can be added here */ }, { deep: true });
+// The watcher for currentQuestion.value.type is now slightly different to handle old options
+// watch(currentQuestion, (newVal) => { /* Debug log can be added here */ }, { deep: true }); // General watcher
 
 </script>
 <style scoped>
@@ -1063,6 +1098,8 @@ textarea.form-control {
   display: flex;
   gap: 10px;
 }
+/* Add/Remove buttons are now removed from template as per requirement for fixed 4 options for SC/MC */
+/*
 .add-option-btn, .remove-option-btn {
   padding: 8px 12px;
   font-size: 0.9em;
@@ -1074,6 +1111,7 @@ textarea.form-control {
 .add-option-btn:hover {
   background-color: #218838;
 }
+*/
 
 .form-hint {
   font-size: 0.9em;
@@ -1095,8 +1133,8 @@ textarea.form-control {
 .icon-edit::before { content: "✎"; margin-right: 6px; }
 .icon-delete::before { content: "🗑"; margin-right: 6px; }
 .icon-save::before { content: "💾"; margin-right: 6px; }
-.icon-add-circle::before { content: "⊕"; margin-right: 6px; }
-.icon-remove-circle::before { content: "⊖"; margin-right: 6px; }
+.icon-add-circle::before { content: "⊕"; margin-right: 6px; } /* Kept in case of future use, though buttons removed */
+.icon-remove-circle::before { content: "⊖"; margin-right: 6px; } /* Kept in case of future use, though buttons removed */
 
 
 @media (max-width: 768px) {
