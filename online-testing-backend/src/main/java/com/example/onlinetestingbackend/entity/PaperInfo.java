@@ -52,7 +52,7 @@ public class PaperInfo {
     @Column(name = "total_scores")
     private Integer totalScores;
 
-    @Column(name = "paper_name")
+    @Column(name = "paper_name", nullable = false, length = 256)
     private String paperName;
 
     @OneToMany(mappedBy = "paperInfo", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
