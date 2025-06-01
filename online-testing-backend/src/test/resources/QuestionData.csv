@@ -1,61 +1,101 @@
 subject_category,tags,question_text,question_type,correct_answer,creator,option_a,option_b,option_c,option_d
-Math,Algebra,What is 2+2?,Single Choice,A,Teacher1,4,5,6,7
-Physics,Force,What is Newton's first law?,Single Choice,B,Teacher2,Every object stays at rest...,An object accelerates...,The gravity pulls...,None of the above
-English,Vocabulary,Which word means 'happy'?,Single Choice,C,Teacher3,Angry,Sad,Delighted,Furious
-History,WWII,When did WWII start?,Single Choice,D,Teacher4,1938,1939,1940,1941
-Biology,Cells,What is the powerhouse of the cell?,Single Choice,A,Teacher5,Mitochondria,Nucleus,Ribosome,Cell membrane
-Chemistry,Elements,Which is a noble gas?,Single Choice,B,Teacher6,Oxygen,Neon,Hydrogen,Carbon
-Geography,Continents,How many continents are there?,Single Choice,C,Teacher7,4,5,"",""
-Programming,Java,Which keyword defines a class in Java?,Single Choice,D,Teacher8,struct,func,classdef,class
-Economics,Supply and Demand,What happens when supply exceeds demand?,Single Choice,A,Teacher9,Price decreases,Price increases,Remains same,No effect
-Literature,Shakespeare,Who wrote Hamlet?,Single Choice,B,Teacher10,Charles Dickens,William Shakespeare,Ernest Hemingway,Mark Twain
-Math,Geometry,What is the sum of angles in a triangle?,Single Choice,C,Teacher11,90°,120°,180°,360°
-Physics,Gravity,What is the acceleration due to gravity on Earth?,Single Choice,D,Teacher12,5 m/s²,7 m/s²,9 m/s²,9.8 m/s²
-English,Tenses,What tense is 'I have eaten'?,Single Choice,A,Teacher13,Past Perfect,Present Continuous,Past Simple,Future
-History,US Independence,In which year did the US declare independence?,Single Choice,B,Teacher14,1770,1776,1781,1789
-Biology,Photosynthesis,What do plants produce during photosynthesis?,Single Choice,C,Teacher15,Oxygen and Water,Ozone and Sugar,Glucose and Oxygen,Carbon Dioxide and Sunlight
-Chemistry,Acids and Bases,pH of 7 indicates what kind of solution?,Single Choice,D,Teacher16,Strong Acid,Weak Base,Very Strong Base,Neutral
-Geography,Oceans,Which is the largest ocean?,Single Choice,A,Teacher17,Pacific Ocean,Atlantic Ocean,Indian Ocean,Arctic Ocean
-Programming,Python,Which symbol starts a comment in Python?,Single Choice,B,Teacher18,//, #, <!--, /*
-Economics,GDP,What does GDP stand for?,Single Choice,C,Teacher19,Global Domestic Product,General Domestic Production,Gross Domestic Product,Grand Domestic Price
-Literature,Poetry,Which poet wrote 'Ode to a Nightingale'?,Single Choice,D,Teacher20,Robert Frost,Walt Whitman,Langston Hughes,John Keats
-Math,Algebra,Which numbers are prime?,Multiple Choice,ABD,Teacher1,2,3,4,5
-Programming,Java,Which are Java keywords?,Multiple Choice,ABC,Teacher2,class,interface,private,include
-Physics,Force,What affects acceleration?,Multiple Choice,AD,Teacher3,Mass,Color,Smell,Force
-English,Tenses,Which sentences use the past perfect?,Multiple Choice,BC,Teacher4,I have eaten.,She had gone.,They had finished.,He is running.
-Biology,Cells,Which organelles are found in plant cells?,Multiple Choice,ABD,Teacher5,Cell wall,Chloroplasts,Centrioles,Vacuole
-Chemistry,Elements,Which are transition metals?,Multiple Choice,ACD,Teacher6,Iron,Copper,Silver,Gold
-Geography,Asia,Which countries are in East Asia?,Multiple Choice,ABC,Teacher7,China,Japan,South Korea,India
-History,American Revolution,Who were involved in the American Revolution?,Multiple Choice,ABD,Teacher8,Britain,France,Spain,Germany
-Economics,Demand,What factors affect demand?,Multiple Choice,ACD,Teacher9,Price,Weather,Income,Tastes
-Literature,Shakespeare,Which plays were written by Shakespeare?,Multiple Choice,ABD,Teacher10,Romeo and Juliet,Hamlet,Animal Farm,Othello
-Math,Geometry,Which are types of triangles?,Multiple Choice,ABD,Teacher11,Equilateral,Isosceles,Rectangle,Parallelogram
-Physics,Electricity,What does Ohm's law relate?,Multiple Choice,ABD,Teacher12,Voltage,Current,Resistance,Power
-English,Punctuation,Which sentences need a comma?,Multiple Choice,ACD,Teacher13,Although it was raining, we went out.,I like apples oranges and bananas.,After lunch
-History,WWII,Which countries were part of the Axis Powers?,Multiple Choice,AB,Teacher14,Germany,Italy,USA,UK
-Biology,Photosynthesis,What are products of photosynthesis?,Multiple Choice,AC,Teacher15,Glucose,Ozone,Water,Oxygen
-Chemistry,Acids and Bases,Which are weak acids?,Multiple Choice,AC,Teacher16,Acetic acid,Carbonic acid,HCl,H2SO4
-Geography,Oceans,Which oceans border Antarctica?,Multiple Choice,ABCD,Teacher17,Pacific,Atlantic,Indian,Arctic
-Programming,Python,Which data types are mutable in Python?,Multiple Choice,BC,Teacher18,Tuple,List,Dictionary,String
-Economics,Markets,Which are types of market structures?,Multiple Choice,ABCD,Teacher19,Monopoly,Oligopoly,Perfect Competition,Monopolistic Competition
-Literature,Poetry,Which are poetic devices?,Multiple Choice,ABD,Teacher20,Alliteration,Assonance,Exclamation,Imagery
-Math,Algebra,Is 2+2=5?,True/False,B,Teacher1,True,False,,
-Programming,Java,Is Java compiled into bytecode?,True/False,A,Teacher2,True,False,,
-Physics,Force,Does force cause acceleration?,True/False,A,Teacher3,True,False,,
-English,Tenses,Is 'I am going' present continuous tense?,True/False,A,Teacher4,True,False,,
-Biology,Cells,Do animal cells have cell walls?,True/False,B,Teacher5,True,False,,
-Chemistry,Elements,Is water an element?,True/False,B,Teacher6,True,False,,
-Geography,Continents,Is Australia the smallest continent?,True/False,A,Teacher7,True,False,,
-History,WWII,Did WWII start in 1939?,True/False,A,Teacher8,True,False,,
-Economics,GDP,Does GDP measure a country's total output?,True/False,A,Teacher9,True,False,,
-Literature,Shakespeare,Was Hamlet written by Charles Dickens?,True/False,B,Teacher10,True,False,,
-Math,Geometry,Is the sum of angles in a triangle 180°?,True/False,A,Teacher11,True,False,,
-Physics,Gravity,Is gravity stronger on the moon than on Earth?,True/False,B,Teacher12,True,False,,
-English,Punctuation,Should a comma be used after introductory phrases?,True/False,A,Teacher13,True,False,,
-History,US Independence,Did the US declare independence in 1776?,True/False,A,Teacher14,True,False,,
-Biology,Photosynthesis,Do plants produce carbon dioxide during photosynthesis?,True/False,B,Teacher15,True,False,,
-Chemistry,Acids and Bases,Does a pH less than 7 indicate a basic solution?,True/False,B,Teacher16,True,False,,
-Geography,Oceans,Is the Atlantic Ocean larger than the Pacific?,True/False,B,Teacher17,True,False,,
-Programming,Python,Is Python a statically typed language?,True/False,B,Teacher18,True,False,,
-Economics,Supply and Demand,If supply increases,True/False,A,Teacher19,True,False,,
-Literature,Poetry,Is rhyme required in poetry?,True/False,B,Teacher20,True,False,,
+Computer Science,Computer Networks,OSI模型的最底层是哪一层？,Single Choice,B,Teacher1,应用层,物理层,传输层,网络层
+Computer Science,Computer Networks,TCP协议工作在哪一层？,Single Choice,B,Teacher2,应用层,传输层,网络层,数据链路层
+Computer Science,Computer Networks,IP地址分为几类？,Single Choice,C,Teacher3,2类,3类,4类,5类
+Computer Science,Computer Networks,HTTP协议的默认端口号是多少？,Single Choice,A,Teacher4,80,443,21,22
+Computer Science,Computer Networks,DNS的作用是什么？,Single Choice,B,Teacher5,文件传输,域名解析,邮件传输,远程登录
+Computer Science,Computer Networks,以下哪个协议用于邮件接收？,Single Choice,C,Teacher6,SMTP,FTP,POP3,HTTP
+Computer Science,Computer Networks,TCP和UDP的主要区别是什么？,Single Choice,A,Teacher7,TCP是面向连接的，UDP是无连接的,TCP是无连接的，UDP是面向连接的,TCP和UDP都是面向连接的,TCP和UDP都是无连接的
+Computer Science,Computer Networks,路由器工作在哪一层？,Single Choice,B,Teacher8,物理层,网络层,数据链路层,传输层
+Computer Science,Computer Networks,以下哪个设备用于扩展局域网？,Single Choice,C,Teacher9,路由器,交换机,集线器,网桥
+Computer Science,Computer Networks,VLAN的作用是什么？,Single Choice,D,Teacher10,增加带宽,提高安全性,扩展网络范围,以上都是
+Computer Science,Computer Networks,什么是子网掩码的主要作用？,Single Choice,A,Teacher11,标识网络部分和主机部分,加密数据传输,提高传输速度,以上都不是
+Computer Science,Computer Networks,以下哪个协议用于文件传输？,Single Choice,C,Teacher12,HTTP,SMTP,FTP,Telnet
+Computer Science,Computer Networks,什么是NAT的主要作用？,Single Choice,B,Teacher13,网络地址转换,加密数据,提高网络速度,以上都不是
+Computer Science,Computer Networks,以下哪个协议用于远程登录？,Single Choice,D,Teacher14,HTTP,SMTP,FTP,Telnet
+Computer Science,Computer Networks,什么是防火墙的主要功能？,Single Choice,A,Teacher15,阻止未经授权的访问,提高网络速度,加密数据,以上都不是
+Computer Science,Computer Networks,以下哪个协议用于网络管理？,Single Choice,C,Teacher16,HTTP,SMTP,SNMP,Telnet
+Computer Science,Computer Networks,什么是VPN的主要功能？,Single Choice,B,Teacher17,虚拟专用网络,提高网络速度,加密数据,以上都不是
+Computer Science,Computer Networks,以下哪个协议用于网络时间同步？,Single Choice,D,Teacher18,HTTP,SMTP,FTP,NTP
+Computer Science,Computer Networks,什么是代理服务器的主要功能？,Single Choice,A,Teacher19,缓存和共享资源,提高网络速度,加密数据,以上都不是
+Computer Science,Computer Networks,以下哪个协议用于简单邮件传输？,Single Choice,B,Teacher20,HTTP,SMTP,FTP,Telnet
+Computer Science,Computer Networks,什么是无线网络的主要优势？,Single Choice,C,Teacher21,移动性,高带宽,低延迟,以上都不是
+Computer Science,Computer Networks,以下哪个协议用于网络层的路由选择？,Single Choice,D,Teacher22,HTTP,SMTP,FTP,RIP
+Computer Science,Computer Networks,什么是蓝牙技术的主要应用场景？,Single Choice,A,Teacher23,短距离无线通信,长距离无线通信,有线通信,以上都不是
+Computer Science,Computer Networks,以下哪个协议用于网络层的多播？,Single Choice,C,Teacher24,HTTP,SMTP,FTP,IGMP
+Computer Science,Computer Networks,什么是5G网络的主要特点？,Single Choice,B,Teacher25,高带宽,低延迟,高可靠性,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的错误检测？,Single Choice,D,Teacher26,HTTP,SMTP,FTP,ICMP
+Computer Science,Computer Networks,什么是物联网的主要技术基础？,Single Choice,A,Teacher27,传感器技术,区块链技术,人工智能技术,以上都不是
+Computer Science,Computer Networks,以下哪个协议用于网络层的隧道技术？,Single Choice,C,Teacher28,HTTP,SMTP,FTP,IPSec
+Computer Science,Computer Networks,什么是边缘计算的主要优势？,Single Choice,B,Teacher29,低延迟,高带宽,高可靠性,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的动态路由选择？,Single Choice,D,Teacher30,HTTP,SMTP,FTP,OSPF
+Computer Science,Computer Networks,什么是软件定义网络（SDN）的主要特点？,Single Choice,A,Teacher31,可编程性,高带宽,低延迟,以上都不是
+Computer Science,Computer Networks,以下哪个协议用于网络层的静态路由选择？,Single Choice,C,Teacher32,HTTP,SMTP,FTP,RIP
+Computer Science,Computer Networks,什么是网络切片的主要应用场景？,Single Choice,B,Teacher33,5G网络,物联网,工业互联网,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的流量控制？,Single Choice,D,Teacher34,HTTP,SMTP,FTP,TCP
+Computer Science,Computer Networks,什么是网络功能虚拟化（NFV）的主要优势？,Single Choice,A,Teacher35,灵活性,高带宽,低延迟,以上都不是
+Computer Science,Computer Networks,以下哪个协议用于网络层的安全通信？,Single Choice,C,Teacher36,HTTP,SMTP,FTP,IPSec
+Computer Science,Computer Networks,什么是网络拓扑的主要类型？,Single Choice,B,Teacher37,星型,环型,总线型,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的拥塞控制？,Single Choice,D,Teacher38,HTTP,SMTP,FTP,TCP
+Computer Science,Computer Networks,什么是网络协议的主要作用？,Single Choice,A,Teacher39,规范网络通信,提高网络速度,加密数据,以上都不是
+Computer Science,Computer Networks,以下哪个协议用于网络层的路由发现？,Single Choice,C,Teacher40,HTTP,SMTP,FTP,RIP
+Computer Science,Computer Networks,什么是网络地址的主要类型？,Single Choice,B,Teacher41,IPv4,IPv6,MAC地址,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的错误报告？,Single Choice,D,Teacher42,HTTP,SMTP,FTP,ICMP
+Computer Science,Computer Networks,什么是网络接口的主要功能？,Single Choice,A,Teacher43,连接网络,加密数据,提高网络速度,以上都不是
+Computer Science,Computer Networks,以下哪个协议用于网络层的多播分发？,Single Choice,C,Teacher44,HTTP,SMTP,FTP,IGMP
+Computer Science,Computer Networks,什么是网络带宽的主要单位？,Single Choice,B,Teacher45,bps,MHz,GHz,以上都不是
+Computer Science,Computer Networks,以下哪个协议用于网络层的隧道封装？,Single Choice,D,Teacher46,HTTP,SMTP,FTP,IPSec
+Computer Science,Computer Networks,什么是网络延迟的主要影响因素？,Single Choice,A,Teacher47,距离,带宽,协议,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的流量工程？,Single Choice,C,Teacher48,HTTP,SMTP,FTP,MPLS
+Computer Science,Computer Networks,什么是网络拓扑的主要设计原则？,Single Choice,B,Teacher49,可靠性,可扩展性,安全性,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的负载均衡？,Single Choice,D,Teacher50,HTTP,SMTP,FTP,DNS
+Computer Science,Computer Networks,什么是网络协议的主要分类？,Single Choice,A,Teacher51,应用层协议,传输层协议,网络层协议,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的地址解析？,Single Choice,C,Teacher52,HTTP,SMTP,FTP,ARP
+Computer Science,Computer Networks,什么是网络接口的主要类型？,Single Choice,B,Teacher53,有线接口,无线接口,光纤接口,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的隧道传输？,Single Choice,D,Teacher54,HTTP,SMTP,FTP,GRE
+Computer Science,Computer Networks,什么是网络带宽的主要测量方法？,Single Choice,A,Teacher55,吞吐量测试,延迟测试,丢包率测试,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的流量监控？,Single Choice,C,Teacher56,HTTP,SMTP,FTP,SNMP
+Computer Science,Computer Networks,什么是网络延迟的主要测量方法？,Single Choice,B,Teacher57,ping命令,traceroute命令,netstat命令,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的流量分析？,Single Choice,D,Teacher58,HTTP,SMTP,FTP,NetFlow
+Computer Science,Computer Networks,什么是网络拓扑的主要应用场景？,Single Choice,A,Teacher59,企业网络,数据中心,物联网,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的流量优化？,Single Choice,C,Teacher60,HTTP,SMTP,FTP,SD-WAN
+Computer Science,Computer Networks,什么是网络协议的主要设计目标？,Single Choice,B,Teacher61,互操作性,可扩展性,安全性,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的流量控制？,Single Choice,D,Teacher62,HTTP,SMTP,FTP,TCP
+Computer Science,Computer Networks,什么是网络接口的主要配置参数？,Single Choice,A,Teacher63,IP地址,子网掩码,默认网关,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的流量加密？,Single Choice,C,Teacher64,HTTP,SMTP,FTP,TLS
+Computer Science,Computer Networks,什么是网络带宽的主要影响因素？,Single Choice,B,Teacher65,网络设备性能,网络拓扑结构,网络协议,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的流量压缩？,Single Choice,D,Teacher66,HTTP,SMTP,FTP,LZ77
+Computer Science,Computer Networks,什么是网络延迟的主要优化方法？,Single Choice,A,Teacher67,减少跳数,增加带宽,优化协议,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的流量分类？,Single Choice,C,Teacher68,HTTP,SMTP,FTP,DPI
+Computer Science,Computer Networks,什么是网络拓扑的主要设计目标？,Single Choice,B,Teacher69,可靠性,可扩展性,安全性,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的流量调度？,Single Choice,D,Teacher70,HTTP,SMTP,FTP,WFQ
+Computer Science,Computer Networks,什么是网络协议的主要实现方式？,Single Choice,A,Teacher71,软件实现,硬件实现,固件实现,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的流量监控？,Single Choice,C,Teacher72,HTTP,SMTP,FTP,SNMP
+Computer Science,Computer Networks,什么是网络接口的主要测试方法？,Single Choice,B,Teacher73,连通性测试,性能测试,安全性测试,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的流量分析？,Single Choice,D,Teacher74,HTTP,SMTP,FTP,NetFlow
+Computer Science,Computer Networks,什么是网络带宽的主要优化方法？,Single Choice,A,Teacher75,增加链路带宽,优化网络拓扑,升级网络设备,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的流量加密？,Single Choice,C,Teacher76,HTTP,SMTP,FTP,TLS
+Computer Science,Computer Networks,什么是网络延迟的主要测量工具？,Single Choice,B,Teacher77,ping工具,traceroute工具,netstat工具,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的流量压缩？,Single Choice,D,Teacher78,HTTP,SMTP,FTP,LZ77
+Computer Science,Computer Networks,什么是网络拓扑的主要优化方法？,Single Choice,A,Teacher79,简化拓扑结构,增加冗余路径,优化设备配置,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的流量调度？,Single Choice,C,Teacher80,HTTP,SMTP,FTP,WFQ
+Computer Science,Computer Networks,什么是网络协议的主要测试方法？,Single Choice,B,Teacher81,功能测试,性能测试,安全性测试,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的流量监控？,Single Choice,D,Teacher82,HTTP,SMTP,FTP,SNMP
+Computer Science,Computer Networks,什么是网络接口的主要优化方法？,Single Choice,A,Teacher83,升级接口硬件,优化接口配置,增加接口带宽,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的流量分析？,Single Choice,C,Teacher84,HTTP,SMTP,FTP,NetFlow
+Computer Science,Computer Networks,什么是网络带宽的主要优化目标？,Single Choice,B,Teacher85,提高传输速度,降低延迟,减少丢包,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的流量加密？,Single Choice,D,Teacher86,HTTP,SMTP,FTP,TLS
+Computer Science,Computer Networks,什么是网络延迟的主要优化目标？,Single Choice,A,Teacher87,降低延迟,提高带宽,减少丢包,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的流量压缩？,Single Choice,C,Teacher88,HTTP,SMTP,FTP,LZ77
+Computer Science,Computer Networks,什么是网络拓扑的主要优化目标？,Single Choice,B,Teacher89,提高可靠性,提高可扩展性,提高安全性,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的流量调度？,Single Choice,D,Teacher90,HTTP,SMTP,FTP,WFQ
+Computer Science,Computer Networks,什么是网络协议的主要优化目标？,Single Choice,A,Teacher91,提高互操作性,提高可扩展性,提高安全性,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的流量监控？,Single Choice,C,Teacher92,HTTP,SMTP,FTP,SNMP
+Computer Science,Computer Networks,什么是网络接口的主要优化目标？,Single Choice,B,Teacher93,提高性能,提高可靠性,提高安全性,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的流量分析？,Single Choice,D,Teacher94,HTTP,SMTP,FTP,NetFlow
+Computer Science,Computer Networks,什么是网络带宽的主要优化手段？,Single Choice,A,Teacher95,增加链路带宽,优化网络拓扑,升级网络设备,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的流量加密？,Single Choice,C,Teacher96,HTTP,SMTP,FTP,TLS
+Computer Science,Computer Networks,什么是网络延迟的主要优化手段？,Single Choice,B,Teacher97,减少跳数,增加带宽,优化协议,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的流量压缩？,Single Choice,D,Teacher98,HTTP,SMTP,FTP,LZ77
+Computer Science,Computer Networks,什么是网络拓扑的主要优化手段？,Single Choice,A,Teacher99,简化拓扑结构,增加冗余路径,优化设备配置,以上都是
+Computer Science,Computer Networks,以下哪个协议用于网络层的流量调度？,Single Choice,C,Teacher100,HTTP,SMTP,FTP,WFQ

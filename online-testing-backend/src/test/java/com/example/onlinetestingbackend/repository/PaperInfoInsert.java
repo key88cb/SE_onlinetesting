@@ -61,7 +61,7 @@ public class PaperInfoInsert {
                 continue; // 跳过表头
             }
 
-            String[] values = line.split(",", 12); // 最多分割成12列
+            String[] values = line.split(",", 13); // 最多分割成12列
 
             ManualPaperCreationRequestDto dto = new ManualPaperCreationRequestDto();
             dto.setCourseId(Integer.parseInt(values[0]));
@@ -75,14 +75,15 @@ public class PaperInfoInsert {
             dto.setHighestScoresForSingleChoice(Integer.parseInt(values[8]));
             dto.setHighestScoresForMultipleChoice(Integer.parseInt(values[9]));
             dto.setHighestScoresForTrueFalse(Integer.parseInt(values[10]));
+            dto.setPaperName(values[11]);
 
-            System.out.println("=== values[11] ===");
-            System.out.println(values[11]);
+            System.out.println("=== values[12] ===");
+            System.out.println(values[12]);
 
             ObjectMapper objectMapper = new ObjectMapper();
 
             // 原始字段值
-            String questionsField = values[11].trim();
+            String questionsField = values[12].trim();
 
             // 1. 去除最外层引号（如果有的话）
             String jsonContent = questionsField;
@@ -140,6 +141,7 @@ public class PaperInfoInsert {
             dto.setCreator(values[1]);
             dto.setOpenTime(java.time.LocalDateTime.parse(values[2]));
             dto.setCloseTime(java.time.LocalDateTime.parse(values[3]));
+            dto.setPaperName(values[10]);
 
             List<AutoPaperCreationRequestDto.QuestionTypeConfig> configs = new ArrayList<>();
             // 单选题
