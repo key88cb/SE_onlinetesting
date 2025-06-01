@@ -82,7 +82,7 @@ const paperInfo = ref(null); // Initialize with null for better loading state ha
 const studentAnswers = ref({});
 const remainingTime = ref(0);
 let timer = null;
-
+const startTime=ref()
 // --- 题目类型中文映射 (主要用于可能的内部逻辑或未来扩展，当前模板不直接显示题型) ---
 const QUESTION_TYPE_MAP_TO_CHINESE = {
   'Single Choice': '单选题',
@@ -199,6 +199,16 @@ onMounted(async () => {
     router.push('/student/dashboard');
     return;
   }
+  if (!startTime.value) {
+    if(!localStorage.getItem(`startTime-${paperId}-${courseId}`)){
+    startTime.value = getCurrentTime(); // 保存当前时间（ISO 格式）
+    localStorage.setItem(`startTime-${paperId}-${courseId}`, startTime.value);
+    }
+    else{
+       startTime.value = localStorage.getItem(`startTime-${paperId}-${courseId}`);
+    }
+    console.log("Start time set:", startTime.value); // 可选：用于调试
+  }
   await fetchPaperQuestions(paperId, courseId);
 });
 
@@ -207,7 +217,19 @@ onUnmounted(() => {
     clearInterval(timer);
   }
 });
-
+const getCurrentTime=()=>{
+    const now = new Date();
+    // 获取本地时间的各个部分
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // 月份从 0 开始，需 +1
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    // 拼接成目标格式
+    const formattedTime = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+    return formattedTime;
+  }
 // MODIFIED: To correctly read options from question.options array (as per your mock data)
 // OR from question.optionA, question.optionB etc. (as per API data from previous turn)
 // This version prioritizes question.options array if it exists and is an array of strings.
@@ -327,7 +349,9 @@ const submitExam = async () => {
     paperId: paperInfo.value.paperId,
     courseId: paperInfo.value.courseId,
     studentId: studentId,
-    answers: answersPayload
+    answers: answersPayload,
+    startTime:startTime.value,
+    finishTime:getCurrentTime()
   };
 
   console.log("Submitting DTO:", dto);
