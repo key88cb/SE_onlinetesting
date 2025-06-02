@@ -70,7 +70,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'; // 引入 watch
 import { useRoute, useRouter } from 'vue-router';
 
 const route = useRoute();
@@ -79,27 +79,25 @@ const url_front = 'http://localhost:8080/';
 
 const isLoading = ref(true);
 const isSubmitting = ref(false);
-const paperInfo = ref(null); // Initialize with null for better loading state handling
+const paperInfo = ref(null);
 const studentAnswers = ref({});
 const remainingTime = ref(0);
 let timer = null;
-const startTime=ref()
-// --- 题目类型中文映射 (主要用于可能的内部逻辑或未来扩展，当前模板不直接显示题型) ---
+const startTime = ref();
+
 const QUESTION_TYPE_MAP_TO_CHINESE = {
   'Single Choice': '单选题',
   'Multiple Choice': '多选题',
   'True/False': '判断题',
-  // 您可以根据后端实际返回的 questionType 字符串添加更多映射
-  '单选题': '单选题', // 如果已经是中文
+  '单选题': '单选题',
   '多选题': '多选题',
   '判断题': '判断题',
   'unknown': '未知题型'
 };
-const getDisplayQuestionType = (backendType) => { // Kept for consistency if needed elsewhere
+const getDisplayQuestionType = (backendType) => {
   if (!backendType) return QUESTION_TYPE_MAP_TO_CHINESE['unknown'];
   return QUESTION_TYPE_MAP_TO_CHINESE[backendType] || backendType;
 };
-// ---
 
 const formatTime = (totalSeconds) => {
   if (typeof totalSeconds !== 'number' || totalSeconds < 0) return '00:00';
@@ -108,7 +106,64 @@ const formatTime = (totalSeconds) => {
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 };
 
-const startCountdown = () => {
+const getAnswersStorageKey = (paperId, courseId) => {
+  return `examAnswers-${paperId}-${courseId}`;
+};
+
+const saveAnswersToLocalStorage = () => {
+  if (paperInfo.value && paperInfo.value.paperId && paperInfo.value.courseId) {
+    const key = getAnswersStorageKey(paperInfo.value.paperId, paperInfo.value.courseId);
+    localStorage.setItem(key, JSON.stringify(studentAnswers.value));
+    console.log('答案已保存到localStorage:', studentAnswers.value);
+  }
+};
+
+// 新增：从 localStorage 加载答案
+const loadAnswersFromLocalStorage = () => {
+  if (paperInfo.value && paperInfo.value.paperId && paperInfo.value.courseId) {
+    const key = getAnswersStorageKey(paperInfo.value.paperId, paperInfo.value.courseId);
+    const savedAnswers = localStorage.getItem(key);
+    if (savedAnswers) {
+      try {
+        const parsedAnswers = JSON.parse(savedAnswers);
+        // 合并，确保所有题目都有初始值，即使localStorage中没有
+        const initialAnswers = {};
+        paperInfo.value.paperQuestions.forEach(q => {
+          const type = q.questionType;
+          initialAnswers[q.questionId] = (type === 'Multiple Choice' || type === '多选题') ? [] : '';
+        });
+        studentAnswers.value = { ...initialAnswers, ...parsedAnswers };
+        console.log('从localStorage加载答案:', studentAnswers.value);
+      } catch (e) {
+        console.error('解析localStorage中的答案失败:', e);
+        // 如果解析失败，则使用默认空答案初始化
+        initializeEmptyAnswers();
+      }
+    } else {
+      // 如果localStorage中没有保存的答案，则使用默认空答案初始化
+      initializeEmptyAnswers();
+    }
+  } else {
+    // 如果试卷信息不完整，也使用默认空答案初始化
+    initializeEmptyAnswers();
+  }
+};
+
+// 新增：初始化空答案的辅助函数
+const initializeEmptyAnswers = () => {
+  const initAnswers = {};
+  if (paperInfo.value && paperInfo.value.paperQuestions) {
+    paperInfo.value.paperQuestions.forEach(q => {
+      const type = q.questionType;
+      initAnswers[q.questionId] = (type === 'Multiple Choice' || type === '多选题') ? [] : '';
+    });
+  }
+  studentAnswers.value = initAnswers;
+};
+
+
+let startCountdown = () => {};
+startCountdown = () => {
   if (!paperInfo.value || !paperInfo.value.closeTime) {
     console.error('无法开始倒计时：closeTime 未定义。');
     remainingTime.value = 0;
@@ -141,6 +196,7 @@ const startCountdown = () => {
   timer = setInterval(updateRemainingTime, 1000);
 };
 
+
 const fetchPaperQuestions = async (paperId, courseId) => {
   isLoading.value = true;
   try {
@@ -151,17 +207,11 @@ const fetchPaperQuestions = async (paperId, courseId) => {
       throw new Error(`获取试卷失败 (${response.status})`);
     }
     const data = await response.json();
-    // 确保 paperQuestions 和内部的 options 是数组
     const questions = Array.isArray(data.paperQuestions) ?
         data.paperQuestions.map(q => ({
           ...q,
-          // 修正：根据您提供的数据，options 是属性名 optionA, optionB...
-          // 但您的 mock 数据中 options 是数组。此处以 API 返回 optionA,B,C,D 为准来构建 options 数组
-          // 或者，如果 API 返回的就是 options 数组，则直接使用。
-          // 为了与 getQuestionOptionsForDisplay 兼容，我们期望 question.options 是文本数组，或 question.optionA 等属性存在
-          // 此处假设 API 返回的 data.paperQuestions.options 就是选项文本数组
           options: Array.isArray(q.options) ? q.options :
-              (q.optionA !== undefined ? [q.optionA, q.optionB, q.optionC, q.optionD].filter(opt => opt !== undefined && opt !== null) : []) // Fallback if options array is missing but optionA etc exist
+              (q.optionA !== undefined ? [q.optionA, q.optionB, q.optionC, q.optionD].filter(opt => opt !== undefined && opt !== null) : [])
         }))
         : [];
 
@@ -171,14 +221,8 @@ const fetchPaperQuestions = async (paperId, courseId) => {
       paperQuestions: questions
     };
 
-    const initAnswers = {};
-    if (paperInfo.value.paperQuestions) {
-      paperInfo.value.paperQuestions.forEach(q => {
-        const type = q.questionType;
-        initAnswers[q.questionId] = (type === 'Multiple Choice' || type === '多选题') ? [] : '';
-      });
-    }
-    studentAnswers.value = initAnswers;
+    // 试卷数据获取成功后，加载localStorage中的答案
+    loadAnswersFromLocalStorage();
 
     console.log('成功加载试卷:', paperInfo.value);
     startCountdown();
@@ -186,7 +230,8 @@ const fetchPaperQuestions = async (paperId, courseId) => {
   } catch (error) {
     alert(`无法加载试卷：${error.message}`);
     console.error(error);
-    paperInfo.value = { paperName: '加载失败', paperQuestions: [], closeTime: new Date().toISOString() }; // Provide fallback for closeTime
+    paperInfo.value = { paperName: '加载失败', paperQuestions: [], closeTime: new Date().toISOString() };
+    initializeEmptyAnswers(); // 确保在加载失败时也有答案结构
   } finally {
     isLoading.value = false;
   }
@@ -200,48 +245,46 @@ onMounted(async () => {
     router.push('/student/dashboard');
     return;
   }
+  // startTime 逻辑
   if (!startTime.value) {
     if(!localStorage.getItem(`startTime-${paperId}-${courseId}`)){
-    startTime.value = getCurrentTime(); // 保存当前时间（ISO 格式）
-    localStorage.setItem(`startTime-${paperId}-${courseId}`, startTime.value);
+      startTime.value = getCurrentTime();
+      localStorage.setItem(`startTime-${paperId}-${courseId}`, startTime.value);
     }
     else{
-       startTime.value = localStorage.getItem(`startTime-${paperId}-${courseId}`);
+      startTime.value = localStorage.getItem(`startTime-${paperId}-${courseId}`);
     }
-    console.log("Start time set:", startTime.value); // 可选：用于调试
+    console.log("Start time set:", startTime.value);
   }
-  await fetchPaperQuestions(paperId, courseId);
+  await fetchPaperQuestions(paperId, courseId); // fetchPaperQuestions内部会调用loadAnswers
 });
 
 onUnmounted(() => {
   if (timer) {
     clearInterval(timer);
   }
+  // saveAnswersToLocalStorage(); // 但要注意，如果是因为提交成功而卸载，则不应保存
 });
-const getCurrentTime=()=>{
-    const now = new Date();
-    // 获取本地时间的各个部分
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0'); // 月份从 0 开始，需 +1
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
-    // 拼接成目标格式
-    const formattedTime = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
-    return formattedTime;
-  }
-// MODIFIED: To correctly read options from question.options array (as per your mock data)
-// OR from question.optionA, question.optionB etc. (as per API data from previous turn)
-// This version prioritizes question.options array if it exists and is an array of strings.
-const getQuestionOptionsForDisplay = (question) => {
-  const letters = ['A', 'B', 'C', 'D', 'E', 'F']; // Support up to F
+let getCurrentTime=()=>{  };
+getCurrentTime = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  const formattedTime = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+  return formattedTime;
+};
+
+let getQuestionOptionsForDisplay = (question) => {  };
+getQuestionOptionsForDisplay = (question) => {
+  const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
   let labelsToMap = [];
 
-  // Priority 1: Use question.options if it's an array of strings
   if (Array.isArray(question.options) && question.options.every(opt => typeof opt === 'string')) {
     labelsToMap = question.options;
-    // For True/False, ensure only two options if more are accidentally provided in array
     if (question.questionType === 'True/False' || question.questionType === '判断题') {
       const trueFalseDefaults = ['正确', '错误'];
       labelsToMap = [
@@ -250,20 +293,16 @@ const getQuestionOptionsForDisplay = (question) => {
       ].slice(0,2);
     }
   }
-  // Priority 2: Fallback to question.optionA, optionB etc.
   else {
     optionLettersLoop: for (const letter of letters) {
       if (question[`option${letter}`] !== undefined && question[`option${letter}`] !== null) {
         labelsToMap.push(question[`option${letter}`]);
       } else {
-        // If strictly A,B,C,D and one is missing, stop assuming more exist
-        if (['A','B','C','D'].includes(letter)) {
-          // break optionLettersLoop; // Or continue if options can be sparse like A, C
-        }
+        // if (['A','B','C','D'].includes(letter)) { }
       }
     }
     if (question.questionType === 'True/False' || question.questionType === '判断题') {
-      if(labelsToMap.length < 2) { // If optionA/B not fully defined, use defaults
+      if(labelsToMap.length < 2) {
         labelsToMap = [labelsToMap[0] || '正确', labelsToMap[1] || '错误'];
       }
       labelsToMap = labelsToMap.slice(0,2);
@@ -286,12 +325,12 @@ const handleMultiChoiceChange = (questionId, optionValue) => {
     } else {
       currentAnswers.splice(index, 1);
     }
-    // studentAnswers.value[questionId] = currentAnswers; // Vue reactivity handles this
   }
-  // console.log('Multi choice changed:', questionId, studentAnswers.value[questionId]);
+  // studentAnswers.value[questionId] = currentAnswers; // 不需要这行，因为数组是响应式的
 };
 
-const isOptionSelected = (question, optionValue) => {
+let isOptionSelected = (question, optionValue) => {  };
+isOptionSelected = (question, optionValue) => {
   const answer = studentAnswers.value[question.questionId];
   const type = question.questionType;
   if (type === 'Multiple Choice' || type === '多选题') {
@@ -300,29 +339,38 @@ const isOptionSelected = (question, optionValue) => {
   return answer === optionValue;
 };
 
-// Function to handle click on the entire option item for better UX
+
 const selectInteractiveOption = (question, optionValue) => {
   const questionId = question.questionId;
   const type = question.questionType;
   if (type === 'Multiple Choice' || type === '多选题') {
     handleMultiChoiceChange(questionId, optionValue);
-  } else { // Single Choice or True/False
+  } else {
     studentAnswers.value[questionId] = optionValue;
   }
+  // saveAnswersToLocalStorage(); // 答案改变后立即保存 - 移动到 watcher 中
 };
 
-const confirmAndSubmitExam = () => {
+watch(studentAnswers, (newAnswers) => {
+  if (paperInfo.value && paperInfo.value.paperId && paperInfo.value.courseId && !isLoading.value) { // 确保试卷信息已加载
+    saveAnswersToLocalStorage();
+  }
+}, { deep: true }); // 使用 deep watcher 来检测嵌套对象/数组的变化
+
+let confirmAndSubmitExam = () => { /* ... (保持不变) ... */ };
+confirmAndSubmitExam = () => {
   if(window.confirm('您确定要提交答卷吗？提交后将无法修改。')) {
     submitExam();
   }
 };
+
 
 const submitExam = async () => {
   if (isSubmitting.value) return;
   isSubmitting.value = true;
   clearInterval(timer);
 
-  const studentId = 123; // TODO: Replace with actual student ID
+  const studentId = 123; // TODO: 替换为实际学生ID
 
   if (!paperInfo.value || !paperInfo.value.paperId || !paperInfo.value.courseId) {
     alert("试卷信息不完整，无法提交。");
@@ -367,14 +415,17 @@ const submitExam = async () => {
       throw new Error(errorData.message || `提交失败 (${res.status})`);
     }
     alert('答卷提交成功！');
+    // 新增：提交成功后清除 localStorage 中的答案
+    if (paperInfo.value && paperInfo.value.paperId && paperInfo.value.courseId) {
+      const key = getAnswersStorageKey(paperInfo.value.paperId, paperInfo.value.courseId);
+      localStorage.removeItem(key);
+      localStorage.removeItem(`startTime-${paperInfo.value.paperId}-${paperInfo.value.courseId}`); // 也清除开始时间
+      console.log('localStorage已清除');
+    }
     await router.push('/student/dashboard');
   } catch (error) {
     alert(`提交失败：${error.message}，请稍后重试。`);
     console.error(error);
-    // Consider restarting countdown if exam is still ongoing and submission failed critically
-    // if (paperInfo.value && paperInfo.value.closeTime && new Date() < new Date(paperInfo.value.closeTime)) {
-    //   startCountdown();
-    // }
   } finally {
     isSubmitting.value = false;
   }
@@ -382,7 +433,7 @@ const submitExam = async () => {
 </script>
 
 <style scoped>
-/* --- 全局与页面布局 --- */
+/* --- (样式保持不变) --- */
 .exam-taking-page {
   display: flex;
   flex-direction: column;
@@ -671,4 +722,3 @@ const submitExam = async () => {
 /* Placeholder Icons (replace with your actual icon solution) */
 .icon-clock::before { content: "⏱️"; }
 </style>
-<!--.icon-submit-paper::before { content: "📤"; }-->

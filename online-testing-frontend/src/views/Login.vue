@@ -48,37 +48,74 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router'; // 1. 引入 useRoute
 
-const router = useRouter()
-const userType = ref('student')
+const router = useRouter();
+const route = useRoute(); // 2. 获取 route 对象以访问查询参数
+const userType = ref('student');
 const credentials = ref({
   id: '',
   password: ''
-})
+});
 
 const setUserType = (type) => {
-  userType.value = type
-  credentials.value = { id: '', password: '' }
-}
+  userType.value = type;
+  credentials.value = { id: '', password: '' };
+};
 
-const login = () => {
-  // 这里添加实际的登录验证逻辑
-  // console.log(`Logging in as ${userType.value} with ID: ${credentials.value.id} and Password: ${credentials.value.password}`)
-  const userInfo = {
-    role: userType.value,
-    userId: credentials.value.id
+
+const login = async () => { // 建议将 login 函数设为 async 以便处理异步API调用
+  try {
+    // TODO: 在这里添加您实际的异步登录验证逻辑
+    // 例如: const response = await YourAuthService.login(userType.value, credentials.value);
+    // 假设登录成功，并且您从后端获取了 token 和确认的用户角色
+    // const token = response.data.token;
+    // const actualUserRole = response.data.role; // 从后端获取的真实角色
+
+    // ---- 模拟登录成功和获取角色 ----
+    const token = 'mock-token-for-' + userType.value; // 示例 token
+    const actualUserRole = userType.value; // 在此示例中，我们假设前端选择的角色就是后端验证后的角色
+    // ---- 模拟结束 ----
+
+    // 存储认证信息到 localStorage (与导航守卫中的逻辑对应)
+    localStorage.setItem('userToken', token);
+    localStorage.setItem('userRole', actualUserRole);
+    // console.log(`Logging in as ${userType.value} with ID: ${credentials.value.id} and Password: ${credentials.value.password}`)
+    const userInfo = {
+      role: userType.value,
+      userId: credentials.value.id
+    }
+    localStorage.setItem('user', JSON.stringify(userInfo))
+    // 如果有userId, 也一并存储
+    // localStorage.setItem('userId', response.data.userId);
+
+
+    // 检查是否有重定向路径
+    const redirectPath = route.query.redirect;
+
+    if (redirectPath && typeof redirectPath === 'string') {
+      // 如果有重定向路径，则跳转到该路径
+      // 使用 router.replace 可以避免登录页成为历史记录的一部分
+      router.replace(redirectPath);
+    } else {
+      // 没有重定向路径，则根据角色跳转到默认的仪表盘
+      if (actualUserRole === 'student') {
+        router.replace({ name: 'StudentHome' }); // 确保 'StudentHome' 是学生仪表盘的正确路由名称
+      } else if (actualUserRole === 'teacher') {
+        router.replace({ name: 'TeacherHome' }); // 确保 'TeacherHome' 是教师仪表盘的正确路由名称
+      } else {
+        // 未知角色或默认情况，可以跳转到根路径或错误页
+        router.replace('/');
+      }
+    }
+  } catch (error) {
+    console.error("登录失败:", error);
+    // 在这里处理登录失败的情况，例如显示错误提示
+    // alert('登录失败：' + (error.response?.data?.message || error.message || '请检查您的凭据。'));
   }
-  localStorage.setItem('user', JSON.stringify(userInfo))
-  if (userType.value === 'student') {
-    router.push('/student/dashboard')
-  } else {
-    router.push('/teacher/dashboard')
-  }
-}
+};
 </script>
-
 <style scoped>
 .login {
   padding: 20px;
@@ -212,11 +249,11 @@ h1 {
   .login-container {
     padding: 1.5rem;
   }
-  
+
   h1 {
     font-size: 2em;
   }
-  
+
   .type-btn {
     padding: 0.6rem;
   }

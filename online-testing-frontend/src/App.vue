@@ -45,13 +45,17 @@
   </div>
 </template>
 
-
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'; // 引入 watch
+import { useRoute, useRouter } from 'vue-router';
 
-const route = useRoute()
-const router = useRouter()
+const route = useRoute();
+const router = useRouter();
+
+// 用户信息 - 使用 ref 进行响应式管理
+const username = ref('访客');
+const userRole = ref(null); // 'student' or 'teacher'
+const isAuthenticated = ref(false); // 关键：响应式的登录状态
 
 // 用 computed 实时获取 userId
 const userId = computed(() => {
@@ -62,64 +66,100 @@ const userId = computed(() => {
 // 用户信息
 const role = ref(null) // 'student' or 'teacher'
 const dropdownVisible = ref(false)
+const dropdownVisible = ref(false);
+const currentTime = ref('');
+let intervalId = null;
 
-// 时间显示相关
-const currentTime = ref('')
-let intervalId = null
+// 函数：从 localStorage 更新认证状态和用户信息到响应式 ref
+const updateAuthState = () => {
+  const token = localStorage.getItem('userToken');
+  const roleFromStorage = localStorage.getItem('userRole');
+  const usernameFromStorage = localStorage.getItem('username'); // 假设登录时也保存了用户名
 
-// 登录状态判断
-const isLoggedIn = computed(() => {
-  return route.path.startsWith('/student') || route.path.startsWith('/teacher')
-})
+  isAuthenticated.value = !!token; // 更新响应式登录状态
 
-
-// 角色判断
-const isStudent = computed(() => { return route.path.startsWith('/student') })
-const isTeacher = computed(() => { return route.path.startsWith('/teacher') })
-
-// 格式化时间
-const formatTime = () => {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const day = String(now.getDate()).padStart(2, '0')
-  const hours = String(now.getHours()).padStart(2, '0')
-  const minutes = String(now.getMinutes()).padStart(2, '0')
-  const seconds = String(now.getSeconds()).padStart(2, '0')
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
-}
-
-// 页面加载时启动定时器
-onMounted(() => {
-  currentTime.value = formatTime()
-  intervalId = setInterval(() => {
-    currentTime.value = formatTime()
-  }, 1000) // 每秒更新一次
-
-  // 模拟从 localStorage 获取用户信息（真实项目中应调用接口）
-  const user = JSON.parse(localStorage.getItem('user'))
-  if (user && user.username && user.role) {
-    username.value = user.username
-    role.value = user.role
+  if (isAuthenticated.value) {
+    userRole.value = roleFromStorage;
+    username.value = usernameFromStorage || (roleFromStorage === 'student' ? '学生用户' : (roleFromStorage === 'teacher' ? '教师用户' : '用户'));
+  } else {
+    userRole.value = null;
+    username.value = '访客';
   }
-})
+  console.log('Auth state updated in App.vue:', { // 调试信息
+    isAuthenticated: isAuthenticated.value,
+    userRole: userRole.value,
+    username: username.value
+  });
+};
 
+// 登录状态判断 (基于 isAuthenticated ref)
+const isLoggedIn = computed(() => isAuthenticated.value);
 
-// 切换下拉菜单
+// 角色判断 (基于 userRole ref 和 isAuthenticated ref)
+const isStudent = computed(() => isAuthenticated.value && userRole.value === 'student');
+const isTeacher = computed(() => isAuthenticated.value && userRole.value === 'teacher');
+
+const formatTime = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+};
+
+onMounted(() => {
+  currentTime.value = formatTime();
+  intervalId = setInterval(() => {
+    currentTime.value = formatTime();
+  }, 1000);
+
+  updateAuthState(); // 页面加载时首次更新认证状态
+
+  // 监听 localStorage 变化，以便在其他标签页登出或登录时同步状态
+  window.addEventListener('storage', (event) => {
+    if (event.key === 'userToken' || event.key === 'userRole' || event.key === 'username') {
+      updateAuthState();
+    }
+  });
+});
+
+onUnmounted(() => {
+  if (intervalId) {
+    clearInterval(intervalId);
+  }
+  window.removeEventListener('storage', updateAuthState);
+});
+
+// 新增：监听路由变化，并在变化后更新认证状态
+// 这确保了从登录页跳转到其他页面时，App.vue能感知到localStorage的变化
+watch(
+    () => route.fullPath, // 监听完整路径的变化
+    (newPath, oldPath) => {
+      if (newPath !== oldPath) { // 确保路径确实改变了
+        updateAuthState(); // 重新检查并更新认证状态
+      }
+    }
+);
+
 const toggleDropdown = () => {
-  dropdownVisible.value = !dropdownVisible.value
-}
+  dropdownVisible.value = !dropdownVisible.value;
+};
 
-// 退出登录
 const logout = () => {
-  localStorage.removeItem('user') // 清除登录信息
-  role.value = null
-  username.value = 'user'
-  dropdownVisible.value = false
-  router.push('/login')
-}
-</script>
+  localStorage.removeItem('userToken');
+  localStorage.removeItem('userRole');
+  localStorage.removeItem('username');
+  localStorage.removeItem('userId'); // 如果您之前使用了 'user' 对象，也考虑是否需要清除
 
+  updateAuthState(); // 关键：清除 localStorage后，立即更新响应式状态
+
+  dropdownVisible.value = false;
+  router.replace({ name: 'Login' }); // 使用 replace 跳转
+};
+</script>
 
 <style scoped>
 .layout {
@@ -301,11 +341,11 @@ const logout = () => {
     width: 200px;
     padding: 16px;
   }
-  
+
   .top-bar {
     padding: 0 16px;
   }
-  
+
   .page-container {
     padding: 16px;
   }
