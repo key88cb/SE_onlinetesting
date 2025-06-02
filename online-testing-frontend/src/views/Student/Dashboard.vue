@@ -126,6 +126,7 @@ import axios from 'axios'; // Assuming axios is installed
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
+const url_front = 'http://localhost:8080/';
 
 const currentTab = ref('ongoing'); // Default to ongoing exams
 const notStartedExams = ref([]);
@@ -154,8 +155,8 @@ const fetchExams = async () => {
   isLoading.value = true;
   try {
     const [notStartedRes, ongoingRes] = await Promise.all([
-      axios.get('http://localhost:8080/api/paper-questions/exams', { params: { status: 'notStarted' } }),
-      axios.get('http://localhost:8080/api/paper-questions/exams', { params: { status: 'ongoing' } })
+      axios.get(url_front+'api/paper-questions/exams', { params: { status: 'notStarted' } }),
+      axios.get(url_front+'api/paper-questions/exams', { params: { status: 'ongoing' } })
     ]);
     notStartedExams.value = (notStartedRes.data || []).map(exam => ({...exam, paperName: exam.paperName || '未命名考试'}));
     ongoingExams.value = (ongoingRes.data || []).map(exam => {

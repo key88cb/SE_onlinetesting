@@ -64,7 +64,7 @@ const setUserType = (type) => {
   credentials.value = { id: '', password: '' };
 };
 
-// 3. 修改 login 函数
+
 const login = async () => { // 建议将 login 函数设为 async 以便处理异步API调用
   try {
     // TODO: 在这里添加您实际的异步登录验证逻辑
@@ -81,6 +81,12 @@ const login = async () => { // 建议将 login 函数设为 async 以便处理�
     // 存储认证信息到 localStorage (与导航守卫中的逻辑对应)
     localStorage.setItem('userToken', token);
     localStorage.setItem('userRole', actualUserRole);
+    // console.log(`Logging in as ${userType.value} with ID: ${credentials.value.id} and Password: ${credentials.value.password}`)
+    const userInfo = {
+      role: userType.value,
+      userId: credentials.value.id
+    }
+    localStorage.setItem('user', JSON.stringify(userInfo))
     // 如果有userId, 也一并存储
     // localStorage.setItem('userId', response.data.userId);
 
@@ -109,11 +115,6 @@ const login = async () => { // 建议将 login 函数设为 async 以便处理�
     // alert('登录失败：' + (error.response?.data?.message || error.message || '请检查您的凭据。'));
   }
 };
-
-// watch userType to clear credentials (this part is fine)
-watch(userType, (newType) => {
-  credentials.value = { id: '', password: '' }
-});
 </script>
 <style scoped>
 .login {

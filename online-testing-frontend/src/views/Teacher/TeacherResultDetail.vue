@@ -92,6 +92,7 @@ import { useRoute, useRouter } from 'vue-router';
 
 const route = useRoute();
 const router = useRouter();
+const url_front = 'http://localhost:8080/';
 
 const isLoading = ref(true);
 const showSettingsModal = ref(false); // Toggles visibility of ALL score edit inputs
@@ -146,7 +147,7 @@ onMounted(async () => {
 const fetchPaperQuestions = async (paperId, courseId) => {
   try {
     const params = new URLSearchParams({ courseId: String(courseId), paperId: String(paperId) });
-    const url = `http://localhost:8080/api/paper-questions/query-paper-and-questions?${params}`;
+    const url = url_front+`api/paper-questions/query-paper-and-questions?${params}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`获取试卷信息失败 (${res.status})`);
     const data = await res.json();
@@ -165,7 +166,7 @@ const fetchPaperQuestions = async (paperId, courseId) => {
 const fetchExamResult = async (paperId, courseId, studentId) => {
   try {
     const params = new URLSearchParams({ courseId: String(courseId), paperId: String(paperId), studentId: String(studentId) });
-    const url = `http://localhost:8080/api/exam/search-examResult-for-one?${params}`;
+    const url = url_front+`api/exam/search-examResult-for-one?${params}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`获取学生总分失败 (${res.status})`);
     examresult.value = await res.json();
@@ -179,7 +180,7 @@ const fetchExamResult = async (paperId, courseId, studentId) => {
 const fetchRecords = async (paperId, courseId, studentId) => {
   try {
     const params = new URLSearchParams({ courseId: String(courseId), paperId: String(paperId), studentId: String(studentId) });
-    const url = `http://localhost:8080/api/exam/search-exam-for-one?${params}`;
+    const url = url_front+`api/exam/search-exam-for-one?${params}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`获取学生答题记录失败 (${res.status})`);
     const data = await res.json();
@@ -256,7 +257,7 @@ const saveNewScore = async (recordToSave) => { // Pass the whole record object
 
   console.log("修改分数:", recordToSave.editScore, recordToSave.courseId, recordToSave.paperId, studentId, recordToSave.questionId);
   try {
-    const url = `http://localhost:8080/api/exam/edit-score`;
+    const url = url_front+`api/exam/edit-score`;
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

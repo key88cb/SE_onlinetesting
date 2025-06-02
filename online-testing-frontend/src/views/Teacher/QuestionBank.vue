@@ -198,6 +198,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 // --- 类型映射 ---
+const url_front = 'http://localhost:8080/';
 const QUESTION_TYPES_MAP = {
   SINGLE_CHOICE: { backend: 'Single Choice', frontend: '单选' },
   MULTIPLE_CHOICE: { backend: 'Multiple Choice', frontend: '多选' },
@@ -365,7 +366,7 @@ const convertBackendToFrontendItem = (backendDto) => {
 };
 
 // --- API 调用函数 ---
-const API_BASE_URL = 'http://localhost:8080/api/questions';
+const API_BASE_URL = url_front+'api/questions';
 let fetchQuestionsFromAPI = async (params = {}) => { /* ... */ };
 let createQuestionAPI = async (frontendQuestionData) => { /* ... */ };
 let updateQuestionAPI = async (questionId, frontendQuestionData) => { /* ... */ };

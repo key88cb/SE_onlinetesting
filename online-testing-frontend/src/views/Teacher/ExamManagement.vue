@@ -165,6 +165,7 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 const router = useRouter();
+const url_front = 'http://localhost:8080/';
 
 const paperInfos = ref([]);
 const isLoading = ref(true);
@@ -199,7 +200,7 @@ onMounted(() => {
 const fetchPaperInfos = async () => {
   isLoading.value = true;
   try {
-    const url = 'http://localhost:8080/api/paper-questions/query-all-papers';
+    const url = url_front+'api/paper-questions/query-all-papers';
     const res = await fetch(url, { method: 'GET' });
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({ message: '网络响应错误' }));
@@ -292,7 +293,7 @@ const submitUpdateTime = async () => {
     };
     // console.log("Submitting time update with payload:", payload);
 
-    const res = await fetch('http://localhost:8080/api/paper-questions/update-paper-time', {
+    const res = await fetch(url_front+'api/paper-questions/update-paper-time', {
       method: 'POST', // Or PUT
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -373,7 +374,7 @@ const viewOngoingDetails = (paperInfo) => {
 const deletepaperInfo = async (paperInfo) => {
   if (window.confirm(`您确定要删除考试 “${paperInfo.paperName}” 吗？此操作不可恢复。`)) {
     try {
-      const res = await fetch('http://localhost:8080/api/paper-questions/delete-paper', {
+      const res = await fetch(url_front+'api/paper-questions/delete-paper', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

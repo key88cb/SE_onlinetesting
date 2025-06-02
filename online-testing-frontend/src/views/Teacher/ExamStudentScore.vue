@@ -55,6 +55,7 @@ import { useRoute, useRouter } from 'vue-router';
 
 const route = useRoute();
 const router = useRouter();
+const url_front = 'http://localhost:8080/';
 
 const isedit = ref(false);
 const isLoading = ref(true); // Added loading state
@@ -76,7 +77,7 @@ const fetchexamresults = async (paperId, courseId) => {
       courseId: String(courseId), // Ensure params are strings
       paperId: String(paperId),
     });
-    const url = `http://localhost:8080/api/exam/search-examResult-for-all?${params}`;
+    const url = url_front+`api/exam/search-examResult-for-all?${params}`;
     const res = await fetch(url, {
       method: 'GET',
       headers: {

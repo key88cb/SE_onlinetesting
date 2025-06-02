@@ -206,6 +206,7 @@ const router = useRouter();
 const route = useRoute();
 const originalPaperId = ref(parseInt(route.query.paperId) || null);
 const originalCourseId = ref(parseInt(route.query.courseId) || null);
+const url_front = 'http://localhost:8080/';
 
 const QUESTION_TYPE_MAP_TO_CHINESE = {
   'Single Choice': '单选',
@@ -351,7 +352,7 @@ onMounted(async () => {
     const courseId = route.params.courseId
 
     try {
-      const res = await fetch(`http://localhost:8080/api/paper-questions/query-paper-and-questions?courseId=${courseId}&paperId=${paperId}`)
+      const res = await fetch(url_front+`api/paper-questions/query-paper-and-questions?courseId=${courseId}&paperId=${paperId}`)
       if (!res.ok) throw new Error('加载失败')
 
       const data = await res.json()
@@ -412,8 +413,8 @@ const goToPublish = () => {
 
 const Create_Exam_Paper = async (requestData) => {
   const endpoint = isEditMode.value && route.params.paperId
-      ? `http://localhost:8080/api/paper-questions/edit-paper/${route.params.paperId}`
-      : 'http://localhost:8080/api/paper-questions/manual-create-paper';
+      ? url_front+`api/paper-questions/edit-paper/${route.params.paperId}`
+      : url_front+'api/paper-questions/manual-create-paper';
   const method = isEditMode.value && route.params.paperId ? 'PUT' : 'POST';
 
   if (isEditMode.value && route.params.paperId) {
@@ -424,7 +425,7 @@ const Create_Exam_Paper = async (requestData) => {
     if (isEditMode.value && window.history.state?.paperInfo?.deleteThenCreateMode && method === 'POST') {
       console.warn(" legacy delete-then-create logic for edit mode is being used via POST.");
       const oldPaperInfo = window.history.state.paperInfo;
-      const deleteRes = await fetch('http://localhost:8080/api/paper-questions/delete-paper', {
+      const deleteRes = await fetch(url_front+'api/paper-questions/delete-paper', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ paperId: oldPaperInfo.paperId, courseId: oldPaperInfo.courseId })
@@ -476,7 +477,7 @@ async function deleteExistingPaper(paperId, courseId) {
   console.log('paperId:', paperId);
   console.log('courseId:', courseId);
   try {
-    const res = await fetch('http://localhost:8080/api/paper-questions/delete-paper', {
+    const res = await fetch(url_front+'api/paper-questions/delete-paper', {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json'
@@ -562,7 +563,7 @@ const uniquesubjects = computed(() => {
 
 const fetchQuestions = async () => {
   try {
-    const res = await fetch('http://localhost:8080/api/questions');
+    const res = await fetch(url_front+'api/questions');
     if (!res.ok) throw new Error(`获取题库网络错误 (${res.status})`);
     const data = await res.json();
     questionBank.value = data.map(q => ({

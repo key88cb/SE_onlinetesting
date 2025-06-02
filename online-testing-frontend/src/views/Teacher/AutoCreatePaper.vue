@@ -200,6 +200,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter,useRoute } from 'vue-router';
 
 const router = useRouter();
+const url_front = 'http://localhost:8080/';
 
 const QUESTION_TYPE_MAP_TO_CHINESE = {
   'Single Choice': '单选',
@@ -304,7 +305,7 @@ const totalScore = computed(() => {
 async function fetchAndSelectQuestions(questionTypeBackend, count, tagsArray) {
   if (count <= 0) return [];
   try {
-    const url = new URL('http://localhost:8080/api/questions');
+    const url = new URL(url_front+'api/questions');
     url.searchParams.append('questionType', questionTypeBackend);
     if (tagsArray && tagsArray.length > 0) {
       tagsArray.forEach(tag => url.searchParams.append('tags', tag));
@@ -442,7 +443,7 @@ async function confirmPublish() {
       };
 
       // 发布新试卷
-      const res = await fetch('http://localhost:8080/api/paper-questions/auto-create-paper', {
+      const res = await fetch(url_front+'api/paper-questions/auto-create-paper', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
