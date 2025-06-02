@@ -65,7 +65,6 @@ const userId = computed(() => {
 
 // 用户信息
 const role = ref(null) // 'student' or 'teacher'
-const dropdownVisible = ref(false)
 const dropdownVisible = ref(false);
 const currentTime = ref('');
 let intervalId = null;
