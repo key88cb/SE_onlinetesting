@@ -139,6 +139,7 @@ import { useRoute, useRouter } from 'vue-router';
 
 const route = useRoute();
 const router = useRouter();
+const url_front = 'http://localhost:8080/';
 
 const isLoading = ref(true);
 const paperInfo = ref(null);
@@ -168,7 +169,7 @@ const getCourseNameById = (courseId) => {
 const fetchPaperQuestions = async (paperId, courseId) => {
   try {
     const params = new URLSearchParams({ courseId: String(courseId), paperId: String(paperId) });
-    const url = `http://localhost:8080/api/paper-questions/query-paper-and-questions?${params}`;
+    const url = url_front+`api/paper-questions/query-paper-and-questions?${params}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`获取试卷信息失败 (${res.status})`);
     const data = await res.json();
@@ -187,7 +188,7 @@ const fetchPaperQuestions = async (paperId, courseId) => {
 const fetchResultAnalysis = async (paperId, courseId) => {
   try {
     const params = new URLSearchParams({ courseId: String(courseId), paperId: String(paperId) });
-    const url = `http://localhost:8080/api/exam/search-exam-for-all?${params}`;
+    const url = url_front`api/exam/search-exam-for-all?${params}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`获取题目分析失败 (${res.status})`);
     const data = await res.json();
@@ -204,7 +205,7 @@ const fetchResultAnalysis = async (paperId, courseId) => {
 const fetchExamResultsForChart = async (paperId, courseId) => {
   try {
     const params = new URLSearchParams({ courseId: String(courseId), paperId: String(paperId) });
-    const url = `http://localhost:8080/api/exam/search-examResult-for-all?${params}`;
+    const url = url_front+`api/exam/search-examResult-for-all?${params}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`获取考试结果失败 (${res.status})`);
     allExamResultsForChart.value = await res.json() || [];

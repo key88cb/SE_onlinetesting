@@ -27,7 +27,7 @@
         </div>
         <div class="user-area" @click="toggleDropdown">
           <img src="./assets/default_teacher.png" alt="头像" class="avatar" />
-          <span class="username">{{ username }}</span>
+          <span class="username">{{ userId }}</span>
           <svg class="arrow" viewBox="0 0 1024 1024" width="12" height="12">
             <path d="M512 672L192 352h640z" fill="#333" />
           </svg>
@@ -53,8 +53,13 @@ import { useRoute, useRouter } from 'vue-router'
 const route = useRoute()
 const router = useRouter()
 
+// 用 computed 实时获取 userId
+const userId = computed(() => {
+  const user = JSON.parse(localStorage.getItem('user'))
+  return user ? user.userId : '默认userId'
+})
+
 // 用户信息
-const username = ref('user')
 const role = ref(null) // 'student' or 'teacher'
 const dropdownVisible = ref(false)
 

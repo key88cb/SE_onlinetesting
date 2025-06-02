@@ -75,6 +75,7 @@ import { useRoute, useRouter } from 'vue-router';
 
 const route = useRoute();
 const router = useRouter();
+const url_front = 'http://localhost:8080/';
 
 const isLoading = ref(true);
 const isSubmitting = ref(false);
@@ -144,7 +145,7 @@ const fetchPaperQuestions = async (paperId, courseId) => {
   isLoading.value = true;
   try {
     const params = new URLSearchParams({ courseId: String(courseId), paperId: String(paperId) });
-    const url = `http://localhost:8080/api/paper-questions/query-paper-and-questions?${params}`;
+    const url = url_front+`api/paper-questions/query-paper-and-questions?${params}`;
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`获取试卷失败 (${response.status})`);
@@ -356,7 +357,7 @@ const submitExam = async () => {
 
   console.log("Submitting DTO:", dto);
   try {
-    const res = await fetch('http://localhost:8080/api/exam/submit-exam', {
+    const res = await fetch(url_front+'api/exam/submit-exam', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(dto)

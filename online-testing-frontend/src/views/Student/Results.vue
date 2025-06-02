@@ -75,6 +75,7 @@ import { useRouter } from 'vue-router';
 const router = useRouter();
 const isLoading = ref(false); // Initialize isLoading, set true before fetch, false after
 const studentId=ref(1)
+const url_front = 'http://localhost:8080/';
 // 模拟考试结果数据，实际应从API获取
 const examResults = ref([{
   paperId:1,
@@ -90,7 +91,7 @@ const examResults = ref([{
 const fetchexamsdata = async() => { // Function to populate mock data
   try {
     const params = new URLSearchParams({ studentId:studentId.value });
-    const url = `http://localhost:8080/api/exam/search-examResult-for-one-student?${params}`;
+    const url = url_front+`api/exam/search-examResult-for-one-student?${params}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`获取考试结果失败 (${res.status})`);
     const temp = await res.json() || [];

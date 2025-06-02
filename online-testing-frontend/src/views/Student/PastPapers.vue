@@ -69,6 +69,7 @@ import { useRouter } from 'vue-router';
 
 const router = useRouter();
 const isLoading = ref(false); // Optional for loading state
+const url_front = 'http://localhost:8080/';
 
 const pastPapers = ref([
   { id: 1, title: '2023年操作系统原理期末考试', subject: '操作系统原理', year: 2023, totalQuestions: 20, fullScore: 100 },
@@ -143,7 +144,7 @@ const fetchPaperInfos = async () => {
     // The URL implies fetching all papers, then client-side filtering is applied.
     // If your backend supports filtering for query-all-papers, you could pass filterCourseId and filterCreator here.
     // For now, sticking to client-side filtering after fetching all.
-    const url = `http://localhost:8080/api/paper-questions/query-all-past-papers`; // Removed params for now if they are for client filtering
+    const url = url_front+`api/paper-questions/query-all-past-papers`; // Removed params for now if they are for client filtering
 
     const res = await fetch(url, {
       method: 'GET',

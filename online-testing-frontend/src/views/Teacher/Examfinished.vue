@@ -59,6 +59,7 @@ import { useRouter } from 'vue-router';
 const router = useRouter();
 const isLoading = ref(true); // Added for loading state
 const paperInfos = ref([]);
+const url_front = 'http://localhost:8080/';
 
 // const constId = ref(3); // Hardcoded courseId filter for fetching, consider making dynamic or removing if API fetches all
 // const creator = ref(""); // Creator filter for fetching
@@ -84,8 +85,7 @@ const fetchPaperInfos = async () => {
     // The URL implies fetching all papers, then client-side filtering is applied.
     // If your backend supports filtering for query-all-papers, you could pass filterCourseId and filterCreator here.
     // For now, sticking to client-side filtering after fetching all.
-    const url = `http://localhost:8080/api/paper-questions/query-all-papers`; // Removed params for now if they are for client filtering
-
+    const url = url_front+`api/paper-questions/query-all-papers`; // Removed params for now if they are for client filtering
     const res = await fetch(url, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },

@@ -65,6 +65,12 @@ const setUserType = (type) => {
 
 const login = () => {
   // 这里添加实际的登录验证逻辑
+  // console.log(`Logging in as ${userType.value} with ID: ${credentials.value.id} and Password: ${credentials.value.password}`)
+  const userInfo = {
+    role: userType.value,
+    userId: credentials.value.id
+  }
+  localStorage.setItem('user', JSON.stringify(userInfo))
   if (userType.value === 'student') {
     router.push('/student/dashboard')
   } else {
