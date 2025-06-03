@@ -11,10 +11,12 @@
             <input id="paper-title" type="text" v-model="paper.title" placeholder="请输入试卷名称" class="form-control" />
           </div>
           <div class="form-group">
-            <label for="paper-course">课程ID：</label>
-            <select id="paper-course" v-model="paper.course" class="form-control">
-              <option value="">请选择课程ID</option>
-              <option v-for="courseItem in courses" :key="courseItem" :value="courseItem">{{ courseItem }}</option>
+            <label for="course-name">课程名称：</label>
+            <select id="course-name" v-model="paper.sectionId" required>
+              <option value="-1">请选择课程</option>
+              <option v-for="course in teacherCourses" :key="course.sectionId" :value="course.sectionId">
+                {{ course.year }}{{ course.semester}}{{ course.courseName }}{{ course.dayOfWeek }}{{ course.startTime }}-{{ course.endTime }}
+              </option>
             </select>
           </div>
           <div class="form-group">
@@ -215,6 +217,33 @@ const QUESTION_TYPE_MAP_TO_CHINESE = {
   'unknown': '未知类型',
   'unknown (unresolved)': '未知类型'
 };
+const teacherCourses = ref([]); // 教师所有课程详情
+const teacherId = computed(() => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  return user ? user.userId : 201;
+});
+const finalTeacherId = ref(5211314);
+onMounted(() => {
+  const id = teacherId.value;
+  finalTeacherId.value = id !== 201 ? parseInt(id, 10) : 5211314;
+});
+
+const fetchTeacherCourses = async () => {
+  if (!finalTeacherId) {
+    alert('未找到教师ID，请重新登录');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${url_front}api/teachers/${finalTeacherId.value}/course-details`);
+    if (!res.ok) throw new Error('获取课程失败');
+    const data = await res.json();
+    teacherCourses.value = data;
+  } catch (error) {
+    console.error('获取课程失败:', error);
+    alert('获取课程失败，请检查网络或服务状态');
+  }
+};
 
 const getDisplayQuestionType = (backendType) => {
   if (!backendType) return QUESTION_TYPE_MAP_TO_CHINESE['unknown'];
@@ -224,7 +253,7 @@ const getDisplayQuestionType = (backendType) => {
 
 const paper = ref({
   title: '',
-  course: '',
+  sectionId: null,
   creator: '',
   questions: []
 });
@@ -279,8 +308,6 @@ const clearInputIfDisabled = (typeKey) => {
 
 const showPreviewModal = ref(false);
 const showPublishModal = ref(false);
-
-const courses = ref(['操作系统原理', '数据库基础', '计算机网络', '数据结构与算法', '软件工程导论']);
 
 const getQuestionScore = (question) => {
   const type = question?.questionTypeOriginal || question?.questionType;
@@ -359,7 +386,7 @@ async function generatePaperQuestions() {
 
 async function previewPaper() {
   if (!paper.value.title) { alert('请填写试卷名称'); return; }
-  if (!paper.value.course) { alert('请选择课程ID'); return; }
+  if (!paper.value.sectionId) { alert('请选择课程'); return; }
   if (!paper.value.creator) { alert('请填写创建者'); return; }
   if (config.value.types.length === 0) { alert('请至少选择一种题型'); return; }
   let totalRequestedCount = 0;
@@ -392,6 +419,9 @@ async function generateNewPaper() {
 }
 
 function goToPublish() {
+  console.log("paper.value.questions:", paper.value.questions); // 查看是否为空
+  console.log("confirmedQuestions.value:", confirmedQuestions.value); // 查看是否为空
+  console.log("totalScore.value:", totalScore.value); // 查看总分是否为 0
   if (paper.value.questions.length === 0) {
     alert('试卷中没有题目，无法发布。');
     return;
@@ -429,7 +459,7 @@ async function confirmPublish() {
       // 构建请求体
       console.log(examSettings.value.startTime)
       const payload = {
-        courseId: getCourseIdFromName(paper.value.course),
+        courseId: paper.value.sectionId,
         creator: paper.value.creator,
         openTime: examSettings.value.startTime,
         closeTime: examSettings.value.endTime,
@@ -484,17 +514,6 @@ async function confirmPublish() {
   }
 }
 
-function getCourseIdFromName(courseName) {
-  const courseMap = {
-    '操作系统原理': 1,
-    '数据库基础': 2,
-    '计算机网络': 3,
-    '数据结构与算法': 4,
-    '软件工程导论': 5
-  };
-  return courseMap[courseName] || null;
-}
-
 function buildQuestionTypeConfigs() {
   const types = [];
   const topics = config.value.topics?.trim();
@@ -531,7 +550,8 @@ function cancelPublish() {
   showPublishModal.value = false;
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await fetchTeacherCourses();
   const lastStartTime = localStorage.getItem('autoCreatePaper_lastStartTime');
   const lastEndTime = localStorage.getItem('autoCreatePaper_lastEndTime');
   if (lastStartTime) examSettings.value.startTime = lastStartTime;

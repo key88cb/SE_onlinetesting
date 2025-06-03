@@ -7,14 +7,14 @@
         <label for="filter-course-id">班级ID：</label>
         <select id="filter-course-id" v-model="filterCourseId" class="form-control">
           <option value="">全部班级</option>
-          <option v-for="id in uniqueCourseIds" :key="id" :value="id">{{ id }}</option>
+          <option v-for="id in filteredCourseIds" :key="id" :value="id">{{ id }}</option>
         </select>
       </div>
       <div class="filter-group">
         <label for="filter-creator">创建者：</label>
         <select id="filter-creator" v-model="filterCreator" class="form-control">
           <option value="">全部创建者</option>
-          <option v-for="c in uniqueCreators" :key="c" :value="c">{{ c }}</option>
+          <option v-for="c in filteredCreators" :key="c" :value="c">{{ c }}</option>
         </select>
       </div>
     </div>
@@ -66,8 +66,36 @@ const url_front = 'http://localhost:8080/';
 
 const filterCourseId = ref(''); // For client-side filtering
 const filterCreator = ref(''); // For client-side filtering
+const teacherCourses = ref([]); // 教师所有课程详情
+const teacherId = computed(() => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  return user ? user.userId : 201;
+});
+const finalTeacherId = ref(5211314);
+onMounted(() => {
+  const id = teacherId.value;
+  finalTeacherId.value = id !== 201 ? parseInt(id, 10) : 5211314;
+});
+
+const fetchTeacherCourses = async () => {
+  if (!finalTeacherId) {
+    alert('未找到教师ID，请重新登录');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${url_front}api/teachers/${finalTeacherId.value}/course-details`);
+    if (!res.ok) throw new Error('获取课程失败');
+    const data = await res.json();
+    teacherCourses.value = data;
+  } catch (error) {
+    console.error('获取课程失败:', error);
+    alert('获取课程失败，请检查网络或服务状态');
+  }
+};
 
 onMounted(() => {
+  fetchTeacherCourses();
   fetchPaperInfos();
 });
 
@@ -120,6 +148,21 @@ const uniqueCourseIds = computed(() => {
 const uniqueCreators = computed(() => {
   return [...new Set(paperInfos.value.map(item => item.creator).filter(Boolean))].sort();
 });
+const filteredCourseIds = computed(() => {
+  return [...new Set(
+      filteredEndedpaperInfos.value
+          .filter(paper => teacherCourses.value.some(course => course.sectionId === paper.courseId))
+          .map(paper => paper.courseId)
+  )].sort((a, b) => a - b);
+});
+
+const filteredCreators = computed(() => {
+  return [...new Set(
+      filteredEndedpaperInfos.value
+          .filter(paper => teacherCourses.value.some(course => course.sectionId === paper.courseId))
+          .map(paper => paper.creator)
+  )].sort();
+});
 
 // Filter logic for "ended" papers based on the full list, then apply UI filters
 const endedpaperInfos = computed(() => {
@@ -128,7 +171,9 @@ const endedpaperInfos = computed(() => {
 });
 
 const filteredEndedpaperInfos = computed(() => {
-  return endedpaperInfos.value.filter(paperInfo => {
+  return endedpaperInfos.value
+      .filter(exam => teacherCourses.value.some(course => course.sectionId === exam.courseId))
+      .filter(paperInfo => {
     const courseMatch = !filterCourseId.value || String(paperInfo.courseId) === String(filterCourseId.value);
     const creatorMatch = !filterCreator.value || paperInfo.creator === filterCreator.value;
     return courseMatch && creatorMatch;
