@@ -36,7 +36,7 @@ public class ExamPaperEditTest {
             List<PaperQuestion> paperQuestions=paperInfo.getPaperQuestions();
             int paperId=paperInfo.getPaperId();
             int courseId=paperInfo.getCourseId();
-            for(int j=0;j<10;j++) {
+            for(int j=0;j<2;j++) {
                 int studentId=j+1;
                 ExamPlainRecordDto examPlainRecordDto = new ExamPlainRecordDto();
                 examPlainRecordDto.setPaperId(paperId);

@@ -220,12 +220,12 @@ const QUESTION_TYPE_MAP_TO_CHINESE = {
 const teacherCourses = ref([]); // 教师所有课程详情
 const teacherId = computed(() => {
   const user = JSON.parse(localStorage.getItem('user'));
-  return user ? user.userId : 201;
+  return user ? user.userId : -1;
 });
 const finalTeacherId = ref(5211314);
 onMounted(() => {
   const id = teacherId.value;
-  finalTeacherId.value = id !== 201 ? parseInt(id, 10) : 5211314;
+  finalTeacherId.value = id !== -1 ? parseInt(id, 10) : 5211314;
 });
 
 const fetchTeacherCourses = async () => {

@@ -140,12 +140,12 @@ const studentCourses = ref([]);
 const studentCoursesName = ref([]);
 const studentId = computed(() => {
   const user = JSON.parse(localStorage.getItem('user'));
-  return user ? user.userId : 201;
+  return user ? user.userId : -1;
 });
 const finalStudentId = ref(5211314);
 onMounted(() => {
   const id = studentId.value;
-  finalStudentId.value = id !== 201 ? parseInt(id, 10) : 5211314;
+  finalStudentId.value = id !== -1 ? parseInt(id, 10) : 5211314;
 
   fetchStudentCourses();
 });
