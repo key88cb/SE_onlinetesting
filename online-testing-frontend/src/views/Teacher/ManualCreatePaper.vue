@@ -9,8 +9,13 @@
           <div class="form-group paper-info-group">
             <label for="paper-title">试卷名称：</label>
             <input id="paper-title" type="text" v-model="paper.title" placeholder="请输入试卷名称" />
-            <label for="course-id">课程 ID：</label>
-            <input id="course-id" type="number" v-model="paper.courseId" placeholder="请输入课程ID" />
+            <label for="course-name">课程名称：</label>
+            <select id="course-name" v-model="paper.sectionId" required>
+              <option value="-1">请选择课程</option>
+              <option v-for="course in teacherCourses" :key="course.sectionId" :value="course.sectionId">
+                {{ course.year }}{{ course.semester}}{{ course.courseName }}{{ course.dayOfWeek }}{{ course.startTime }}-{{ course.endTime }}
+              </option>
+            </select>
             <label for="paper-creator">创建者：</label>
             <input id="paper-creator" type="text" v-model="paper.creator" placeholder="请输入出卷人名称" />
           </div>
@@ -206,6 +211,16 @@ const router = useRouter();
 const route = useRoute();
 const originalPaperId = ref(parseInt(route.query.paperId) || null);
 const originalCourseId = ref(parseInt(route.query.courseId) || null);
+const teacherCourses = ref([]); // 教师所有课程详情
+const teacherId = computed(() => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  return user ? user.userId : -1;
+});
+const finalTeacherId = ref(5211314);
+onMounted(() => {
+  const id = teacherId.value;
+  finalTeacherId.value = id !== -1 ? parseInt(id, 10) : 5211314;
+});
 const url_front = 'http://localhost:8080/';
 
 const QUESTION_TYPE_MAP_TO_CHINESE = {
@@ -226,10 +241,26 @@ const getDisplayQuestionType = (backendType) => {
   if (!backendType) return QUESTION_TYPE_MAP_TO_CHINESE['unknown'];
   return QUESTION_TYPE_MAP_TO_CHINESE[backendType] || backendType;
 };
+const fetchTeacherCourses = async () => {
+  if (!finalTeacherId) {
+    alert('未找到教师ID，请重新登录');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${url_front}api/teachers/${finalTeacherId.value}/course-details`);
+    if (!res.ok) throw new Error('获取课程失败');
+    const data = await res.json();
+    teacherCourses.value = data;
+  } catch (error) {
+    console.error('获取课程失败:', error);
+    alert('获取课程失败，请检查网络或服务状态');
+  }
+};
 
 const getInitialPaperData = () => ({
   title: '',
-  courseId: null,
+  sectionId: null,
   creator: '',
   questions: []
 });
@@ -345,7 +376,8 @@ const previewPaper = () => {
 //   }
 // })
 onMounted(async () => {
-  await fetchQuestions()
+  await fetchQuestions();
+  await fetchTeacherCourses();
 
   if (route.query.mode === 'edit' && route.params.paperId && route.params.courseId) {
     const paperId = route.params.paperId
@@ -359,7 +391,7 @@ onMounted(async () => {
 
       // 设置表单数据
       paper.value.title = data.paperName
-      paper.value.courseId = data.courseId
+      paper.value.sectionId = data.courseId
       paper.value.creator = data.creator
 
       // 设置题目列表
@@ -505,8 +537,8 @@ const confirmPublish = async () => {
     alert('请输入试卷名称。');
     return;
   }
-  if (!paper.value.courseId) {
-    alert('请输入课程ID。');
+  if (!paper.value.sectionId) {
+    alert('请选择课程。');
     return;
   }
   if (!paper.value.creator.trim()) {
@@ -539,7 +571,7 @@ const confirmPublish = async () => {
       await deleteExistingPaper(route.params.paperId, route.params.courseId);
     }
     const manualPaperRequest = {
-      courseId: paper.value.courseId,
+      courseId: paper.value.sectionId,
       creator: paper.value.creator,
       openTime:examSettings.value.startTime,
       closeTime: examSettings.value.endTime,

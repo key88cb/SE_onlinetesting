@@ -16,6 +16,7 @@
         <div class="list-header">
           <div class="header-item rank-col">排名</div>
           <div class="header-item user-col">用户ID</div>
+          <div class="header-item name-col">学生姓名</div>
           <div class="header-item score-col">分数</div>
           <div class="header-item time-col">开始时间</div>
           <div class="header-item time-col">结束时间</div>
@@ -29,24 +30,36 @@
           <p>暂无学生成绩数据。</p>
         </div>
         <div v-else>
-          <div v-for="(student) in computedstudents" :key="student.studentId" class="user-row-item">
+          <div v-for="(student) in computedstudents(examresultswithname)" :key="student.studentId" class="user-row-item">
             <div class="data-cell rank-col">{{ student.rank }}</div>
             <div class="data-cell user-col user-info">
               {{ student.studentId }}
             </div>
+            <div class="data-cell name-col">{{ student.studentName }}</div>
             <div class="data-cell score-col">{{ student.score }}</div>
             <div class="data-cell time-col">{{ student.startTime || 'N/A' }}</div>
             <div class="data-cell time-col">{{ student.finishTime || 'N/A' }}</div>
             <div class="data-cell actions-col">
+
+
               <button class="btn edit-action-btn" @click="gotoedit(student.studentId)" title="修改/查看学生成绩详情">
                 <i class="icon-edit"></i> 修改/查看
               </button>
             </div>
           </div>
+          <div v-if="notattended.length > 0" class="no-results">
+            <p>以下学生未参加考试：</p>
+            <div v-for="(student1) in notattended" :key="student1.studentId" :value="student1.studentId"
+              class="user-row-item">
+              <div class="data-cell rank-col">{{ student1.studentId }}</div>
+              <div class="data-cell user-col user-info">{{ student1.studentName }}</div>
+              <div class="data-cell score-col">未参加考试</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
+    </div>
 </template>
 
 <script setup>
@@ -60,16 +73,53 @@ const url_front = 'http://localhost:8080/';
 const isedit = ref(false);
 const isLoading = ref(true); // Added loading state
 const allexamresults = ref([]); // Initialize as empty, will be filled from API
-
+const allstudents = ref([]); // Placeholder for all students, if needed
 onMounted(async () => {
   const paperId = parseInt(route.params.paperId);
   const courseId = parseInt(route.params.courseId);
   if (route.query.mode && route.query.mode === 'edit') {
     isedit.value = true;
   }
+  await fetchAllStudents(courseId); // Fetch all students if needed
   await fetchexamresults(paperId, courseId);
 });
+const fetchAllStudents = async (courseId) => {
+  try {
+    const url = url_front + `api/courses/${courseId}/students`;
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+    });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ message: '网络响应错误' }));
+      throw new Error(errorData.message || `HTTP error ${res.status}`);
+    }
+    const data = await res.json();
+    allstudents.value = Array.isArray(data) ? data : []; // Ensure it's an array
+    console.log("allstudents:", allstudents.value);
+  } catch (error) {
+    // alert('加载学生信息失败，请检查网络或服务状态: ' + error.message);
+    console.error(error);
+    allstudents.value = []; // Set to empty on error
+  }
+}
+const notattended = computed(() => {
+  if (!Array.isArray(allstudents.value)) return [];
+  const students = allstudents.value;
 
+  const temp = students.filter(student => {
+    const studentId = student.studentId;
+    return !allexamresults.value.some(examResult => examResult.studentId === studentId);
+  }).map(student => ({
+    studentId: student.studentId,
+    studentName: student.studentName,
+    department: student.department
+  }));
+  console.log("notattended:", temp);
+  return temp;
+});
 const fetchexamresults = async (paperId, courseId) => {
   isLoading.value = true;
   try {
@@ -77,7 +127,7 @@ const fetchexamresults = async (paperId, courseId) => {
       courseId: String(courseId), // Ensure params are strings
       paperId: String(paperId),
     });
-    const url = url_front+`api/exam/search-examResult-for-all?${params}`;
+    const url = url_front + `api/exam/search-examResult-for-all?${params}`;
     const res = await fetch(url, {
       method: 'GET',
       headers: {
@@ -99,11 +149,24 @@ const fetchexamresults = async (paperId, courseId) => {
     isLoading.value = false;
   }
 };
+const examresultswithname = computed(() => {
+  if (!Array.isArray(allexamresults.value)) return [];
+  const temp2 = allexamresults.value.map(result => {
+    const student = allstudents.value.find(s => s.studentId === result.studentId);
+    return {
+      ...result,
+      studentName: student ? student.studentName : '未知学生',
+    };
+  });
+  console.log("examresultswithname:", temp2);
+  return temp2;
+}
+);
 
-const computedstudents = computed(() => {
-  if (!Array.isArray(allexamresults.value)) return []; // Guard against non-array
-  const sortedResults = [...allexamresults.value].sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
-  return sortedResults.map((result, index) => ({
+const computedstudents = (allexamresults) => {
+  if (!Array.isArray(allexamresults)) return []; // Guard against non-array
+  const sortedResults = [...allexamresults].sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
+  const temp3= sortedResults.map((result, index) => ({
     ...result,
     rank: index + 1,
     score: result.totalScore !== undefined ? result.totalScore : 'N/A',
@@ -112,7 +175,9 @@ const computedstudents = computed(() => {
     startTime: result.startTime ? formatDate(result.startTime) : null,
     finishTime: result.finishTime ? formatDate(result.finishTime) : null,
   }));
-});
+  console.log("computedstudents:", temp3);
+  return temp3;
+};
 
 // 日期格式化 (如果需要显示在列表中的开始/结束时间)
 const formatDate = (dateString) => {
@@ -143,15 +208,36 @@ const gotoedit = (studentId) => {
 };
 
 // Placeholder for uploadScores function
-const uploadScores = () => {
-  alert("“上传成绩”功能待实现。");
+const uploadScores = async() => {
+  try {
+    const studentscoremap=examresult.value.map(item => ({
+      studentId: item.studentId,
+      score: item.totalScore
+    }));
+    const res = await fetch(`/courses/${courseId}/${paperId}/students/exam`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body:JSON.stringify({
+        studentIdscoremap: studentscoremap, // [{studentId: 1, score: 85}, ...]
+      })
+    });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ message: '网络响应错误' }));
+      throw new Error(errorData.message || `HTTP error ${res.status}`);
+    }
+  } catch (error) {
+    // alert('加载学生信息失败，请检查网络或服务状态: ' + error.message);
+    console.error(error);
+  }
 };
-
 </script>
 
 <style scoped>
 /* --- 全局与页面布局 --- */
-.student-scores-page { /* Renamed from .exam-details and .actions */
+.student-scores-page {
+  /* Renamed from .exam-details and .actions */
   padding: 25px 35px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   background-color: #f8f9fa;
@@ -159,7 +245,8 @@ const uploadScores = () => {
   color: #333;
 }
 
-.page-actions-bar { /* Was .actions */
+.page-actions-bar {
+  /* Was .actions */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -167,6 +254,7 @@ const uploadScores = () => {
   padding-bottom: 20px;
   border-bottom: 1px solid #e0e0e0;
 }
+
 .page-actions-bar .btn {
   font-size: 0.95em;
 }
@@ -181,30 +269,78 @@ h1 {
 
 /* --- 按钮通用样式 --- */
 .btn {
-  padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer;
-  font-size: 1em; font-weight: 500; transition: all 0.2s ease-in-out;
-  display: inline-flex; align-items: center; justify-content: center;
-  gap: 8px; text-decoration: none; line-height: 1.5;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1em;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  line-height: 1.5;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
 }
-.btn:hover:not(:disabled) { opacity: 0.85; transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-.btn:active:not(:disabled) { transform: translateY(0); box-shadow: 0 2px 5px rgba(0,0,0,0.08); }
-.btn:disabled { background-color: #adb5bd; color: #6c757d; cursor: not-allowed; box-shadow: none; opacity: 0.7;}
-.btn i[class^="icon-"] { font-size: 1.1em; }
 
-.primary-btn { background-color: #007bff; color: white; }
-.primary-btn:hover:not(:disabled) { background-color: #0069d9; }
-.secondary-outline-btn {
-  background-color: transparent; color: #6c757d; border: 1px solid #6c757d;
+.btn:hover:not(:disabled) {
+  opacity: 0.85;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
-.secondary-outline-btn:hover:not(:disabled) { background-color: #6c757d; color: white; }
-.edit-action-btn { /* For modify button in row */
-  background-color: #ffc107; /* Yellow/Orange for edit */
+
+.btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+}
+
+.btn:disabled {
+  background-color: #adb5bd;
+  color: #6c757d;
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.7;
+}
+
+.btn i[class^="icon-"] {
+  font-size: 1.1em;
+}
+
+.primary-btn {
+  background-color: #007bff;
+  color: white;
+}
+
+.primary-btn:hover:not(:disabled) {
+  background-color: #0069d9;
+}
+
+.secondary-outline-btn {
+  background-color: transparent;
+  color: #6c757d;
+  border: 1px solid #6c757d;
+}
+
+.secondary-outline-btn:hover:not(:disabled) {
+  background-color: #6c757d;
+  color: white;
+}
+
+.edit-action-btn {
+  /* For modify button in row */
+  background-color: #ffc107;
+  /* Yellow/Orange for edit */
   color: #212529;
-  padding: 6px 12px; /* Smaller button in table row */
+  padding: 6px 12px;
+  /* Smaller button in table row */
   font-size: 0.85em;
 }
-.edit-action-btn:hover:not(:disabled) { background-color: #e0a800;}
+
+.edit-action-btn:hover:not(:disabled) {
+  background-color: #e0a800;
+}
 
 
 /* --- 排名列表 --- */
@@ -217,47 +353,94 @@ h1 {
 
 .ranking-list {
   width: 100%;
-  border-collapse: collapse; /* Behaves more like a table */
+  border-collapse: collapse;
+  /* Behaves more like a table */
 }
 
-.list-header, .user-row-item {
+.list-header,
+.user-row-item {
   display: flex;
-  align-items: center; /* Vertically center content in rows/header */
-  padding: 12px 15px; /* Padding for rows/header */
-  border-bottom: 1px solid #e9ecef; /* Separator line */
+  align-items: center;
+  /* Vertically center content in rows/header */
+  padding: 12px 15px;
+  /* Padding for rows/header */
+  border-bottom: 1px solid #e9ecef;
+  /* Separator line */
 }
 
 .list-header {
-  font-weight: 600; /* Bold header text */
+  font-weight: 600;
+  /* Bold header text */
   color: #495057;
-  background-color: #f8f9fa; /* Light background for header */
-  border-top-left-radius: 8px; /* Rounded corners for header */
+  background-color: #f8f9fa;
+  /* Light background for header */
+  border-top-left-radius: 8px;
+  /* Rounded corners for header */
   border-top-right-radius: 8px;
   font-size: 0.95em;
 }
+
 .user-row-item:last-child {
-  border-bottom: none; /* No border for the last item */
+  border-bottom: none;
+  /* No border for the last item */
 }
-.user-row-item:nth-child(even) { /* Zebra striping for rows */
+
+.user-row-item:nth-child(even) {
+  /* Zebra striping for rows */
   background-color: #fdfdff;
 }
+
 .user-row-item:hover {
-  background-color: #f0f8ff; /* Light blue hover for rows */
+  background-color: #f0f8ff;
+  /* Light blue hover for rows */
 }
 
 
 /* Column styling */
-.header-item, .data-cell {
-  padding: 8px 10px; /* Cell padding */
+.header-item,
+.data-cell {
+  padding: 8px 10px;
+  /* Cell padding */
   text-align: left;
-  flex-shrink: 0; /* Prevent shrinking by default */
+  flex-shrink: 0;
+  /* Prevent shrinking by default */
 }
 
-.rank-col { flex-basis: 8%; min-width: 60px; text-align: center;}
-.user-col { flex-basis: 22%; min-width: 120px; }
-.score-col { flex-basis: 15%; min-width: 80px; text-align: center; font-weight: 500;}
-.time-col { flex-basis: 20%; min-width: 150px; font-size: 0.9em; color: #555; }
-.actions-col { flex-basis: 15%; min-width: 100px; text-align: center; }
+.rank-col {
+  flex-basis: 8%;
+  min-width: 60px;
+  text-align: center;
+}
+
+.user-col {
+  flex-basis: 22%;
+  min-width: 120px;
+}
+
+.score-col {
+  flex-basis: 10%;
+  min-width: 80px;
+  text-align: center;
+  font-weight: 500;
+}
+.name-col {
+  flex-basis: 5%;
+  width: 80px;
+
+}
+
+.time-col {
+  flex-basis: 20%;
+  min-width: 150px;
+  font-size: 0.9em;
+  color: #555;
+}
+
+.actions-col {
+  flex-basis: 15%;
+  min-width: 100px;
+  text-align: center;
+}
 
 
 .user-info {
@@ -268,67 +451,147 @@ h1 {
 /* .current-user-badge styling would go here if used */
 
 /* --- 空状态与加载状态 --- */
-.loading-indicator, .no-results {
-  text-align: center; padding: 40px 20px; color: #6c757d;
-  background-color: #f0f3f5; border-radius: 8px;
-  font-size: 1.1em; margin: 20px 0;
+.loading-indicator,
+.no-results {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6c757d;
+  background-color: #f0f3f5;
+  border-radius: 8px;
+  font-size: 1.1em;
+  margin: 20px 0;
   border: 1px dashed #d0d9e0;
 }
-.loading-indicator p, .no-results p { margin: 0; }
+
+.loading-indicator p,
+.no-results p {
+  margin: 0;
+}
 
 
 /* --- 响应式调整 --- */
 @media (max-width: 992px) {
-  .time-col { display: none; } /* Hide time columns on medium screens */
-  .user-col { flex-basis: 30%; }
-  .actions-col { flex-basis: 20%; }
+  .time-col {
+    display: none;
+  }
+
+  /* Hide time columns on medium screens */
+  .user-col {
+    flex-basis: 30%;
+  }
+
+  .actions-col {
+    flex-basis: 20%;
+  }
 }
 
 @media (max-width: 768px) {
-  .student-scores-page { padding: 20px 15px; }
-  .page-actions-bar { flex-direction: column; gap: 10px; align-items: stretch; }
-  .page-actions-bar .btn { width: 100%; }
-  h1 { font-size: 1.8em; }
-  .ranking-list-container { padding: 15px; }
+  .student-scores-page {
+    padding: 20px 15px;
+  }
 
-  .list-header { display: none; } /* Hide header on small screens, rows become cards */
+  .page-actions-bar {
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .page-actions-bar .btn {
+    width: 100%;
+  }
+
+  h1 {
+    font-size: 1.8em;
+  }
+
+  .ranking-list-container {
+    padding: 15px;
+  }
+
+  .list-header {
+    display: none;
+  }
+
+  /* Hide header on small screens, rows become cards */
   .user-row-item {
     flex-direction: column;
-    align-items: flex-start; /* Align items to start in column */
+    align-items: flex-start;
+    /* Align items to start in column */
     padding: 15px;
     margin-bottom: 10px;
     border: 1px solid #e0e0e0;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   }
+
   .data-cell {
     padding: 5px 0;
     width: 100%;
-    text-align: left !important; /* Override centered text for some columns */
-    display: flex; /* For label-value pairs */
-    flex-basis: auto !important; /* Reset flex basis */
-    min-width: unset !important; /* Reset min width */
+    text-align: left !important;
+    /* Override centered text for some columns */
+    display: flex;
+    /* For label-value pairs */
+    flex-basis: auto !important;
+    /* Reset flex basis */
+    min-width: unset !important;
+    /* Reset min width */
   }
-  .data-cell::before { /* Add labels for data cells */
+
+  .data-cell::before {
+    /* Add labels for data cells */
     content: attr(data-label);
     font-weight: 600;
-    width: 90px; /* Fixed width for labels */
+    width: 90px;
+    /* Fixed width for labels */
     flex-shrink: 0;
     margin-right: 10px;
     color: #495057;
   }
-  .rank-col::before { content: "排名："; }
-  .user-col::before { content: "用户ID："; }
-  .score-col::before { content: "分数："; }
+
+  .rank-col::before {
+    content: "排名：";
+  }
+
+  .user-col::before {
+    content: "用户ID：";
+  }
+
+  .score-col::before {
+    content: "分数：";
+  }
+
   /* Time columns are hidden, but if shown, would need labels too */
   /* .time-col::before { content: "时间："; } */
-  .actions-col { padding-top: 10px; border-top: 1px solid #eee; margin-top:10px; }
-  .actions-col::before { display: none; } /* No label for actions column */
-  .actions-col .btn { width: 100%; }
+  .actions-col {
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+    margin-top: 10px;
+  }
+
+  .actions-col::before {
+    display: none;
+  }
+
+  /* No label for actions column */
+  .actions-col .btn {
+    width: 100%;
+  }
 }
 
 /* Placeholder Icons */
-.icon-back-arrow::before { content: "←"; margin-right: 6px; font-weight: bold; }
-.icon-upload::before { content: "↑"; margin-right: 6px;}
-.icon-edit::before { content: "✏️"; margin-right: 6px;}
+.icon-back-arrow::before {
+  content: "←";
+  margin-right: 6px;
+  font-weight: bold;
+}
+
+.icon-upload::before {
+  content: "↑";
+  margin-right: 6px;
+}
+
+.icon-edit::before {
+  content: "✏️";
+  margin-right: 6px;
+}
 </style>
