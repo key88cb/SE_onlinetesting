@@ -1,15 +1,14 @@
 package com.example.onlinetestingbackend.controller;
 
-import com.example.onlinetestingbackend.dto.OqCourseForStudentDTO;
-import com.example.onlinetestingbackend.dto.OqCourseForTeacherDTO;
-import com.example.onlinetestingbackend.dto.OqStudentDTO;
-import com.example.onlinetestingbackend.dto.OqTeacherCourseInfoDTO;
+import com.example.onlinetestingbackend.dto.*;
 import com.example.onlinetestingbackend.entity.Course;
+import com.example.onlinetestingbackend.service.GradeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.example.onlinetestingbackend.service.OnlineQuizService;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -22,6 +21,8 @@ public class OnlineQuizController {
     @Autowired
     public OnlineQuizController(OnlineQuizService service) {this.service = service;}
 
+    @Autowired
+    public GradeService gradeService;
     // 查询老师教授课程
     @GetMapping("/teachers/{teacherId}/courses")
     public ResponseEntity<List<OqCourseForTeacherDTO>> getCoursesByTeacher(@PathVariable Integer teacherId) {
@@ -45,30 +46,52 @@ public class OnlineQuizController {
         return ResponseEntity.ok(courses);
     }
 
-    // 设置考试成绩占比
-    @PostMapping("/courses/{courseId}/exam/proportion")
-    public ResponseEntity<Void> setExamProportion(
-            @PathVariable Integer courseId,
-            @RequestBody Map<String, Double> requestBody) {
-        Double proportion = requestBody.get("proportion");
-        if (proportion == null || proportion < 0 || proportion > 1) {
-            return ResponseEntity.badRequest().build();
-        }
-        service.setExamProportion(courseId, proportion);
-        return ResponseEntity.ok().build();
-    }
+//    // 设置考试成绩占比
+//    @PostMapping("/courses/{courseId}/exam/proportion")
+//    public ResponseEntity<Void> setExamProportion(
+//            @PathVariable Integer courseId,
+//            @RequestBody Map<String, Double> requestBody) {
+//        Double proportion = requestBody.get("proportion");
+//        if (proportion == null || proportion < 0 || proportion > 1) {
+//            return ResponseEntity.badRequest().build();
+//        }
+//        service.setExamProportion(courseId, proportion);
+//        return ResponseEntity.ok().build();
+//    }
+//
+//    // 设置考试成绩
+//    @PostMapping("/courses/{courseId}/students/{studentId}/exam")
+//    public ResponseEntity<Void> setExamScore(
+//            @PathVariable Integer courseId,
+//            @PathVariable Integer studentId,
+//            @RequestBody Map<String, Integer> requestBody) {
+//        Integer score = requestBody.get("score");
+//        if (score == null || score < 0 || score > 100) {
+//            return ResponseEntity.badRequest().build();
+//        }
+//        service.setExamScore(courseId, studentId, score);
+//        return ResponseEntity.ok().build();
+//    }
 
     // 设置考试成绩
-    @PostMapping("/courses/{courseId}/students/{studentId}/exam")
+    @PostMapping("/courses/section/{sectionId}/paper/{paperId}/students/exam")
     public ResponseEntity<Void> setExamScore(
-            @PathVariable Integer courseId,
-            @PathVariable Integer studentId,
-            @RequestBody Map<String, Integer> requestBody) {
-        Integer score = requestBody.get("score");
-        if (score == null || score < 0 || score > 100) {
-            return ResponseEntity.badRequest().build();
+            @PathVariable Integer sectionId,
+            @PathVariable Integer paperId,
+            @RequestBody List<SendGradeDTO> requestBody) {
+        List<OutGradeDTO> outGradeDTOs = new ArrayList<>();
+        for (SendGradeDTO gradeDTO : requestBody) {
+            OutGradeDTO outGradeDTO = new OutGradeDTO();
+            outGradeDTO.setType("test");
+            outGradeDTO.setSecId(sectionId);
+            outGradeDTO.setId(paperId);
+            outGradeDTO.setStudentId(gradeDTO.getStudentId());
+            outGradeDTO.setGrade(gradeDTO.getScore());
+            outGradeDTO.setName(gradeDTO.getName());
+            outGradeDTO.setProportion(gradeDTO.getProportion());
+            outGradeDTOs.add(outGradeDTO);
         }
-        service.setExamScore(courseId, studentId, score);
+        gradeService.addGrade(outGradeDTOs);
         return ResponseEntity.ok().build();
     }
 
