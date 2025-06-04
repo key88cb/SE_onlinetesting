@@ -74,15 +74,34 @@ const isedit = ref(false);
 const isLoading = ref(true); // Added loading state
 const allexamresults = ref([]); // Initialize as empty, will be filled from API
 const allstudents = ref([]); // Placeholder for all students, if needed
+const paperName = ref(''); // Placeholder for paper name, if needed
+const paperId=ref(null);
+const courseId=ref(null);
 onMounted(async () => {
-  const paperId = parseInt(route.params.paperId);
-  const courseId = parseInt(route.params.courseId);
+  paperId.value = parseInt(route.params.paperId);
+  courseId.value = parseInt(route.params.courseId);
+   // Get paper name from route params
   if (route.query.mode && route.query.mode === 'edit') {
     isedit.value = true;
+    paperName.value = route.params.paperName || '';
   }
-  await fetchAllStudents(courseId); // Fetch all students if needed
-  await fetchexamresults(paperId, courseId);
+  await fetchAllStudents(courseId.value); // Fetch all students if needed
+  await fetchexamresults(paperId.value, courseId.value);
+  await fetchPaperName(paperId.value,courseId.value); // Fetch paper name if needed
 });
+const fetchPaperName= async (paperId, courseId) => {
+  try {
+    const params = new URLSearchParams({ courseId: String(courseId), paperId: String(paperId) });
+    const url = url_front+`api/paper-questions/query-paper-and-questions?${params}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`获取试卷信息失败 (${res.status})`);
+    const data = await res.json();
+    paperName.value = data.paperName || '未知试卷';
+  } catch (error) {
+    console.error('fetchPaperQuestions error:', error);
+    paperInfo.value = { paperName: '加载失败', paperQuestions: [] };
+  }
+};
 const fetchAllStudents = async (courseId) => {
   try {
     const url = url_front + `api/courses/${courseId}/students`;
@@ -207,21 +226,32 @@ const gotoedit = (studentId) => {
   }
 };
 
-// Placeholder for uploadScores function
+//Placeholder for uploadScores function
 const uploadScores = async() => {
   try {
-    const studentscoremap=examresult.value.map(item => ({
+    const proportionInput = prompt("请输入该考试成绩的占比（例如0.3）：");
+    const proportion = parseFloat(proportionInput);
+
+    if ( proportion < 0 || proportion > 1) {
+      alert("请输入有效的比例值（0~1之间）");
+      return;
+    }
+
+    const studentscoremap=examresultswithname.value.map(item => ({
       studentId: item.studentId,
-      score: item.totalScore
+      score: item.totalScore,
+      proportion: proportion,
+      name:paperName.value // Assuming paperName is defined in the scope
     }));
-    const res = await fetch(`/courses/${courseId}/${paperId}/students/exam`, {
+    // 正确方式：直接发送数组
+    const res = await fetch(`${url_front}api/courses/section/${courseId.value}/paper/${paperId.value}/students/exam`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body:JSON.stringify({
-        studentIdscoremap: studentscoremap, // [{studentId: 1, score: 85}, ...]
-      })
+      body:JSON.stringify(
+         studentscoremap // [{studentId: 1, score: 85}, ...]
+      )
     });
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({ message: '网络响应错误' }));
@@ -232,6 +262,37 @@ const uploadScores = async() => {
     console.error(error);
   }
 };
+
+// async function uploadScores(sectionId, paperId, studentData) {
+//   const proportionInput = prompt("请输入该考试成绩的占比（例如0.3）：");
+//   const proportion = parseFloat(proportionInput);
+//
+//   if (isNaN(proportion) || proportion < 0 || proportion > 1) {
+//     alert("请输入有效的比例值（0~1之间）");
+//     return;
+//   }
+//
+//   const requestBody = studentData.map(student => ({
+//     studentId: student.studentId,
+//     score: student.score,
+//     name: student.name,//卷名
+//     proportion: proportion
+//   }));
+//
+//   const res = await fetch(`/api/courses/section/${sectionId}/paper/${paperId}/students/exam`, {
+//     method: 'POST',
+//     headers: {
+//       'Content-Type': 'application/json'
+//     },
+//     body: JSON.stringify(requestBody)
+//   });
+//
+//   if (res.ok) {
+//     alert("成绩上传成功！");
+//   } else {
+//     alert("成绩上传失败，请重试。");
+//   }
+// }
 </script>
 
 <style scoped>
