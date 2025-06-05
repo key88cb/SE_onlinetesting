@@ -10,8 +10,8 @@
             <label for="paper-title">试卷名称：</label>
             <input id="paper-title" type="text" v-model="paper.title" placeholder="请输入试卷名称" />
             <label for="course-name">课程名称：</label>
-            <select id="course-name" v-model="paper.sectionId" required>
-              <option value="-1">请选择课程</option>
+            <select id="course-name" v-model="paper.sectionId" required >
+              <option value=null disabled selected hidden>请选择课程</option>
               <option v-for="course in teacherCourses" :key="course.sectionId" :value="course.sectionId">
                 {{ course.year }}{{ course.semester}}{{ course.courseName }}{{ course.dayOfWeek }}{{ course.startTime }}-{{ course.endTime }}
               </option>

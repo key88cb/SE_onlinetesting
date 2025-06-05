@@ -16,7 +16,12 @@ public class ExamResultController {
     private ExamQuestionService examQuestionService;
     @PostMapping("/submit-exam")
     public ResponseEntity<String> submitExam(@RequestBody ExamPlainRecordDto examResult) {
-        examQuestionService.judgeResult(examResult);
+        try {
+            examQuestionService.submitExamManually(examResult);
+        }
+        catch (Exception e) {
+            return ResponseEntity.status(500).body("提交失败: " + e.getMessage());
+        }
         return ResponseEntity.ok("Exam Submitted");
     }
     @GetMapping("/search-exam-for-all")

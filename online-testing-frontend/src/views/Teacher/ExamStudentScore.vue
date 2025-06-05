@@ -53,7 +53,7 @@
               class="user-row-item">
               <div class="data-cell rank-col">{{ student1.studentId }}</div>
               <div class="data-cell user-col user-info">{{ student1.studentName }}</div>
-              <div class="data-cell score-col">未参加考试</div>
+              <div class="data-cell score-col"></div>
             </div>
           </div>
         </div>
@@ -229,7 +229,7 @@ const gotoedit = (studentId) => {
 //Placeholder for uploadScores function
 const uploadScores = async() => {
   try {
-    const proportionInput = prompt("请输入该考试成绩的占比（例如0.3）：");
+    const proportionInput = prompt("请输入该考试成绩的占比（小数，0-1之间）：");
     const proportion = parseFloat(proportionInput);
 
     if ( proportion < 0 || proportion > 1) {
@@ -460,6 +460,8 @@ h1 {
 /* Column styling */
 .header-item,
 .data-cell {
+  display: flex;
+  flex-direction: row;
   padding: 8px 10px;
   /* Cell padding */
   text-align: left;
@@ -475,7 +477,8 @@ h1 {
 
 .user-col {
   flex-basis: 22%;
-  min-width: 120px;
+  min-width: 60px;
+  max-width: 120px;
 }
 
 .score-col {
@@ -487,6 +490,7 @@ h1 {
 .name-col {
   flex-basis: 5%;
   width: 80px;
+  min-width: 120px;
 
 }
 
@@ -516,12 +520,12 @@ h1 {
 .no-results {
   text-align: center;
   padding: 40px 20px;
-  color: #6c757d;
-  background-color: #f0f3f5;
-  border-radius: 8px;
-  font-size: 1.1em;
+  color: rgba(248, 0, 0, 0.68);
+  background-color: rgba(131, 234, 234, 0.27);
+  border-radius: 16px;
+  font-size: 1em;
   margin: 20px 0;
-  border: 1px dashed #d0d9e0;
+  border: 2px dashed #d0d9e0;
 }
 
 .loading-indicator p,
@@ -575,7 +579,8 @@ h1 {
 
   /* Hide header on small screens, rows become cards */
   .user-row-item {
-    flex-direction: column;
+    display: flex;
+    flex-direction: row;
     align-items: flex-start;
     /* Align items to start in column */
     padding: 15px;

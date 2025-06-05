@@ -22,8 +22,39 @@ public class TemporarySubmission {
     @Column(name = "student_id")
     private Integer studentId;
 
-    @Column(name = "submission_time")
-    private LocalDateTime submissionTime;
+    @Column(name = "start_time")
+    private LocalDateTime startTime;
+
+    @Column(name = "finish_time")
+    private LocalDateTime finishTime;
+
+    public LocalDateTime getFinishTime() {
+        return finishTime;
+    }
+
+    public void setFinishTime(LocalDateTime finishTime) {
+        this.finishTime = finishTime;
+    }
+
+    public LocalDateTime getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(LocalDateTime startTime) {
+        this.startTime = startTime;
+    }
+
+    public void setStudentId(Integer studentId) {
+        this.studentId = studentId;
+    }
+
+    public void setCourseId(Integer courseId) {
+        this.courseId = courseId;
+    }
+
+    public void setPaperId(Integer paperId) {
+        this.paperId = paperId;
+    }
 
     // JSON or BLOB 字段存储答案列表
     @Column(name = "answers", columnDefinition = "TEXT")
@@ -38,8 +69,6 @@ public class TemporarySubmission {
     public int getStudentId() { return studentId; }
     public void setStudentId(int studentId) { this.studentId = studentId; }
 
-    public LocalDateTime getSubmissionTime() { return submissionTime; }
-    public void setSubmissionTime(LocalDateTime submissionTime) { this.submissionTime = submissionTime; }
 
     public String getAnswersJson() { return answersJson; }
     public void setAnswersJson(String answersJson) { this.answersJson = answersJson; }
