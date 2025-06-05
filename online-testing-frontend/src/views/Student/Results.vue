@@ -75,7 +75,7 @@ import axios from "axios";
 
 const router = useRouter();
 const isLoading = ref(false); // Initialize isLoading, set true before fetch, false after
-const url_front = 'http://localhost:8080/';
+const url_front = 'http://localhost:8082/';
 const studentCourses = ref([]);
 const studentCoursesName = ref([]);
 const studentId = computed(() => {

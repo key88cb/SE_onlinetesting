@@ -318,9 +318,10 @@ public class ExamQuestionService {
         return examresultDtos;
     }
 
-    @Scheduled(cron = "0 0/1 * * * ?")
+    @Scheduled(cron = "0/30 * * * * ?")
     @Transactional
     public void autoSubmitExams() {
+        System.out.println("自动提交考试开始");
         List<PaperInfo> papers = paperInfoRepository.findAll();
         LocalDateTime now = LocalDateTime.now();
 
