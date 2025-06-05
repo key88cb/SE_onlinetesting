@@ -236,6 +236,10 @@ const fetchPaperQuestions = async (paperId, courseId) => {
     isLoading.value = false;
   }
 };
+const studentId = computed(() => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  return user ? user.userId : -1;
+});
 
 onMounted(async () => {
   const paperId = parseInt(route.params.paperId);
@@ -370,7 +374,6 @@ const submitExam = async () => {
   isSubmitting.value = true;
   clearInterval(timer);
 
-  const studentId = 123; // TODO: 替换为实际学生ID
 
   if (!paperInfo.value || !paperInfo.value.paperId || !paperInfo.value.courseId) {
     alert("试卷信息不完整，无法提交。");
@@ -397,7 +400,7 @@ const submitExam = async () => {
   const dto = {
     paperId: paperInfo.value.paperId,
     courseId: paperInfo.value.courseId,
-    studentId: studentId,
+    studentId: studentId.value,
     answers: answersPayload,
     startTime:startTime.value,
     finishTime:getCurrentTime()

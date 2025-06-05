@@ -13,7 +13,7 @@
           <div class="form-group">
             <label for="course-name">课程名称：</label>
             <select id="course-name" v-model="paper.sectionId" required>
-              <option value="-1">请选择课程</option>
+              <option value=null disabled selected hidden>请选择课程</option>
               <option v-for="course in teacherCourses" :key="course.sectionId" :value="course.sectionId">
                 {{ course.year }}{{ course.semester}}{{ course.courseName }}{{ course.dayOfWeek }}{{ course.startTime }}-{{ course.endTime }}
               </option>
