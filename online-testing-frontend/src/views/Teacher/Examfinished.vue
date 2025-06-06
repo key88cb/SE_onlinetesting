@@ -59,7 +59,7 @@ import { useRouter } from 'vue-router';
 const router = useRouter();
 const isLoading = ref(true); // Added for loading state
 const paperInfos = ref([]);
-const url_front = 'http://localhost:8080/';
+const url_front = 'http://localhost:8082/';
 
 // const constId = ref(3); // Hardcoded courseId filter for fetching, consider making dynamic or removing if API fetches all
 // const creator = ref(""); // Creator filter for fetching
@@ -84,7 +84,7 @@ const fetchTeacherCourses = async () => {
   }
 
   try {
-    const res = await fetch(`${url_front}api/teachers/${finalTeacherId.value}/course-details`);
+    const res = await fetch(`http://localhost:8080/api/teachers/${finalTeacherId.value}/course-details`);
     if (!res.ok) throw new Error('获取课程失败');
     const data = await res.json();
     teacherCourses.value = data;

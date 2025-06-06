@@ -68,7 +68,7 @@ import { useRoute, useRouter } from 'vue-router';
 
 const route = useRoute();
 const router = useRouter();
-const url_front = 'http://localhost:8080/';
+const url_front = 'http://localhost:8082/';
 
 const isedit = ref(false);
 const isLoading = ref(true); // Added loading state
@@ -104,7 +104,7 @@ const fetchPaperName= async (paperId, courseId) => {
 };
 const fetchAllStudents = async (courseId) => {
   try {
-    const url = url_front + `api/courses/${courseId}/students`;
+    const url = "http://localhost:8080/" + `api/courses/${courseId}/students`;
     const res = await fetch(url, {
       method: 'GET',
       headers: {
@@ -244,7 +244,7 @@ const uploadScores = async() => {
       name:paperName.value // Assuming paperName is defined in the scope
     }));
     // 正确方式：直接发送数组
-    const res = await fetch(`${url_front}api/courses/section/${courseId.value}/paper/${paperId.value}/students/exam`, {
+    const res = await fetch(`http://localhost:8080/api/courses/section/${courseId.value}/paper/${paperId.value}/students/exam`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
