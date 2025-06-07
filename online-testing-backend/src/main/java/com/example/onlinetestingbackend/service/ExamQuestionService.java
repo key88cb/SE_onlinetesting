@@ -216,6 +216,14 @@ public class ExamQuestionService {
         }
         Map<Integer, AnalyseData> questionMap = statsMap.get(courseId);
         List<AnalyseDto> analyseResult = new ArrayList<>();
+        if(questionMap == null || questionMap.isEmpty())
+        {
+            RecordsDto emptyResult = new RecordsDto();
+            emptyResult.setCourseId(courseId);
+            emptyResult.setPaperId(paperId);
+            emptyResult.setAnalyses(Collections.emptyList()); // 设置空列表
+            return emptyResult;
+        }
         for (Integer questionId : questionMap.keySet()) {
             AnalyseData data = questionMap.get(questionId);
 
@@ -318,9 +326,10 @@ public class ExamQuestionService {
         return examresultDtos;
     }
 
-    @Scheduled(cron = "0 0/1 * * * ?")
+    @Scheduled(cron = "0/30 * * * * ?")
     @Transactional
     public void autoSubmitExams() {
+        System.out.println("自动提交考试开始");
         List<PaperInfo> papers = paperInfoRepository.findAll();
         LocalDateTime now = LocalDateTime.now();
 

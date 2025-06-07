@@ -90,7 +90,7 @@ const isLoading = ref(true);
 const paperInfo = ref(null);
 const examresult = ref(null);
 const records = ref(null); // Will store { studentId, ..., detailedResults: [] }
-const url_front = 'http://localhost:8080/';
+const url_front = 'http://localhost:8082/';
 
 // const isedit = ref(route.query.mode === 'edit'); // From your original code if needed for "上传成绩"
 

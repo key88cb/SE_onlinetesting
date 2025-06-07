@@ -70,7 +70,7 @@ import axios from "axios";
 
 const router = useRouter();
 const isLoading = ref(false); // Optional for loading state
-const url_front = 'http://localhost:8080/';
+const url_front = 'http://localhost:8082/';
 
 const pastPapers = ref([
   { id: 1, title: '2023年操作系统原理期末考试', subject: '操作系统原理', year: 2023, totalQuestions: 20, fullScore: 100 },

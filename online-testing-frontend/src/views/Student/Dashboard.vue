@@ -126,7 +126,7 @@ import axios from 'axios'; // Assuming axios is installed
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
-const url_front = 'http://localhost:8080/';
+const url_front = 'http://localhost:8082/';
 
 const currentTab = ref('ongoing'); // Default to ongoing exams
 const notStartedExams = ref([]);
@@ -170,7 +170,7 @@ const fetchStudentCourses = async () => {
     const response = await axios.get(`http://localhost:8080/api/students/${finalStudentId.value}/courses`);
 
     const courseList = response.data || [];
-
+    console.log('学生选课列表:', courseList);
     // 提取学生选课的 sectionId(sec_id)
     const secIds = courseList.map(course => course.sectionId);
 

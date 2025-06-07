@@ -221,7 +221,7 @@ onMounted(() => {
   const id = teacherId.value;
   finalTeacherId.value = id !== -1 ? parseInt(id, 10) : 5211314;
 });
-const url_front = 'http://localhost:8080/';
+const url_front = 'http://localhost:8082/';
 
 const QUESTION_TYPE_MAP_TO_CHINESE = {
   'Single Choice': '单选',
@@ -248,7 +248,7 @@ const fetchTeacherCourses = async () => {
   }
 
   try {
-    const res = await fetch(`${url_front}api/teachers/${finalTeacherId.value}/course-details`);
+    const res = await fetch(`http://localhost:8080/api/teachers/${finalTeacherId.value}/course-details`);
     if (!res.ok) throw new Error('获取课程失败');
     const data = await res.json();
     teacherCourses.value = data;
