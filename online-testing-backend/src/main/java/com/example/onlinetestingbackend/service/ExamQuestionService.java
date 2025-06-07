@@ -390,6 +390,7 @@ public class ExamQuestionService {
             PaperInfo paperInfo = paperInfoRepository.findByCourseIdAndPaperId(examResult.getCourseId(), examResult.getPaperId());
             ExamwithNameDto examwithNameDto = new ExamwithNameDto();
             examwithNameDto.setStudentId(studentId);
+            examwithNameDto.setPaperName(paperInfo.getPaperName());
             examwithNameDto.setPaperId(paperInfo.getPaperId());
             examwithNameDto.setCourseId(examResult.getCourseId());
             examwithNameDto.setTotalScore(examResult.getTotalScore());
