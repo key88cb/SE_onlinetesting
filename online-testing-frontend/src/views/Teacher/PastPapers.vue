@@ -42,11 +42,11 @@
           :aria-label="`查看试卷详情: ${paper.title}`"
       >
         <div class="card-header">
-          <h3 class="paper-title">{{ paper.title }}</h3>
+          <h3 class="paper-title">{{ paper.paperName }}</h3>
           <span class="paper-year-badge">{{ paper.year }}</span>
         </div>
         <div class="paper-info">
-          <p><span class="info-label">科目：</span>hbgg抱歉没有这一项呢</p>
+          <p><span class="info-label">科目：</span>{{getCourseNameById(paper.courseId)}}</p>
           <p><span class="info-label">总题数：</span>{{ paper.multipleChoiceNum+paper.singleChoiceNum+paper.trueFalseNum }} 题</p>
           <p><span class="info-label">总分：</span>{{ paper.totalScores }} 分</p>
         </div>
@@ -66,6 +66,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'; // Added onMounted if loading state is used
 import { useRouter } from 'vue-router';
+import axios from "axios";
 
 const router = useRouter();
 const isLoading = ref(false); // Optional for loading state
@@ -79,6 +80,40 @@ const pastPapers = ref([
   { id: 5, title: '2024年计算机网络模拟测试A卷', subject: '计算机网络', year: 2024, totalQuestions: 30, fullScore: 100 },
   { id: 6, title: '2024年数据结构期末考试', subject: '数据结构与算法', year: 2024, totalQuestions: 22, fullScore: 100 },
 ]);
+
+const studentCourses = ref([]);
+const studentCoursesName = ref([]);
+const getCourseNameById = (secId) => {
+  return secIdToCourseNameMap.value[secId] || `未知课程(${secId})`;
+};
+
+const secIdToCourseNameMap = ref({});
+const fetchStudentCourses = async () => {
+  try {
+    const response = await axios.get(`http://localhost:8080/api/students/-1/courses`);
+
+    const courseList = response.data || [];
+
+    // 提取学生选课的 sectionId(sec_id)
+    const secIds = courseList.map(course => course.sectionId);
+
+    // 构建映射关系：sectionId -> courseName
+    const secIdToCourseName = {};
+    courseList.forEach(course => {
+      secIdToCourseName[course.sectionId] = course.courseName;
+    });
+
+    // 更新响应式数据
+    studentCourses.value = secIds;
+    secIdToCourseNameMap.value = secIdToCourseName;
+
+    console.log('学生课程列表:', secIds);
+    console.log('课程名映射:', secIdToCourseName);
+  } catch (error) {
+    console.error('获取学生课程失败:', error);
+    alert('无法加载您的课程信息，请重试');
+  }
+};
 
 const searchQuery = ref('');
 const selectedSubject = ref('');
@@ -127,6 +162,7 @@ const viewPaperDetails = (paper) => {
 // Optional: Simulate API call for initial data
 onMounted(() => {
   fetchPaperInfos();
+  fetchStudentCourses();
 });
 
 const fetchPaperInfos = async () => {
