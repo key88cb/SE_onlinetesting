@@ -216,6 +216,14 @@ public class ExamQuestionService {
         }
         Map<Integer, AnalyseData> questionMap = statsMap.get(courseId);
         List<AnalyseDto> analyseResult = new ArrayList<>();
+        if(questionMap == null || questionMap.isEmpty())
+        {
+            RecordsDto emptyResult = new RecordsDto();
+            emptyResult.setCourseId(courseId);
+            emptyResult.setPaperId(paperId);
+            emptyResult.setAnalyses(Collections.emptyList()); // 设置空列表
+            return emptyResult;
+        }
         for (Integer questionId : questionMap.keySet()) {
             AnalyseData data = questionMap.get(questionId);
 

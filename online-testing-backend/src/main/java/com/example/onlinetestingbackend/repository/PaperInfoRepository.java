@@ -35,4 +35,6 @@ public interface PaperInfoRepository extends JpaRepository<PaperInfo, PaperInfoI
 
     // 查询已结束的考试（closeTime 早于当前时间）
     List<PaperInfo> findByCloseTimeBefore(java.time.LocalDateTime now);
+
+    boolean existsByPaperId(Integer paperId);
 }
