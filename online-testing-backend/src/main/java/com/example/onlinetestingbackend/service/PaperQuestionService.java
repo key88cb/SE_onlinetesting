@@ -282,7 +282,10 @@ public class PaperQuestionService {
      */
     private Integer generateUniquePaperId() {
         Integer paperId;
-        paperId = 100000 + ThreadLocalRandom.current().nextInt(900000);
+        do {
+            paperId = 100000 + ThreadLocalRandom.current().nextInt(999999);
+        } while (paperInfoRepository.existsByPaperId(paperId)); // 自旋直到找到唯一的 ID
+
         return paperId;
     }
 

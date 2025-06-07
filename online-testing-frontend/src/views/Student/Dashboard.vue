@@ -172,7 +172,7 @@ const fetchStudentCourses = async () => {
     const courseList = response.data || [];
     console.log('学生选课列表:', courseList);
     // 提取学生选课的 sectionId(sec_id)
-    const secIds = courseList.map(course => course.courseId);
+    const secIds = courseList.map(course => course.sectionId);
 
     // 构建映射关系：sectionId -> courseName
     const secIdToCourseName = {};
