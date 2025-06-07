@@ -88,6 +88,7 @@ onMounted(() => {
   finalStudentId.value = id !== -1 ? parseInt(id, 10) : 5211314;
 
   fetchStudentCourses();
+  fetchexamsdata();
 });
 const secIdToCourseNameMap = ref({});
 const fetchStudentCourses = async () => {
@@ -117,16 +118,7 @@ const fetchStudentCourses = async () => {
   }
 };
 // 模拟考试结果数据，实际应从API获取
-const examResults = ref([{
-  paperId:1,
-  courseId:1,
-  studentId:1,
-  paperName:"",
-  totalScore:100,
-  closeTime: new Date(),
-   openTime: new Date(),
-   date:new Date(),//此处是我写的，用openTime来初始化的，你得稍微改改可能
-}]); // Initialize as empty
+const examResults = ref([]); // Initialize as empty
 
 const fetchexamsdata = async() => { // Function to populate mock data
   try {
@@ -148,20 +140,6 @@ const fetchexamsdata = async() => { // Function to populate mock data
     examResults.value = [];
   }
 };
-
-onMounted(() => {
-  // In a real app, you would fetch data here:
-  // isLoading.value = true;
-  // fetchExamResultsAPI().then(data => {
-  //   examResults.value = data.sort((a, b) => new Date(b.date) - new Date(a.date));
-  //   isLoading.value = false;
-  // }).catch(err => {
-  //   console.error(err);
-  //   isLoading.value = false;
-  //   alert("加载考试记录失败");
-  // });
-  fetchexamsdata(); // Using mock data for now
-});
 
 
 const searchQuery = ref('');
