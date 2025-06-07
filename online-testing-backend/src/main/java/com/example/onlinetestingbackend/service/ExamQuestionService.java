@@ -216,6 +216,14 @@ public class ExamQuestionService {
         }
         Map<Integer, AnalyseData> questionMap = statsMap.get(courseId);
         List<AnalyseDto> analyseResult = new ArrayList<>();
+        if(questionMap == null || questionMap.isEmpty())
+        {
+            RecordsDto emptyResult = new RecordsDto();
+            emptyResult.setCourseId(courseId);
+            emptyResult.setPaperId(paperId);
+            emptyResult.setAnalyses(Collections.emptyList()); // 设置空列表
+            return emptyResult;
+        }
         for (Integer questionId : questionMap.keySet()) {
             AnalyseData data = questionMap.get(questionId);
 
@@ -280,16 +288,18 @@ public class ExamQuestionService {
 //            throw new RuntimeException("考试已结束，无法手动提交");
 //        }
         try {
-            String answerJson = serializeAnswers(dto);
+            ExamPlainRecordtempDto dto1 = new ExamPlainRecordtempDto();
+            dto1.setPaperId(paperId);
+            dto1.setCourseId(courseId);
+            dto1.setStudentId(studentId);
+            dto1.setAnswers(dto.getAnswers());
+            String answerJson = serializeAnswers(dto1);
             TemporarySubmission temporarySubmission = new TemporarySubmission();
-            ExamResultId examResultId = new ExamResultId();
-            examResultId.setPaperId(paperId);
-            examResultId.setCourseId(courseId);
-            examResultId.setStudentId(studentId);
+            temporarySubmission.setStartTime(dto.getStartTime());
+            temporarySubmission.setFinishTime(dto.getFinishTime());
             temporarySubmission.setPaperId(paperId);
             temporarySubmission.setCourseId(courseId);
             temporarySubmission.setStudentId(studentId);
-            temporarySubmission.setSubmissionTime(now);
             temporarySubmission.setAnswersJson(answerJson);
             temporarySubmissionRepository.save(temporarySubmission);
 //          ExamPlainRecordDto examPlainRecordDto =deserializeAnswers(temporarySubmission.getAnswersJson());
@@ -316,9 +326,10 @@ public class ExamQuestionService {
         return examresultDtos;
     }
 
-    @Scheduled(cron = "0 0/1 * * * ?")
+    @Scheduled(cron = "0/30 * * * * ?")
     @Transactional
     public void autoSubmitExams() {
+        System.out.println("自动提交考试开始");
         List<PaperInfo> papers = paperInfoRepository.findAll();
         LocalDateTime now = LocalDateTime.now();
 
@@ -336,8 +347,11 @@ public class ExamQuestionService {
             for (TemporarySubmission temp : submissions) {
                 try {
 
-                    ExamPlainRecordDto dto = deserializeAnswers(temp.getAnswersJson());
-
+                    ExamPlainRecordtempDto dto1 = deserializeAnswers(temp.getAnswersJson());
+                    ExamPlainRecordDto dto = new ExamPlainRecordDto(paperId, courseId, dto1.getAnswers());
+                    dto.setStudentId(temp.getStudentId());
+                    dto.setStartTime(temp.getStartTime());
+                    dto.setFinishTime(temp.getFinishTime());
                     judgeResult(dto);
 
                     temporarySubmissionRepository.deleteById(temp.getId());
@@ -350,10 +364,10 @@ public class ExamQuestionService {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    private ExamPlainRecordDto deserializeAnswers(String json) throws Exception {
-        return objectMapper.readValue(json, ExamPlainRecordDto.class);
+    private ExamPlainRecordtempDto deserializeAnswers(String json) throws Exception {
+        return objectMapper.readValue(json, ExamPlainRecordtempDto.class);
     }
-    private String serializeAnswers(ExamPlainRecordDto dto) throws Exception {
+    private String serializeAnswers(ExamPlainRecordtempDto dto) throws Exception {
     return objectMapper.writeValueAsString(dto);
 }
 
@@ -376,6 +390,7 @@ public class ExamQuestionService {
             PaperInfo paperInfo = paperInfoRepository.findByCourseIdAndPaperId(examResult.getCourseId(), examResult.getPaperId());
             ExamwithNameDto examwithNameDto = new ExamwithNameDto();
             examwithNameDto.setStudentId(studentId);
+            examwithNameDto.setPaperName(paperInfo.getPaperName());
             examwithNameDto.setPaperId(paperInfo.getPaperId());
             examwithNameDto.setCourseId(examResult.getCourseId());
             examwithNameDto.setTotalScore(examResult.getTotalScore());

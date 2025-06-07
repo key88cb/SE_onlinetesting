@@ -198,7 +198,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 // --- 类型映射 ---
-const url_front = 'http://localhost:8080/';
+const url_front = 'http://localhost:8082/';
 const QUESTION_TYPES_MAP = {
   SINGLE_CHOICE: { backend: 'Single Choice', frontend: '单选' },
   MULTIPLE_CHOICE: { backend: 'Multiple Choice', frontend: '多选' },

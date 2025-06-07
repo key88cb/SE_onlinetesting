@@ -117,12 +117,18 @@ onMounted(() => {
 
   updateAuthState(); // 页面加载时首次更新认证状态
 
-  // 监听 localStorage 变化，以便在其他标签页登出或登录时同步状态
-  window.addEventListener('storage', (event) => {
-    if (event.key === 'userToken' || event.key === 'userRole' || event.key === 'username') {
-      updateAuthState();
-    }
-  });
+  // 模拟从 localStorage 获取用户信息（真实项目中应调用接口）
+  const user = JSON.parse(localStorage.getItem('user'))
+  if (user && user.username && user.role) {
+    role.value = user.role
+  }
+})
+
+// 监听 localStorage 变化，以便在其他标签页登出或登录时同步状态
+window.addEventListener('storage', (event) => {
+  if (event.key === 'userToken' || event.key === 'userRole' || event.key === 'username') {
+    updateAuthState();
+  }
 });
 
 onUnmounted(() => {

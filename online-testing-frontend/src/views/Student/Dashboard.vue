@@ -20,13 +20,13 @@
               :class="['tab-btn', { active: currentTab === 'ongoing' }]"
               @click="setActiveTab('ongoing')"
           >
-            <i class="icon-ongoing"></i> 进行中考试 ({{ ongoingExams.length }})
+            <i class="icon-ongoing"></i> 进行中考试 ({{ ongoingFiltered.length }})
           </button>
           <button
               :class="['tab-btn', { active: currentTab === 'notStarted' }]"
               @click="setActiveTab('notStarted')"
           >
-            <i class="icon-future"></i> 未开始考试 ({{ notStartedExams.length }})
+            <i class="icon-future"></i> 未开始考试 ({{ notStartedFiltered.length }})
           </button>
         </div>
       </div>
@@ -126,7 +126,7 @@ import axios from 'axios'; // Assuming axios is installed
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
-const url_front = 'http://localhost:8080/';
+const url_front = 'http://localhost:8082/';
 
 const currentTab = ref('ongoing'); // Default to ongoing exams
 const notStartedExams = ref([]);
@@ -136,6 +136,61 @@ const isLoading = ref(true);
 
 const showDialog = ref(false);
 const selectedExam = ref(null);
+const studentCourses = ref([]);
+const studentCoursesName = ref([]);
+const studentId = computed(() => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  return user ? user.userId : -1;
+});
+const finalStudentId = ref(5211314);
+onMounted(() => {
+  const id = studentId.value;
+  finalStudentId.value = id !== -1 ? parseInt(id, 10) : 5211314;
+
+  fetchStudentCourses();
+});
+
+const ongoingFiltered = computed(() =>
+    ongoingExams.value.filter(exam => studentCourses.value.includes(exam.courseId))
+);
+
+const notStartedFiltered = computed(() =>
+    notStartedExams.value.filter(exam => studentCourses.value.includes(exam.courseId))
+);
+
+// 使用一个新的 ref 来存储处理后的 studentId
+
+const getCourseNameById = (secId) => {
+  return secIdToCourseNameMap.value[secId] || `未知课程(${secId})`;
+};
+
+const secIdToCourseNameMap = ref({});
+const fetchStudentCourses = async () => {
+  try {
+    const response = await axios.get(`http://localhost:8080/api/students/${finalStudentId.value}/courses`);
+
+    const courseList = response.data || [];
+    console.log('学生选课列表:', courseList);
+    // 提取学生选课的 sectionId(sec_id)
+    const secIds = courseList.map(course => course.sectionId);
+
+    // 构建映射关系：sectionId -> courseName
+    const secIdToCourseName = {};
+    courseList.forEach(course => {
+      secIdToCourseName[course.sectionId] = course.courseName;
+    });
+
+    // 更新响应式数据
+    studentCourses.value = secIds;
+    secIdToCourseNameMap.value = secIdToCourseName;
+
+    console.log('学生课程列表:', secIds);
+    console.log('课程名映射:', secIdToCourseName);
+  } catch (error) {
+    console.error('获取学生课程失败:', error);
+    alert('无法加载您的课程信息，请重试');
+  }
+};
 
 // --- 科目ID到名称的映射 (示例) ---
 const COURSE_ID_TO_NAME_MAP = {
@@ -143,9 +198,9 @@ const COURSE_ID_TO_NAME_MAP = {
   2: '软件工程',   3: '计算机网络',
   // 根据您的实际情况补充
 };
-const getCourseNameById = (courseId) => {
-  return COURSE_ID_TO_NAME_MAP[courseId] || `课程ID ${courseId}`;
-};
+// const getCourseNameById = (courseId) => {
+//   return COURSE_ID_TO_NAME_MAP[courseId] || `课程ID ${courseId}`;
+// };
 // ---
 
 let nowInterval = null;
@@ -264,7 +319,9 @@ const filteredExams = computed(() => {
         (exam.paperName && exam.paperName.toLowerCase().includes(query))
     );
   }
-  return examsToFilter;
+  return examsToFilter.filter(exam =>
+      studentCourses.value.includes(exam.courseId)
+  );
 });
 
 const clearSearch = () => {

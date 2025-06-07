@@ -139,7 +139,7 @@ import { useRoute, useRouter } from 'vue-router';
 
 const route = useRoute();
 const router = useRouter();
-const url_front = 'http://localhost:8080/';
+const url_front = 'http://localhost:8082/';
 
 const isLoading = ref(true);
 const paperInfo = ref(null);
@@ -188,7 +188,7 @@ const fetchPaperQuestions = async (paperId, courseId) => {
 const fetchResultAnalysis = async (paperId, courseId) => {
   try {
     const params = new URLSearchParams({ courseId: String(courseId), paperId: String(paperId) });
-    const url = url_front`api/exam/search-exam-for-all?${params}`;
+    const url = url_front + `api/exam/search-exam-for-all?${params}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`获取题目分析失败 (${res.status})`);
     const data = await res.json();
