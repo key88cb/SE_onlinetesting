@@ -20,16 +20,21 @@
           <option :value="QUESTION_TYPES_MAP.TRUE_FALSE.frontend">{{ QUESTION_TYPES_MAP.TRUE_FALSE.frontend }}</option>
         </select>
       </div>
-      <div class="search-mode-switch-container">
-        <span class="search-mode-label">搜索模式:</span>
-        <label class="switch-label">
-          <input type="checkbox" v-model="isIntersectionMode" class="visually-hidden-input">
-          <span class="switch-track">
-                <span class="switch-thumb"></span>
-            </span>
-        </label>
-        <span class="search-mode-text">{{ isIntersectionMode ? '交集 (AND)' : '并集 (OR)' }}</span>
-      </div>
+<div class="search-mode-switch-container">
+    <span class="search-mode-label">搜索模式:</span>
+    <input
+        type="checkbox"
+        id="search-mode-toggle"
+        v-model="isIntersectionMode"
+        class="visually-hidden-input"
+    >
+    <label for="search-mode-toggle" class="switch-label">
+        <span class="switch-track">
+            <span class="switch-thumb"></span>
+        </span>
+    </label>
+    <span class="search-mode-text">{{ isIntersectionMode ? '交集 (AND)' : '并集 (OR)' }}</span>
+</div>
       <button class="btn primary-btn add-question-btn" @click="showAddQuestionDialog">
         <i class="icon-add"></i> 添加新题目
       </button>
